@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.wdf.sap.corp/kubernetes/azure-remeny-controller/pkg/cmd"
+	"github.wdf.sap.corp/kubernetes/azure-remedy-controller/pkg/cmd"
 )
 
 func main() {

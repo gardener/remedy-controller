@@ -3,7 +3,7 @@ package pubips
 import (
 	"os"
 
-	azclient "github.wdf.sap.corp/kubernetes/azure-remeny-controller/pkg/azure/client"
+	azclient "github.wdf.sap.corp/kubernetes/azure-remedy-controller/pkg/azure/client"
 	"k8s.io/client-go/kubernetes"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

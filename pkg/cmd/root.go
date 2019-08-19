@@ -6,9 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	azclient "github.wdf.sap.corp/kubernetes/azure-remeny-controller/pkg/azure/client"
-	k8sclient "github.wdf.sap.corp/kubernetes/azure-remeny-controller/pkg/k8s"
-	"github.wdf.sap.corp/kubernetes/azure-remeny-controller/pkg/remedies/pubips"
+	azclient "github.wdf.sap.corp/kubernetes/azure-remedy-controller/pkg/azure/client"
+	k8sclient "github.wdf.sap.corp/kubernetes/azure-remedy-controller/pkg/k8s"
+	"github.wdf.sap.corp/kubernetes/azure-remedy-controller/pkg/remedies/pubips"
 )
 
 // GetRootCommand TODO

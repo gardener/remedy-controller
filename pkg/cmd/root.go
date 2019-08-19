@@ -45,5 +45,9 @@ func GetRootCommand() *cobra.Command {
 	)
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "path to kubeconfig to target whatever")
 	cmd.Flags().StringVar(&azureConfigPath, "azure-config", "", "path to Azure config")
+
+	cmd.MarkFlagRequired("kubeconfig")
+	cmd.MarkFlagRequired("azure-config")
+
 	return cmd
 }

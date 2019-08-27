@@ -31,7 +31,6 @@ func GetRootCommand() *cobra.Command {
 				ctx, cancel := context.WithCancel(context.Background())
 				interuptCh := make(chan os.Signal, 1)
 				signal.Notify(interuptCh, os.Interrupt, syscall.SIGTERM)
-				_ = ctx
 
 				k8sClientSet, err := k8sclient.GetClientSet(kubeconfigPath)
 				if err != nil {
@@ -51,7 +50,7 @@ func GetRootCommand() *cobra.Command {
 					os.Exit(1)
 				}
 
-				go pubips.CleanPubIps(k8sClientSet, azdrivers)
+				go pubips.CleanPubIps(ctx, k8sClientSet, azdrivers, azConfig.ResourceGroup)
 
 				select {
 				case <-interuptCh:

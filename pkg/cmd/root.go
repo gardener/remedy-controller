@@ -1,9 +1,14 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.wdf.sap.corp/kubernetes/azure-remedy-controller/pkg/config"
@@ -21,6 +26,12 @@ func GetRootCommand() *cobra.Command {
 			Long: "TODO",
 			Run: func(cmd *cobra.Command, args []string) {
 				config.ConfigureLogger(logLevel)
+
+				// Register a signal handler and create root context to shutdown the app with a graceperiod.
+				ctx, cancel := context.WithCancel(context.Background())
+				interuptCh := make(chan os.Signal, 1)
+				signal.Notify(interuptCh, os.Interrupt, syscall.SIGTERM)
+				_ = ctx
 
 				k8sClientSet, err := k8sclient.GetClientSet(kubeconfigPath)
 				if err != nil {
@@ -42,7 +53,14 @@ func GetRootCommand() *cobra.Command {
 
 				go pubips.CleanPubIps(k8sClientSet, azdrivers)
 
-				select {}
+				select {
+				case <-interuptCh:
+					signal.Stop(interuptCh)
+					log.Info("Received stop signal, shutting down with grace period.")
+					cancel()
+					time.Sleep(time.Second * 5)
+					log.Info("Shut down.")
+				}
 			},
 		}
 	)

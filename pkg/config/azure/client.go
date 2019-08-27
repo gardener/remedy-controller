@@ -1,4 +1,4 @@
-package client
+package azure
 
 import (
 	"encoding/json"

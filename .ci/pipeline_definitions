@@ -1,0 +1,29 @@
+remedy-controller:
+  jobs:
+    manual-release:
+      traits:
+        version:
+          preprocess: 'finalize'
+          inject_effective_version: True
+        publish:
+          dockerimages:
+            remedy-controller-image:
+              registry: 'gcr-readwrite-sap-se-gcp-scp-k8s'
+              image: 'eu.gcr.io/sap-se-gcp-scp-k8s/remedy-controller/remedy-controller'
+              dockerfile: 'Dockerfile'
+              target: controller
+              tag_as_latest: True
+        release:
+          nextversion: 'bump_minor'
+          release_notes_policy: disabled
+    head-update:
+      traits:
+        version:
+          inject_effective_version: True
+        publish:
+          dockerimages:
+            remedy-controller-image:
+              registry: 'gcr-readwrite-sap-se-gcp-scp-k8s'
+              image: 'eu.gcr.io/sap-se-gcp-scp-k8s/remedy-controller/remedy-controller'
+              dockerfile: 'Dockerfile'
+              target: controller

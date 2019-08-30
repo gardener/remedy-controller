@@ -70,5 +70,7 @@ func GetRootCommand() *cobra.Command {
 	cmd.MarkFlagRequired("kubeconfig")
 	cmd.MarkFlagRequired("infrastructure-config")
 
+	cmd.AddCommand(getVersionCommand())
+
 	return cmd
 }

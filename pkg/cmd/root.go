@@ -11,10 +11,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.wdf.sap.corp/kubernetes/azure-remedy-controller/pkg/config"
-	azclient "github.wdf.sap.corp/kubernetes/azure-remedy-controller/pkg/config/azure"
-	k8sclient "github.wdf.sap.corp/kubernetes/azure-remedy-controller/pkg/config/k8s"
-	"github.wdf.sap.corp/kubernetes/azure-remedy-controller/pkg/remedies/pubips"
+	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/config"
+	azclient "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/config/azure"
+	k8sclient "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/config/k8s"
+	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/remedies/pubips"
 )
 
 // GetRootCommand TODO
@@ -22,7 +22,7 @@ func GetRootCommand() *cobra.Command {
 	var (
 		kubeconfigPath, azureConfigPath, logLevel string
 		cmd                                       = &cobra.Command{
-			Use:  "azure-remedy-controller",
+			Use:  "remedy-controller",
 			Long: "TODO",
 			Run: func(cmd *cobra.Command, args []string) {
 				config.ConfigureLogger(logLevel)
@@ -64,11 +64,11 @@ func GetRootCommand() *cobra.Command {
 		}
 	)
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "path to kubeconfig to target whatever")
-	cmd.Flags().StringVar(&azureConfigPath, "azure-config", "", "path to Azure config")
+	cmd.Flags().StringVar(&azureConfigPath, "infrastructure-config", "", "path to infrastructure config")
 	cmd.Flags().StringVar(&logLevel, "log-level", "info", "log level: error|info|debug")
 
 	cmd.MarkFlagRequired("kubeconfig")
-	cmd.MarkFlagRequired("azure-config")
+	cmd.MarkFlagRequired("infrastructure-config")
 
 	return cmd
 }

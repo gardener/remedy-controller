@@ -7,7 +7,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	azclient "github.wdf.sap.corp/kubernetes/azure-remedy-controller/pkg/config/azure"
+	azclient "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/config/azure"
 
 	aznetwork "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
 

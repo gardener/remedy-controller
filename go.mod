@@ -1,4 +1,4 @@
-module github.wdf.sap.corp/kubernetes/azure-remedy-controller
+module github.wdf.sap.corp/kubernetes/remedy-controller
 
 go 1.12
 

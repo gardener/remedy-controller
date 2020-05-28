@@ -86,7 +86,7 @@ func clean(ctx context.Context, k8sClientSet *kubernetes.Clientset, azureClients
 	if err != nil {
 		return err
 	}
-	err = result.WaitForCompletion(ctx, azureClients.Lb.Client)
+	err = result.WaitForCompletionRef(ctx, azureClients.Lb.Client)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func clean(ctx context.Context, k8sClientSet *kubernetes.Clientset, azureClients
 			log.Error(err.Error())
 			continue
 		}
-		err = result.WaitForCompletion(ctx, azureClients.Ip.Client)
+		err = result.WaitForCompletionRef(ctx, azureClients.Ip.Client)
 		if err != nil {
 			return err
 		}
@@ -131,9 +131,7 @@ func getIpsFromAzure(ctx context.Context, azureClients *azclient.AzureDriverClie
 		return nil, err
 	}
 	var ips []aznetwork.PublicIPAddress
-	for _, ip := range ipList.Values() {
-		ips = append(ips, ip)
-	}
+	ips = append(ips, ipList.Values()...)
 	return ips, nil
 }
 

@@ -1,23 +1,22 @@
-############# builder #############
-FROM golang:1.12.8 AS builder
+############# builder
+FROM golang:1.14.2 AS builder
 
 WORKDIR /go/src/github.wdf.sap.corp/kubernetes/remedy-controller
 COPY . .
+RUN make install
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GO111MODULE=on go install \
-  -ldflags="-s -w \
-    -X github.wdf.sap.corp/kubernetes/remedy-controller/pkg/version.gitVersion=$(cat VERSION) \
-    -X github.wdf.sap.corp/kubernetes/remedy-controller/pkg/version.gitCommit=$(git rev-parse --verify HEAD) \
-    -X github.wdf.sap.corp/kubernetes/remedy-controller/pkg/version.buildDate=$(date --rfc-3339=seconds | sed 's/ /T/')" \
-  -mod=vendor \
-  .
+############# base image
+FROM alpine:3.11.6 AS base
 
-############# controller #############
-FROM alpine:3.10 AS controller
+############# remedy-controller-azure
+FROM base AS remedy-controller-azure
 
-RUN apk add --update bash curl
+#COPY charts /charts
+COPY --from=builder /go/bin/remedy-controller-azure /remedy-controller-azure
+ENTRYPOINT ["/remedy-controller-azure"]
 
-COPY --from=builder /go/bin/remedy-controller /remedy-controller
-WORKDIR /
+############# remedy-applier-azure
+FROM base AS remedy-applier-azure
 
-ENTRYPOINT ["/remedy-controller"]
+COPY --from=builder /go/bin/remedy-applier-azure /remedy-applier-azure
+ENTRYPOINT ["/remedy-applier-azure"]

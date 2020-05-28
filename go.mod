@@ -1,21 +1,32 @@
 module github.wdf.sap.corp/kubernetes/remedy-controller
 
-go 1.12
+go 1.14
 
 require (
-	github.com/Azure/azure-sdk-for-go v26.1.0+incompatible
-	github.com/Azure/go-autorest v11.1.2+incompatible
-	github.com/Azure/go-autorest/tracing v0.5.0 // indirect
-	github.com/googleapis/gnostic v0.3.1 // indirect
-	github.com/imdario/mergo v0.3.7 // indirect
+	github.com/Azure/azure-sdk-for-go v39.0.0+incompatible
+	github.com/Azure/go-autorest/autorest v0.9.3
+	github.com/Azure/go-autorest/autorest/adal v0.8.1
+	github.com/ahmetb/gen-crd-api-reference-docs v0.1.5
+	github.com/gardener/gardener v1.5.0
+	github.com/go-logr/logr v0.1.0
+	github.com/gobuffalo/packr/v2 v2.8.0
+	github.com/golang/mock v1.4.3
+	github.com/onsi/ginkgo v1.10.1
 	github.com/sirupsen/logrus v1.4.2
-	github.com/spf13/cobra v0.0.5
-	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
-	golang.org/x/net v0.0.0-20190813141303-74dc4d7220e7 // indirect
-	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
-	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
-	k8s.io/api v0.0.0-20190814101207-0772a1bdf941
-	k8s.io/apimachinery v0.0.0-20190814100815-533d101be9a6
-	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/utils v0.0.0-20190809000727-6c36bc71fc4a // indirect
+	github.com/spf13/cobra v0.0.6
+	github.com/spf13/pflag v1.0.5
+	k8s.io/api v0.17.0
+	k8s.io/apimachinery v0.17.0
+	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
+	k8s.io/code-generator v0.17.0
+	k8s.io/component-base v0.17.0
+	sigs.k8s.io/controller-runtime v0.4.0
+)
+
+replace (
+	k8s.io/api => k8s.io/api v0.16.8 // 1.16.8
+	k8s.io/apimachinery => k8s.io/apimachinery v0.16.8 // 1.16.8
+	k8s.io/client-go => k8s.io/client-go v0.16.8 // 1.16.8
+	k8s.io/code-generator => k8s.io/code-generator v0.16.8 // 1.16.8
+	k8s.io/component-base => k8s.io/component-base v0.16.8 // 1.16.8
 )

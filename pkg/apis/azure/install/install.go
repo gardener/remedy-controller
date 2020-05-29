@@ -15,8 +15,8 @@
 package install
 
 import (
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config/v1alpha1"
+	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure"
+	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -24,7 +24,7 @@ import (
 var (
 	schemeBuilder = runtime.NewSchemeBuilder(
 		v1alpha1.AddToScheme,
-		config.AddToScheme,
+		azure.AddToScheme,
 		setVersionPriority,
 	)
 

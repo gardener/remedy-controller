@@ -30,13 +30,14 @@ type AddArgs struct {
 	Actuator Actuator
 	// ControllerName is the name of the controller.
 	ControllerName string
+	// FinalizerName is the finalizer name.
+	FinalizerName string
 	// ControllerOptions are the controller options to use when creating a controller.
 	// The Reconciler field is always overridden with a reconciler created from the given actuator.
 	ControllerOptions controller.Options
 	// Type is the object type to watch.
 	Type runtime.Object
 	// Predicates are the predicates to use when watching objects.
-	// If unset, GenerationChangedPredicate will be used.
 	Predicates []predicate.Predicate
 	// WatchBuilder defines additional watches that should be set up.
 	WatchBuilder extensionscontroller.WatchBuilder
@@ -44,15 +45,12 @@ type AddArgs struct {
 
 // DefaultPredicates returns the default predicates for a reconciler.
 func DefaultPredicates() []predicate.Predicate {
-	return []predicate.Predicate{
-		// TODO
-		predicate.GenerationChangedPredicate{},
-	}
+	return []predicate.Predicate{}
 }
 
 // Add creates a new controller and adds it to the given manager using the given args.
 func Add(mgr manager.Manager, args AddArgs) error {
-	args.ControllerOptions.Reconciler = NewReconciler(mgr, args.Actuator, args.ControllerName)
+	args.ControllerOptions.Reconciler = NewReconciler(mgr, args.Actuator, args.ControllerName, args.FinalizerName, args.Type)
 	return add(mgr, args)
 }
 

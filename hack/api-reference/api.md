@@ -42,6 +42,64 @@ string
 </td>
 <td><code>PublicIPAddress</code></td>
 </tr>
+<tr>
+<td>
+<code>metadata</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#objectmeta-v1-meta">
+Kubernetes meta/v1.ObjectMeta
+</a>
+</em>
+</td>
+<td>
+Refer to the Kubernetes API documentation for the fields of the
+<code>metadata</code> field.
+</td>
+</tr>
+<tr>
+<td>
+<code>spec</code></br>
+<em>
+<a href="#%22azure.remedy.gardener.cloud%22/v1alpha1.PublicIPAddressSpec">
+PublicIPAddressSpec
+</a>
+</em>
+</td>
+<td>
+<br/>
+<br/>
+<table>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<code>status</code></br>
+<em>
+<a href="#%22azure.remedy.gardener.cloud%22/v1alpha1.PublicIPAddressStatus">
+PublicIPAddressStatus
+</a>
+</em>
+</td>
+<td>
+</td>
+</tr>
 </tbody>
 </table>
+<h3 id="&#34;azure.remedy.gardener.cloud&#34;/v1alpha1.PublicIPAddressSpec">PublicIPAddressSpec
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#%22azure.remedy.gardener.cloud%22/v1alpha1.PublicIPAddress">PublicIPAddress</a>)
+</p>
+<p>
+</p>
+<h3 id="&#34;azure.remedy.gardener.cloud&#34;/v1alpha1.PublicIPAddressStatus">PublicIPAddressStatus
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#%22azure.remedy.gardener.cloud%22/v1alpha1.PublicIPAddress">PublicIPAddress</a>)
+</p>
+<p>
+</p>
 <hr/>

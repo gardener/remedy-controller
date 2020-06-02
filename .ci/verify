@@ -9,8 +9,8 @@ cd "$(dirname $0)/.."
 apt-get update
 apt-get install -y unzip
 
-git config --global user.email "gardener@sap.com"
-git config --global user.name "Gardener CI/CD"
+git config --global user.email "kubernetes.concourse@gmail.com"
+git config --global user.name "kubernetes-concourse"
 
 mkdir -p /go/src/github.wdf.sap.corp/kubernetes/remedy-controller
 cp -r . /go/src/github.wdf.sap.corp/kubernetes/remedy-controller

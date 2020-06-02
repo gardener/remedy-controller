@@ -17,6 +17,9 @@ remedy-controller:
           nextversion: 'bump_minor'
           release_notes_policy: disabled
     head-update:
+      steps:
+        verify:
+          image: 'golang:1.14.4'
       traits:
         version:
           inject_effective_version: True

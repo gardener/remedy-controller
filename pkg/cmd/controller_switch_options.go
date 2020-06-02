@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	azurepublicipaddress "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/publicipaddress"
 	azureservice "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/service"
 
 	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
@@ -23,7 +24,7 @@ import (
 // ControllerSwitchOptions are the controllercmd.SwitchOptions for the provider controllers.
 func ControllerSwitchOptions() *controllercmd.SwitchOptions {
 	return controllercmd.NewSwitchOptions(
-		// TODO controllercmd.Switch(azurepublicipaddress.ControllerName, azurepublicipaddress.AddToManager),
+		controllercmd.Switch(azurepublicipaddress.ControllerName, azurepublicipaddress.AddToManager),
 		controllercmd.Switch(azureservice.ControllerName, azureservice.AddToManager),
 	)
 }

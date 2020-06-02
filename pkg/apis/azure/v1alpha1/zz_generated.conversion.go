@@ -151,6 +151,11 @@ func Convert_azure_PublicIPAddressSpec_To_v1alpha1_PublicIPAddressSpec(in *azure
 }
 
 func autoConvert_v1alpha1_PublicIPAddressStatus_To_azure_PublicIPAddressStatus(in *PublicIPAddressStatus, out *azure.PublicIPAddressStatus, s conversion.Scope) error {
+	out.Exists = in.Exists
+	out.ID = (*string)(unsafe.Pointer(in.ID))
+	out.Name = (*string)(unsafe.Pointer(in.Name))
+	out.IPAddress = (*string)(unsafe.Pointer(in.IPAddress))
+	out.ProvisioningState = (*string)(unsafe.Pointer(in.ProvisioningState))
 	return nil
 }
 
@@ -160,6 +165,11 @@ func Convert_v1alpha1_PublicIPAddressStatus_To_azure_PublicIPAddressStatus(in *P
 }
 
 func autoConvert_azure_PublicIPAddressStatus_To_v1alpha1_PublicIPAddressStatus(in *azure.PublicIPAddressStatus, out *PublicIPAddressStatus, s conversion.Scope) error {
+	out.Exists = in.Exists
+	out.ID = (*string)(unsafe.Pointer(in.ID))
+	out.Name = (*string)(unsafe.Pointer(in.Name))
+	out.IPAddress = (*string)(unsafe.Pointer(in.IPAddress))
+	out.ProvisioningState = (*string)(unsafe.Pointer(in.ProvisioningState))
 	return nil
 }
 

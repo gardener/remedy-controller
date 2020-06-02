@@ -7,7 +7,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	azclient "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/config/azure"
+	azclient "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/azure"
 
 	aznetwork "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
 
@@ -17,7 +17,7 @@ import (
 )
 
 // CleanPubIps TODO
-func CleanPubIps(ctx context.Context, k8sClientSet *kubernetes.Clientset, azureClients *azclient.AzureDriverClients, resourceGroup string) {
+func CleanPubIps(ctx context.Context, k8sClientSet *kubernetes.Clientset, azureClients *azclient.Clients, resourceGroup string) {
 	var retry int
 	for {
 		if err := clean(ctx, k8sClientSet, azureClients, resourceGroup); err != nil {
@@ -37,7 +37,7 @@ func CleanPubIps(ctx context.Context, k8sClientSet *kubernetes.Clientset, azureC
 	}
 }
 
-func clean(ctx context.Context, k8sClientSet *kubernetes.Clientset, azureClients *azclient.AzureDriverClients, resourceGroup string) error {
+func clean(ctx context.Context, k8sClientSet *kubernetes.Clientset, azureClients *azclient.Clients, resourceGroup string) error {
 	// Determine the Kubernetes known ips.
 	k8sIps, err := getKnownK8sIps(k8sClientSet)
 	if err != nil {
@@ -60,7 +60,7 @@ func clean(ctx context.Context, k8sClientSet *kubernetes.Clientset, azureClients
 	log.Infof("Count known IPs: %d", len(knownIps))
 
 	// Fetch the LoadBalancer.
-	lb, err := azureClients.Lb.Get(ctx, resourceGroup, lbName, "")
+	lb, err := azureClients.LoadBalancersClient.Get(ctx, resourceGroup, lbName, "")
 	if err != nil {
 		return err
 	}
@@ -82,11 +82,11 @@ func clean(ctx context.Context, k8sClientSet *kubernetes.Clientset, azureClients
 	lb.Probes = validLBProbes
 
 	log.Infof("Update LoadBalancer %s", lbName)
-	result, err := azureClients.Lb.CreateOrUpdate(ctx, resourceGroup, lbName, lb)
+	result, err := azureClients.LoadBalancersClient.CreateOrUpdate(ctx, resourceGroup, lbName, lb)
 	if err != nil {
 		return err
 	}
-	err = result.WaitForCompletionRef(ctx, azureClients.Lb.Client)
+	err = result.WaitForCompletionRef(ctx, azureClients.LoadBalancersClient.Client)
 	if err != nil {
 		return err
 	}
@@ -94,12 +94,12 @@ func clean(ctx context.Context, k8sClientSet *kubernetes.Clientset, azureClients
 	// Remove the orphan public ips.
 	for _, ip := range orphanIps {
 		log.Infof("Remove orphan public ip: %s", *ip.Name)
-		result, err := azureClients.Ip.Delete(ctx, resourceGroup, *ip.Name)
+		result, err := azureClients.PublicIPAddressesClient.Delete(ctx, resourceGroup, *ip.Name)
 		if err != nil {
 			log.Error(err.Error())
 			continue
 		}
-		err = result.WaitForCompletionRef(ctx, azureClients.Ip.Client)
+		err = result.WaitForCompletionRef(ctx, azureClients.PublicIPAddressesClient.Client)
 		if err != nil {
 			return err
 		}
@@ -125,8 +125,8 @@ func getKnownK8sIps(k8sClientSet *kubernetes.Clientset) ([]string, error) {
 	return ips, nil
 }
 
-func getIpsFromAzure(ctx context.Context, azureClients *azclient.AzureDriverClients, resourceGroup string) ([]aznetwork.PublicIPAddress, error) {
-	ipList, err := azureClients.Ip.List(ctx, resourceGroup)
+func getIpsFromAzure(ctx context.Context, azureClients *azclient.Clients, resourceGroup string) ([]aznetwork.PublicIPAddress, error) {
+	ipList, err := azureClients.PublicIPAddressesClient.List(ctx, resourceGroup)
 	if err != nil {
 		return nil, err
 	}

@@ -32,7 +32,8 @@ start-azure:
 		-ldflags $(LD_FLAGS) \
 		./cmd/$(NAME)-azure \
 		--config-file=./example/00-config.yaml \
-		--leader-election=$(LEADER_ELECTION)
+		--leader-election=$(LEADER_ELECTION) \
+		--infrastructure-config=dev/credentials.json
 
 .PHONY: start-applier-azure
 start-applier-azure:

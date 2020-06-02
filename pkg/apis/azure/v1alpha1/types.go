@@ -35,7 +35,16 @@ type PublicIPAddressSpec struct {
 }
 
 type PublicIPAddressStatus struct {
-	// TODO
+	// Exists specifies whether the public IP address resource exists or not.
+	Exists bool `json:"exists"`
+	// ID is the id of the public IP address resource in Azure.
+	ID *string `json:"id,omitempty"`
+	// Name is the name of the public IP address resource in Azure.
+	Name *string `json:"name,omitempty"`
+	// IPAddres is the actual IP address of the public IP address resource in Azure.
+	IPAddress *string `json:"ipAddress,omitempty"`
+	// ProvisioningState is the provisioning state of the public IP address resource in Azure.
+	ProvisioningState *string `json:"provisioningState,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

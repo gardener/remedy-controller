@@ -21,6 +21,7 @@ import (
 
 	azureinstall "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/install"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/cmd"
+	azurepublicipaddress "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/publicipaddress"
 	azureservice "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/service"
 
 	"github.com/gardener/gardener/extensions/pkg/controller"
@@ -56,6 +57,7 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 
 		configFileOpts     = &cmd.ConfigOptions{}
 		controllerSwitches = cmd.ControllerSwitchOptions()
+		reconcilerOpts     = &cmd.ReconcilerOptions{}
 
 		aggOption = controllercmd.NewOptionAggregator(
 			restOpts,
@@ -64,6 +66,7 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			controllercmd.PrefixOption("service-", serviceCtrlOpts),
 			configFileOpts,
 			controllerSwitches,
+			reconcilerOpts,
 		)
 	)
 
@@ -90,8 +93,9 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 				controllercmd.LogErrAndExit(err, "Could not update manager scheme")
 			}
 
-			// TODO publicIPAddressCtrlOpts.Completed().Apply(&azurepublicipaddress.DefaultAddOptions.Controller)
+			publicIPAddressCtrlOpts.Completed().Apply(&azurepublicipaddress.DefaultAddOptions.Controller)
 			serviceCtrlOpts.Completed().Apply(&azureservice.DefaultAddOptions.Controller)
+			reconcilerOpts.Completed().Apply(&azurepublicipaddress.DefaultAddOptions.InfraConfigPath)
 
 			if err := controllerSwitches.Completed().AddToManager(mgr); err != nil {
 				controllercmd.LogErrAndExit(err, "Could not add controllers to manager")

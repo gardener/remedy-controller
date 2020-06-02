@@ -16,6 +16,7 @@ package controller
 
 import (
 	"context"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -23,7 +24,7 @@ import (
 // Actuator acts upon objects being reconciled by a Reconciler.
 type Actuator interface {
 	// CreateOrUpdate reconciles object creation or update.
-	CreateOrUpdate(context.Context, runtime.Object) (bool, bool, error)
+	CreateOrUpdate(context.Context, runtime.Object) (time.Duration, bool, error)
 	// Delete reconciles object deletion.
 	Delete(context.Context, runtime.Object) error
 }

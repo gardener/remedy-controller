@@ -19,6 +19,7 @@ import (
 	"time"
 
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
+	controllererror "github.com/gardener/gardener/extensions/pkg/controller/error"
 	"github.com/gardener/gardener/extensions/pkg/util"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -31,11 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
-)
-
-const (
-	// RequeueAfter is the duration to requeue an object reconciliation if indicated by the actuator.
-	RequeueAfter time.Duration = 2 * time.Second
 )
 
 type reconciler struct {
@@ -105,9 +101,9 @@ func (r *reconciler) createOrUpdate(ctx context.Context, obj runtime.Object, log
 	}
 
 	logger.Info("Reconciling object creation or update")
-	requeue, removeFinalizer, err := r.actuator.CreateOrUpdate(ctx, obj)
+	requeueAfter, removeFinalizer, err := r.actuator.CreateOrUpdate(ctx, obj)
 	if err != nil {
-		return extensionscontroller.ReconcileErr(errors.Wrap(err, "could not reconcile object creation or update"))
+		return reconcileErr(errors.Wrap(err, "could not reconcile object creation or update"))
 	}
 	logger.Info("Successfully reconciled object creation or update")
 
@@ -118,8 +114,8 @@ func (r *reconciler) createOrUpdate(ctx context.Context, obj runtime.Object, log
 		}
 	}
 
-	if requeue {
-		return reconcile.Result{RequeueAfter: RequeueAfter}, nil
+	if requeueAfter != time.Duration(0) {
+		return reconcile.Result{RequeueAfter: requeueAfter}, nil
 	}
 	return reconcile.Result{}, nil
 }
@@ -136,7 +132,7 @@ func (r *reconciler) delete(ctx context.Context, obj runtime.Object, logger logr
 
 	logger.Info("Reconciling object deletion")
 	if err := r.actuator.Delete(r.ctx, obj); err != nil {
-		return extensionscontroller.ReconcileErr(errors.Wrap(err, "could not reconcile object deletion"))
+		return reconcileErr(errors.Wrap(err, "could not reconcile object deletion"))
 	}
 	logger.Info("Successfully reconciled object deletion")
 
@@ -146,4 +142,13 @@ func (r *reconciler) delete(ctx context.Context, obj runtime.Object, logger logr
 	}
 
 	return reconcile.Result{}, nil
+}
+
+// reconcileErr returns a reconcile.Result or an error, depending on whether the error is a
+// RequeueAfterError or not.
+func reconcileErr(err error) (reconcile.Result, error) {
+	if requeueAfter, ok := errors.Cause(err).(*controllererror.RequeueAfterError); ok {
+		return reconcile.Result{Requeue: true, RequeueAfter: requeueAfter.RequeueAfter}, nil
+	}
+	return reconcile.Result{}, err
 }

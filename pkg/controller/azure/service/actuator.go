@@ -17,6 +17,7 @@ package service
 import (
 	"context"
 	"strings"
+	"time"
 
 	azurev1alpha1 "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/v1alpha1"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
@@ -54,12 +55,12 @@ func (a *actuator) InjectClient(client client.Client) error {
 }
 
 // CreateOrUpdate reconciles object creation or update.
-func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requeue bool, removeFinalizer bool, err error) {
+func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requeueAfter time.Duration, removeFinalizer bool, err error) {
 	// Cast object to Service
 	var svc *corev1.Service
 	var ok bool
 	if svc, ok = obj.(*corev1.Service); !ok {
-		return false, false, errors.New("reconciled object is not a service")
+		return 0, false, errors.New("reconciled object is not a service")
 	}
 
 	// Initialize labels
@@ -83,26 +84,26 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 			pubip.Labels = pubipLabels
 			return nil
 		}); err != nil {
-			return false, false, errors.Wrap(err, "could not create or update publicipaddress")
+			return 0, false, errors.Wrap(err, "could not create or update publicipaddress")
 		}
 	}
 
 	// Delete PublicIPAddress objects for non-existing LoadBalancer IPs
 	pubipList := &azurev1alpha1.PublicIPAddressList{}
 	if err := a.client.List(ctx, pubipList, client.InNamespace(svc.Namespace), client.MatchingLabels(pubipLabels)); err != nil {
-		return false, false, errors.Wrap(err, "could not list publicipaddresses")
+		return 0, false, errors.Wrap(err, "could not list publicipaddresses")
 	}
 	for _, pubip := range pubipList.Items {
 		ip := strings.TrimPrefix(pubip.Name, svc.Name+"-")
 		if _, ok := ips[ip]; !ok {
 			a.logger.Info("Deleting publicipaddress", "name", pubip.Name, "namespace", pubip.Namespace)
 			if err := a.client.Delete(ctx, &pubip); err != nil {
-				return false, false, errors.Wrap(err, "could not delete publicipaddress")
+				return 0, false, errors.Wrap(err, "could not delete publicipaddress")
 			}
 		}
 	}
 
-	return false, len(ips) == 0, nil
+	return 0, len(ips) == 0, nil
 }
 
 // Delete reconciles object deletion.

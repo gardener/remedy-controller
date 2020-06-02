@@ -11,7 +11,7 @@ remedy-controller:
               registry: 'gcr-readwrite-sap-se-gcp-scp-k8s'
               image: 'eu.gcr.io/sap-se-gcp-scp-k8s/remedy-controller/remedy-controller'
               dockerfile: 'Dockerfile'
-              target: controller
+              target: remedy-controller-azure
               tag_as_latest: True
         release:
           nextversion: 'bump_minor'
@@ -29,4 +29,4 @@ remedy-controller:
               registry: 'gcr-readwrite-sap-se-gcp-scp-k8s'
               image: 'eu.gcr.io/sap-se-gcp-scp-k8s/remedy-controller/remedy-controller'
               dockerfile: 'Dockerfile'
-              target: controller
+              target: remedy-controller-azure

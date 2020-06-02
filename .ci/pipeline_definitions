@@ -30,3 +30,9 @@ remedy-controller:
               image: 'eu.gcr.io/sap-se-gcp-scp-k8s/remedy-controller/remedy-controller'
               dockerfile: 'Dockerfile'
               target: remedy-controller-azure
+    pull-request:
+      steps:
+        verify:
+          image: 'golang:1.14.4'
+      traits:
+        pull-request: ~

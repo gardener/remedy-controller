@@ -12,4 +12,8 @@ apt-get install -y unzip
 git config --global user.email "gardener@sap.com"
 git config --global user.name "Gardener CI/CD"
 
+mkdir -p /go/src/github.wdf.sap.corp/kubernetes/remedy-controller
+cp -r . /go/src/github.wdf.sap.corp/kubernetes/remedy-controller
+cd /go/src/github.wdf.sap.corp/kubernetes/remedy-controller
+
 make verify-extended

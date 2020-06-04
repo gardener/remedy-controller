@@ -1,0 +1,11 @@
+{{ if .Values.cloudProviderConfig }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloud-provider-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "labels" . | indent 4 }}
+data:
+  cloudprovider.conf: {{ toYaml .Values.cloudProviderConfig | indent 2 }}
+{{ end }}

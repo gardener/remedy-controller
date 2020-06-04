@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+{{ include "labels" . | indent 4 }}
+spec:
+  revisionHistoryLimit: 0
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+{{ include "labels" . | indent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/configmap-{{ include "name" . }}-config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+{{- if .Values.cloudProviderConfig }}
+        checksum/configmap-cloud-provider-config: {{ include (print $.Template.BasePath "/configmap-cloud-provider-config.yaml") . | sha256sum }}
+{{- end }}
+      labels:
+{{ include "labels" . | indent 8 }}
+    spec:
+      containers:
+      - name: {{ include "name" . }}
+        image: {{ include "image" . }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - /remedy-controller-azure
+        - --config-file=/etc/{{ include "name" . }}/config/config.yaml
+        - --infrastructure-config=/etc/kubernetes/cloudprovider/cloudprovider.conf
+        - --leader-election=true
+        - --publicipaddress-max-concurrent-reconciles={{ .Values.controllers.publicipaddress.concurrentSyncs }}
+        - --service-max-concurrent-reconciles={{ .Values.controllers.service.concurrentSyncs }}
+        - --disable-controllers={{ .Values.disableControllers | join "," }}
+        env:
+        - name: LEADER_ELECTION_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+{{- if .Values.resources }}
+        resources:
+{{ toYaml .Values.resources | nindent 10 }}
+{{- end }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/{{ include "name" . }}/config
+        - name: cloud-provider-config
+          mountPath: /etc/kubernetes/cloudprovider          
+      serviceAccountName: {{ include "name" . }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: {{ include "labels.app.key" . }}
+                operator: In
+                values:
+                - {{ include "labels.app.value" . }}
+            topologyKey: "kubernetes.io/hostname"
+      volumes:
+      - name: config
+        configMap:
+          name: {{ include "name" . }}-config
+          defaultMode: 420
+      - name: cloud-provider-config
+        configMap:
+          name: cloud-provider-config
+      imagePullSecrets:
+      - name: {{ include "name" . }}-image-pull-secret

@@ -1,0 +1,34 @@
+image:
+  repository: eu.gcr.io/sap-se-gcp-scp-k8s/remedy-controller/remedy-controller-azure
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+resources: {}
+vpa:
+  enabled: false
+  updatePolicy:
+    updateMode: "Auto"
+
+controllers:
+  publicipaddress:
+    concurrentSyncs: 5
+  service:
+    concurrentSyncs: 5
+
+disableControllers: []
+
+config:
+  clientConnection:
+    acceptContentTypes: application/json
+    contentType: application/json
+    qps: 100
+    burst: 130
+  azure:
+    publicIPRemedy:
+      requeueInterval: 30s
+      deletionGracePeriod: 5m
+
+imagePullSecret: ~
+
+cloudProviderConfig: ~

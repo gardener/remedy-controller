@@ -59,7 +59,7 @@ docker-login:
 
 .PHONY: docker-images
 docker-images:
-	@docker build -t $(IMAGE_PREFIX)/$(NAME):$(VERSION) -t $(IMAGE_PREFIX)/$(NAME):latest -f Dockerfile -m 6g --target $(NAME) .
+	@docker build -t $(IMAGE_PREFIX)/$(NAME)-azure:$(VERSION) -t $(IMAGE_PREFIX)/$(NAME)-azure:latest -f Dockerfile -m 6g --target $(NAME)-azure .
 
 #####################################################################
 # Rules for verification, formatting, linting, testing and cleaning #

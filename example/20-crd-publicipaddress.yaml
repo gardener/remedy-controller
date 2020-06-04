@@ -15,5 +15,7 @@ spec:
     plural: publicipaddresses
     singular: publicipaddress
     kind: PublicIPAddress
+    shortNames:
+    - pubip
   subresources:
     status: {}

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	azurev1alpha1 "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/v1alpha1"
+	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/azure"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
 
@@ -41,15 +42,23 @@ type actuator struct {
 	client        client.Client
 	azureClients  *azure.Clients
 	resourceGroup string
+	config        config.AzurePublicIPRemedyConfiguration
 	logger        logr.Logger
 }
 
 // NewActuator creates a new Actuator.
-func NewActuator(azureClients *azure.Clients, resourceGroup string) controller.Actuator {
+func NewActuator(
+	azureClients *azure.Clients,
+	resourceGroup string,
+	config config.AzurePublicIPRemedyConfiguration,
+) controller.Actuator {
+	logger := log.Log.WithName("azurepublicipaddress-actuator")
+	logger.Info("Creating actuator", "resourceGroup", resourceGroup, "config", config)
 	return &actuator{
 		azureClients:  azureClients,
 		resourceGroup: resourceGroup,
-		logger:        log.Log.WithName("azurepublicipaddress-actuator"),
+		config:        config,
+		logger:        logger,
 	}
 }
 
@@ -83,7 +92,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 
 	requeueAfter = 0
 	if !status.Exists || (getProvisioningState(status) != aznetwork.Succeeded && getProvisioningState(status) != aznetwork.Failed) {
-		requeueAfter = 30 * time.Second
+		requeueAfter = a.config.RequeueInterval.Duration
 	}
 
 	return requeueAfter, false, nil
@@ -114,10 +123,11 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 		}
 
 		// If within a configurable duration after the deletion timestamp, requeue so we could check again
-		if pubip.DeletionTimestamp != nil && !time.Now().After(pubip.DeletionTimestamp.Add(5*time.Minute)) {
+		if pubip.DeletionTimestamp != nil &&
+			!time.Now().After(pubip.DeletionTimestamp.Add(a.config.DeletionGracePeriod.Duration)) {
 			return &controllererror.RequeueAfterError{
 				Cause:        errors.New("public IP address still exists"),
-				RequeueAfter: 30 * time.Second,
+				RequeueAfter: a.config.RequeueInterval.Duration,
 			}
 		}
 

@@ -76,3 +76,11 @@ func (c *Config) Options() config.ControllerConfiguration {
 	c.Apply(&cfg)
 	return cfg
 }
+
+// ApplyAzurePublicIPRemedy sets the given Azure public ID remedy configuration to that of
+// this Config.
+func (c *Config) ApplyAzurePublicIPRemedy(cfg *config.AzurePublicIPRemedyConfiguration) {
+	if c.Config.Azure != nil && c.Config.Azure.PublicIPRemedy != nil {
+		*cfg = *c.Config.Azure.PublicIPRemedy
+	}
+}

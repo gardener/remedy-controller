@@ -15,11 +15,15 @@
 package service
 
 import (
+	"time"
+
 	azurev1alpha1 "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/v1alpha1"
+	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/azure"
 	remedycontroller "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
 
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -32,7 +36,12 @@ const (
 
 var (
 	// DefaultAddOptions are the default AddOptions for AddToManager.
-	DefaultAddOptions = AddOptions{}
+	DefaultAddOptions = AddOptions{
+		Config: config.AzurePublicIPRemedyConfiguration{
+			RequeueInterval:     metav1.Duration{Duration: 30 * time.Second},
+			DeletionGracePeriod: metav1.Duration{Duration: 5 * time.Minute},
+		},
+	}
 )
 
 // AddOptions are options to apply when adding a controller to a manager.
@@ -41,6 +50,8 @@ type AddOptions struct {
 	Controller controller.Options
 	// InfraConfigPath is the path to the infrastructure configuration file.
 	InfraConfigPath string
+	// Config defines the configuration for the public IP remedy.
+	Config config.AzurePublicIPRemedyConfiguration
 }
 
 // AddToManagerWithOptions adds a controller with the given AddOptions to the given manager.
@@ -58,7 +69,7 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 	}
 
 	return remedycontroller.Add(mgr, remedycontroller.AddArgs{
-		Actuator:          NewActuator(azureClients, credentials.ResourceGroup),
+		Actuator:          NewActuator(azureClients, credentials.ResourceGroup, options.Config),
 		ControllerName:    ControllerName,
 		FinalizerName:     FinalizerName,
 		ControllerOptions: options.Controller,

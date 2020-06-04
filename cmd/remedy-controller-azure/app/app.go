@@ -94,6 +94,7 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			}
 
 			publicIPAddressCtrlOpts.Completed().Apply(&azurepublicipaddress.DefaultAddOptions.Controller)
+			configFileOpts.Completed().ApplyAzurePublicIPRemedy(&azurepublicipaddress.DefaultAddOptions.Config)
 			serviceCtrlOpts.Completed().Apply(&azureservice.DefaultAddOptions.Controller)
 			reconcilerOpts.Completed().Apply(&azurepublicipaddress.DefaultAddOptions.InfraConfigPath)
 

@@ -28,4 +28,22 @@ type ControllerConfiguration struct {
 	// ClientConnection specifies the kubeconfig file and client connection
 	// settings for the proxy server to use when communicating with the apiserver.
 	ClientConnection *componentbaseconfig.ClientConnectionConfiguration
+
+	// Azure specifies the configuration for all Azure remedies.
+	Azure *AzureConfiguration
+}
+
+// AzureConfiguration defines the configuration for the Azure remedy controller.
+type AzureConfiguration struct {
+	PublicIPRemedy *AzurePublicIPRemedyConfiguration
+}
+
+// AzurePublicIPRemedyConfiguration defines the configuration for the public IP remedy.
+type AzurePublicIPRemedyConfiguration struct {
+	// RequeueInterval specifies the time after which reconciliation requests will be
+	// requeued. Applies to both creation/update and deletion.
+	RequeueInterval metav1.Duration
+	// DeletionGracePeriod specifies the period after which a public ip address will be
+	// deleted by the controller if it still exists.
+	DeletionGracePeriod metav1.Duration
 }

@@ -6,3 +6,7 @@ clientConnection:
   contentType: application/json
   qps: 100
   burst: 130
+azure:
+  publicIPRemedy:
+    requeueInterval: 30s
+    deletionGracePeriod: 5m

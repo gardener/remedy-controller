@@ -30,4 +30,26 @@ type ControllerConfiguration struct {
 	// settings for the proxy server to use when communicating with the apiserver.
 	// +optional
 	ClientConnection *componentbaseconfigv1alpha1.ClientConnectionConfiguration `json:"clientConnection,omitempty"`
+
+	// Azure specifies the configuration for all Azure remedies.
+	// +optional
+	Azure *AzureConfiguration `json:"azure,omitempty"`
+}
+
+// AzureConfiguration defines the configuration for the Azure remedy controller.
+type AzureConfiguration struct {
+	// +optional
+	PublicIPRemedy *AzurePublicIPRemedyConfiguration `json:"publicIPRemedy,omitempty"`
+}
+
+// AzurePublicIPRemedyConfiguration defines the configuration for the public IP remedy.
+type AzurePublicIPRemedyConfiguration struct {
+	// RequeueInterval specifies the time after which reconciliation requests will be
+	// requeued. Applies to both creation/update and deletion.
+	// +optional
+	RequeueInterval metav1.Duration `json:"requeueInterval,omitempty"`
+	// DeletionGracePeriod specifies the period after which a public ip address will be
+	// deleted by the controller if it still exists.
+	// +optional
+	DeletionGracePeriod metav1.Duration `json:"deletionGracePeriod,omitempty"`
 }

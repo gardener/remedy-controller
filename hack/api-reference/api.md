@@ -69,6 +69,17 @@ PublicIPAddressSpec
 <br/>
 <br/>
 <table>
+<tr>
+<td>
+<code>ipAddress</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>IPAddres is the actual IP address of the public IP address resource in Azure.</p>
+</td>
+</tr>
 </table>
 </td>
 </tr>
@@ -93,7 +104,29 @@ PublicIPAddressStatus
 <a href="#%22azure.remedy.gardener.cloud%22/v1alpha1.PublicIPAddress">PublicIPAddress</a>)
 </p>
 <p>
+<p>PublicIPAddressSpec represents the spec of an Azure public IP address.</p>
 </p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>ipAddress</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>IPAddres is the actual IP address of the public IP address resource in Azure.</p>
+</td>
+</tr>
+</tbody>
+</table>
 <h3 id="&#34;azure.remedy.gardener.cloud&#34;/v1alpha1.PublicIPAddressStatus">PublicIPAddressStatus
 </h3>
 <p>
@@ -101,6 +134,7 @@ PublicIPAddressStatus
 <a href="#%22azure.remedy.gardener.cloud%22/v1alpha1.PublicIPAddress">PublicIPAddress</a>)
 </p>
 <p>
+<p>PublicIPAddressStatus represents the status of an Azure public IP address.</p>
 </p>
 <table>
 <thead>
@@ -141,17 +175,6 @@ string
 </td>
 <td>
 <p>Name is the name of the public IP address resource in Azure.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>ipAddress</code></br>
-<em>
-string
-</em>
-</td>
-<td>
-<p>IPAddres is the actual IP address of the public IP address resource in Azure.</p>
 </td>
 </tr>
 <tr>

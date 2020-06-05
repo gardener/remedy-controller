@@ -75,13 +75,14 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 	for ip := range ips {
 		pubip := &azurev1alpha1.PublicIPAddress{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      svc.Name + "-" + ip,
+				Name:      generatePublicIPAddressName(svc.Name, ip),
 				Namespace: svc.Namespace,
 			},
 		}
 		a.logger.Info("Creating or updating publicipaddress", "name", pubip.Name, "namespace", pubip.Namespace)
 		if _, err := controllerutil.CreateOrUpdate(ctx, a.client, pubip, func() error {
 			pubip.Labels = pubipLabels
+			pubip.Spec.IPAddress = ip
 			return nil
 		}); err != nil {
 			return 0, false, errors.Wrap(err, "could not create or update publicipaddress")
@@ -122,7 +123,7 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 	for ip := range ips {
 		pubip := &azurev1alpha1.PublicIPAddress{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      svc.Name + "-" + ip,
+				Name:      generatePublicIPAddressName(svc.Name, ip),
 				Namespace: svc.Namespace,
 			},
 		}
@@ -133,4 +134,8 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 	}
 
 	return nil
+}
+
+func generatePublicIPAddressName(serviceName, ip string) string {
+	return serviceName + "-" + ip
 }

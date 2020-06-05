@@ -114,11 +114,6 @@ func (in *PublicIPAddressStatus) DeepCopyInto(out *PublicIPAddressStatus) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.IPAddress != nil {
-		in, out := &in.IPAddress, &out.IPAddress
-		*out = new(string)
-		**out = **in
-	}
 	if in.ProvisioningState != nil {
 		in, out := &in.ProvisioningState, &out.ProvisioningState
 		*out = new(string)

@@ -29,10 +29,13 @@ type PublicIPAddress struct {
 	Status PublicIPAddressStatus
 }
 
+// PublicIPAddressSpec represents the spec of an Azure public IP address.
 type PublicIPAddressSpec struct {
-	// TODO
+	// IPAddres is the actual IP address of the public IP address resource in Azure.
+	IPAddress string
 }
 
+// PublicIPAddressStatus represents the status of an Azure public IP address.
 type PublicIPAddressStatus struct {
 	// Exists specifies whether the public IP address resource exists or not.
 	Exists bool
@@ -40,14 +43,13 @@ type PublicIPAddressStatus struct {
 	ID *string
 	// Name is the name of the public IP address resource in Azure.
 	Name *string
-	// IPAddres is the actual IP address of the public IP address resource in Azure.
-	IPAddress *string
 	// ProvisioningState is the provisioning state of the public IP address resource in Azure.
 	ProvisioningState *string
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// PublicIPAddressList contains a list of PublicIPAddress.
 type PublicIPAddressList struct {
 	metav1.TypeMeta
 	metav1.ListMeta

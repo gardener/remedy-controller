@@ -17,7 +17,6 @@ package service
 import (
 	"context"
 	"net/http"
-	"strings"
 	"time"
 
 	azurev1alpha1 "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/v1alpha1"
@@ -76,11 +75,8 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 		return 0, false, errors.New("reconciled object is not a publicipaddress")
 	}
 
-	// Get IP from name
-	ip := getIPFromName(pubip.Name)
-
 	// Get the public IP address in Azure and build resource status
-	status, err := a.buildPublicIPAddressStatus(ctx, pubip.Status.Name, ip)
+	status, err := a.buildPublicIPAddressStatus(ctx, pubip.Status.Name, pubip.Spec.IPAddress)
 	if err != nil {
 		return 0, false, err
 	}
@@ -107,11 +103,8 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 		return errors.New("reconciled object is not a publicipaddress")
 	}
 
-	// Get IP from name
-	ip := getIPFromName(pubip.Name)
-
 	// Get the public IP address in Azure and build resource status
-	status, err := a.buildPublicIPAddressStatus(ctx, pubip.Status.Name, ip)
+	status, err := a.buildPublicIPAddressStatus(ctx, pubip.Status.Name, pubip.Spec.IPAddress)
 	if err != nil {
 		return err
 	}
@@ -152,7 +145,6 @@ func (a *actuator) buildPublicIPAddressStatus(ctx context.Context, name *string,
 			Exists:            true,
 			ID:                azurePublicIP.ID,
 			Name:              azurePublicIP.Name,
-			IPAddress:         azurePublicIP.IPAddress,
 			ProvisioningState: azurePublicIP.ProvisioningState,
 		}
 	}
@@ -286,13 +278,6 @@ func updateProbes(lb aznetwork.LoadBalancer, ruleIDs []string) {
 		}
 	}
 	*lb.Probes = updated
-}
-
-func getIPFromName(name string) string {
-	if index := strings.LastIndex(name, "-"); index >= 0 {
-		return name[index+1:]
-	}
-	return name
 }
 
 func getProvisioningState(status azurev1alpha1.PublicIPAddressStatus) aznetwork.ProvisioningState {

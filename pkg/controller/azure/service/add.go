@@ -20,10 +20,12 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 const (
-	ControllerName = "azureservice"
+	ControllerName = "azureservice-controller"
+	FinalizerName  = "azure.remedy.gardener.cloud/service"
 )
 
 var (
@@ -42,9 +44,12 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 	return remedycontroller.Add(mgr, remedycontroller.AddArgs{
 		Actuator:          NewActuator(),
 		ControllerName:    ControllerName,
+		FinalizerName:     FinalizerName,
 		ControllerOptions: options.Controller,
 		Type:              &corev1.Service{},
-		Predicates:        remedycontroller.DefaultPredicates(),
+		Predicates: []predicate.Predicate{
+			NewLoadBalancerIPsChangedPredicate(),
+		},
 	})
 }
 

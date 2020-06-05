@@ -22,8 +22,8 @@ import (
 
 // Actuator acts upon objects being reconciled by a Reconciler.
 type Actuator interface {
-	// Create or update the object.
-	CreateOrUpdate(context.Context, runtime.Object) error
-	// Delete the object.
+	// CreateOrUpdate reconciles object creation or update.
+	CreateOrUpdate(context.Context, runtime.Object) (bool, bool, error)
+	// Delete reconciles object deletion.
 	Delete(context.Context, runtime.Object) error
 }

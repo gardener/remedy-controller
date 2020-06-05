@@ -23,6 +23,25 @@ import (
 // PublicIPAddress represents an Azure public IP address.
 type PublicIPAddress struct {
 	metav1.TypeMeta
+	metav1.ObjectMeta
 
+	Spec   PublicIPAddressSpec
+	Status PublicIPAddressStatus
+}
+
+type PublicIPAddressSpec struct {
 	// TODO
+}
+
+type PublicIPAddressStatus struct {
+	// TODO
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+type PublicIPAddressList struct {
+	metav1.TypeMeta
+	metav1.ListMeta
+
+	Items []PublicIPAddress
 }

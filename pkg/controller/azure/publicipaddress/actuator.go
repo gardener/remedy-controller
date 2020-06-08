@@ -34,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 type actuator struct {
@@ -50,8 +49,8 @@ func NewActuator(
 	azureClients *azure.Clients,
 	resourceGroup string,
 	config config.AzurePublicIPRemedyConfiguration,
+	logger logr.Logger,
 ) controller.Actuator {
-	logger := log.Log.WithName("azurepublicipaddress-actuator")
 	logger.Info("Creating actuator", "resourceGroup", resourceGroup, "config", config)
 	return &actuator{
 		azureClients:  azureClients,
@@ -75,19 +74,20 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 		return 0, false, errors.New("reconciled object is not a publicipaddress")
 	}
 
-	// Get the public IP address in Azure and build resource status
-	status, err := a.buildPublicIPAddressStatus(ctx, pubip.Status.Name, pubip.Spec.IPAddress)
+	// Get the public IP address in Azure
+	azurePublicIP, err := a.getAzurePublicIPAddress(ctx, pubip.Status.Name, pubip.Spec.IPAddress)
 	if err != nil {
 		return 0, false, err
 	}
 
 	// Update resource status
-	if err := a.updatePublicIPAddressStatus(ctx, pubip, status); err != nil {
+	if err := a.updatePublicIPAddressStatus(ctx, pubip, azurePublicIP); err != nil {
 		return 0, false, err
 	}
 
+	// Requeue if the public IP address doesn't exist or is in a transient state
 	requeueAfter = 0
-	if !status.Exists || (getProvisioningState(status) != aznetwork.Succeeded && getProvisioningState(status) != aznetwork.Failed) {
+	if azurePublicIP == nil || (getProvisioningState(azurePublicIP) != aznetwork.Succeeded && getProvisioningState(azurePublicIP) != aznetwork.Failed) {
 		requeueAfter = a.config.RequeueInterval.Duration
 	}
 
@@ -103,15 +103,15 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 		return errors.New("reconciled object is not a publicipaddress")
 	}
 
-	// Get the public IP address in Azure and build resource status
-	status, err := a.buildPublicIPAddressStatus(ctx, pubip.Status.Name, pubip.Spec.IPAddress)
+	// Get the public IP address in Azure
+	azurePublicIP, err := a.getAzurePublicIPAddress(ctx, pubip.Status.Name, pubip.Spec.IPAddress)
 	if err != nil {
 		return err
 	}
 
-	if status.Exists {
+	if azurePublicIP != nil {
 		// Update resource status
-		if err := a.updatePublicIPAddressStatus(ctx, pubip, status); err != nil {
+		if err := a.updatePublicIPAddressStatus(ctx, pubip, azurePublicIP); err != nil {
 			return err
 		}
 
@@ -131,24 +131,6 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 	}
 
 	return nil
-}
-
-func (a *actuator) buildPublicIPAddressStatus(ctx context.Context, name *string, ip string) (azurev1alpha1.PublicIPAddressStatus, error) {
-	// Get the public IP address in Azure and compose resource status
-	status := azurev1alpha1.PublicIPAddressStatus{}
-	azurePublicIP, err := a.getAzurePublicIPAddress(ctx, name, ip)
-	if err != nil {
-		return status, err
-	}
-	if azurePublicIP != nil {
-		status = azurev1alpha1.PublicIPAddressStatus{
-			Exists:            true,
-			ID:                azurePublicIP.ID,
-			Name:              azurePublicIP.Name,
-			ProvisioningState: azurePublicIP.ProvisioningState,
-		}
-	}
-	return status, nil
 }
 
 func (a *actuator) getAzurePublicIPAddress(ctx context.Context, name *string, ip string) (*aznetwork.PublicIPAddress, error) {
@@ -181,7 +163,19 @@ func (a *actuator) getAzurePublicIPAddress(ctx context.Context, name *string, ip
 	return nil, nil
 }
 
-func (a *actuator) updatePublicIPAddressStatus(ctx context.Context, pubip *azurev1alpha1.PublicIPAddress, status azurev1alpha1.PublicIPAddressStatus) error {
+func (a *actuator) updatePublicIPAddressStatus(ctx context.Context, pubip *azurev1alpha1.PublicIPAddress, azurePublicIP *aznetwork.PublicIPAddress) error {
+	// Build status
+	status := azurev1alpha1.PublicIPAddressStatus{}
+	if azurePublicIP != nil {
+		status = azurev1alpha1.PublicIPAddressStatus{
+			Exists:            true,
+			ID:                azurePublicIP.ID,
+			Name:              azurePublicIP.Name,
+			ProvisioningState: azurePublicIP.ProvisioningState,
+		}
+	}
+
+	// Update resource status
 	a.logger.Info("Updating publicipaddress status", "name", pubip.Name, "namespace", pubip.Namespace, "status", status)
 	if err := extensionscontroller.TryUpdateStatus(ctx, retry.DefaultBackoff, a.client, pubip, func() error {
 		pubip.Status = status
@@ -211,7 +205,7 @@ func (a *actuator) cleanAzurePublicIPAddress(ctx context.Context, pubip *azurev1
 	if err != nil {
 		return errors.Wrap(err, "could not update Azure LoadBalancer")
 	}
-	if err := result.WaitForCompletionRef(ctx, a.azureClients.LoadBalancersClient.Client); err != nil {
+	if err := result.WaitForCompletionRef(ctx, a.azureClients.LoadBalancersClient.Client()); err != nil {
 		return errors.Wrap(err, "could not wait for the Azure LoadBalancer update to complete")
 	}
 
@@ -221,7 +215,7 @@ func (a *actuator) cleanAzurePublicIPAddress(ctx context.Context, pubip *azurev1
 	if err != nil {
 		return errors.Wrap(err, "could not delete Azure PublicIPAddress")
 	}
-	if err := deleteResult.WaitForCompletionRef(ctx, a.azureClients.PublicIPAddressesClient.Client); err != nil {
+	if err := deleteResult.WaitForCompletionRef(ctx, a.azureClients.PublicIPAddressesClient.Client()); err != nil {
 		return errors.Wrap(err, "could not wait for the Azure PublicIPAddress deletion to complete")
 	}
 
@@ -280,11 +274,11 @@ func updateProbes(lb aznetwork.LoadBalancer, ruleIDs []string) {
 	*lb.Probes = updated
 }
 
-func getProvisioningState(status azurev1alpha1.PublicIPAddressStatus) aznetwork.ProvisioningState {
-	if status.ProvisioningState == nil {
+func getProvisioningState(azurePublicIP *aznetwork.PublicIPAddress) aznetwork.ProvisioningState {
+	if azurePublicIP.ProvisioningState == nil {
 		return ""
 	}
-	return aznetwork.ProvisioningState(*status.ProvisioningState)
+	return aznetwork.ProvisioningState(*azurePublicIP.ProvisioningState)
 }
 
 func isAzureNotFoundError(err error) bool {

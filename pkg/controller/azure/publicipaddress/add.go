@@ -25,12 +25,14 @@ import (
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 const (
 	ControllerName = "azurepublicipaddress-controller"
+	ActuatorName   = "azurepublicipaddress-actuator"
 	FinalizerName  = "azure.remedy.gardener.cloud/publicipaddress"
 )
 
@@ -69,7 +71,7 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 	}
 
 	return remedycontroller.Add(mgr, remedycontroller.AddArgs{
-		Actuator:          NewActuator(azureClients, credentials.ResourceGroup, options.Config),
+		Actuator:          NewActuator(azureClients, credentials.ResourceGroup, options.Config, log.Log.WithName(ActuatorName)),
 		ControllerName:    ControllerName,
 		FinalizerName:     FinalizerName,
 		ControllerOptions: options.Controller,

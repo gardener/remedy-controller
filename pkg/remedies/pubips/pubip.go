@@ -86,7 +86,7 @@ func clean(ctx context.Context, k8sClientSet *kubernetes.Clientset, azureClients
 	if err != nil {
 		return err
 	}
-	err = result.WaitForCompletionRef(ctx, azureClients.LoadBalancersClient.Client)
+	err = result.WaitForCompletionRef(ctx, azureClients.LoadBalancersClient.Client())
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func clean(ctx context.Context, k8sClientSet *kubernetes.Clientset, azureClients
 			log.Error(err.Error())
 			continue
 		}
-		err = result.WaitForCompletionRef(ctx, azureClients.PublicIPAddressesClient.Client)
+		err = result.WaitForCompletionRef(ctx, azureClients.PublicIPAddressesClient.Client())
 		if err != nil {
 			return err
 		}

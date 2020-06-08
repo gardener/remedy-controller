@@ -23,8 +23,9 @@ import (
 	azurev1alpha1 "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/v1alpha1"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/service"
+	mockclient "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/controller-runtime/client"
 
-	mockclient "github.com/gardener/gardener/pkg/mock/controller-runtime/client"
+	"github.com/go-logr/logr"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -47,13 +48,34 @@ var _ = Describe("Actuator", func() {
 
 	var (
 		ctrl *gomock.Controller
-		ctx  = context.TODO()
+		ctx  context.Context
+
+		scheme *runtime.Scheme
+
+		c *mockclient.MockClient
+
+		logger   logr.Logger
+		actuator controller.Actuator
+
+		svc          *corev1.Service
+		clusterIPSvc *corev1.Service
+		pubipLabels  map[string]string
+		emptyPubip   *azurev1alpha1.PublicIPAddress
+		pubip        *azurev1alpha1.PublicIPAddress
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		ctx = context.TODO()
 
 		scheme = runtime.NewScheme()
-		_      = azureinstall.AddToScheme(scheme)
+		Expect(azureinstall.AddToScheme(scheme)).To(Succeed())
 
-		c        *mockclient.MockClient
-		actuator controller.Actuator
+		c = mockclient.NewMockClient(ctrl)
+
+		logger = log.Log.WithName("test")
+		actuator = service.NewActuator(logger)
+		Expect(actuator.(inject.Client).InjectClient(c)).To(Succeed())
 
 		svc = &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
@@ -99,16 +121,6 @@ var _ = Describe("Actuator", func() {
 				IPAddress: ip,
 			},
 		}
-
-		logger = log.Log.WithName("test")
-	)
-
-	BeforeEach(func() {
-		ctrl = gomock.NewController(GinkgoT())
-		c = mockclient.NewMockClient(ctrl)
-
-		actuator = service.NewActuator(logger)
-		Expect(actuator.(inject.Client).InjectClient(c)).To(Succeed())
 	})
 
 	AfterEach(func() {
@@ -137,10 +149,8 @@ var _ = Describe("Actuator", func() {
 				Return(apierrors.NewNotFound(schema.GroupResource{}, pubip.Name))
 			c.EXPECT().Create(ctx, pubip).Return(apierrors.NewInternalError(errors.New("test")))
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, svc)
+			_, _, err := actuator.CreateOrUpdate(ctx, svc)
 			Expect(err).To(MatchError("could not create or update publicipaddress: Internal error occurred: test"))
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should fail when an error occurs while listing PublicIPAddress objects", func() {
@@ -150,10 +160,8 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(svc.Namespace), client.MatchingLabels(pubipLabels)).
 				Return(apierrors.NewInternalError(errors.New("test")))
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, svc)
+			_, _, err := actuator.CreateOrUpdate(ctx, svc)
 			Expect(err).To(MatchError("could not list publicipaddresses: Internal error occurred: test"))
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should update the PublicIPAddress object for an existing service IP if it already exists and is not properly initialized", func() {
@@ -226,10 +234,8 @@ var _ = Describe("Actuator", func() {
 				})
 			c.EXPECT().Update(ctx, pubip).Return(apierrors.NewInternalError(errors.New("test")))
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, svc)
+			_, _, err := actuator.CreateOrUpdate(ctx, svc)
 			Expect(err).To(MatchError("could not create or update publicipaddress: Internal error occurred: test"))
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should delete the PublicIPAddress object for a non-existing service IP", func() {
@@ -268,10 +274,8 @@ var _ = Describe("Actuator", func() {
 				})
 			c.EXPECT().Delete(ctx, pubip).Return(apierrors.NewInternalError(errors.New("test")))
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, clusterIPSvc)
+			_, _, err := actuator.CreateOrUpdate(ctx, clusterIPSvc)
 			Expect(err).To(MatchError("could not delete publicipaddress: Internal error occurred: test"))
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 	})
 

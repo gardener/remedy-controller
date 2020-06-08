@@ -16,4 +16,4 @@ mkdir -p /go/src/github.wdf.sap.corp/kubernetes/remedy-controller
 cp -r . /go/src/github.wdf.sap.corp/kubernetes/remedy-controller
 cd /go/src/github.wdf.sap.corp/kubernetes/remedy-controller
 
-make verify-ci
+make verify-extended

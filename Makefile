@@ -120,6 +120,3 @@ verify: check test
 .PHONY: verify-extended
 verify-extended: install-requirements check-generate check test-cov test-clean
 
-# temporary workaround for CI until test coverage issues are fixed.
-.PHONY: verify-ci
-verify-ci: install-requirements check-generate check test

@@ -92,15 +92,3 @@ func NewLoadBalancerIPsChangedPredicate() predicate.Predicate {
 		},
 	}
 }
-
-func getServiceLoadBalancerIPs(svc *corev1.Service) map[string]bool {
-	ips := make(map[string]bool)
-	if svc.Spec.Type == corev1.ServiceTypeLoadBalancer {
-		for _, ingress := range svc.Status.LoadBalancer.Ingress {
-			if ingress.IP != "" {
-				ips[ingress.IP] = true
-			}
-		}
-	}
-	return ips
-}

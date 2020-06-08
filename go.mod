@@ -12,6 +12,8 @@ require (
 	github.com/gobuffalo/packr/v2 v2.8.0
 	github.com/golang/mock v1.4.3
 	github.com/onsi/ginkgo v1.10.1
+	github.com/onsi/gomega v1.7.0
+	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/pflag v1.0.5

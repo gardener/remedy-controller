@@ -19,12 +19,14 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 const (
 	ControllerName = "azureservice-controller"
+	ActuatorName   = "azureservice-actuator"
 	FinalizerName  = "azure.remedy.gardener.cloud/service"
 )
 
@@ -42,7 +44,7 @@ type AddOptions struct {
 // AddToManagerWithOptions adds a controller with the given AddOptions to the given manager.
 func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 	return remedycontroller.Add(mgr, remedycontroller.AddArgs{
-		Actuator:          NewActuator(),
+		Actuator:          NewActuator(log.Log.WithName(ActuatorName)),
 		ControllerName:    ControllerName,
 		FinalizerName:     FinalizerName,
 		ControllerOptions: options.Controller,

@@ -16,7 +16,6 @@ package service
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	azurev1alpha1 "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/v1alpha1"
@@ -27,9 +26,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -43,9 +42,9 @@ type actuator struct {
 }
 
 // NewActuator creates a new Actuator.
-func NewActuator() controller.Actuator {
+func NewActuator(logger logr.Logger) controller.Actuator {
 	return &actuator{
-		logger: log.Log.WithName("azureservice-actuator"),
+		logger: logger,
 	}
 }
 
@@ -80,10 +79,13 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 			},
 		}
 		a.logger.Info("Creating or updating publicipaddress", "name", pubip.Name, "namespace", pubip.Namespace)
-		if _, err := controllerutil.CreateOrUpdate(ctx, a.client, pubip, func() error {
-			pubip.Labels = pubipLabels
-			pubip.Spec.IPAddress = ip
-			return nil
+		if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+			_, err := controllerutil.CreateOrUpdate(ctx, a.client, pubip, func() error {
+				pubip.Labels = pubipLabels
+				pubip.Spec.IPAddress = ip
+				return nil
+			})
+			return err
 		}); err != nil {
 			return 0, false, errors.Wrap(err, "could not create or update publicipaddress")
 		}
@@ -95,10 +97,9 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 		return 0, false, errors.Wrap(err, "could not list publicipaddresses")
 	}
 	for _, pubip := range pubipList.Items {
-		ip := strings.TrimPrefix(pubip.Name, svc.Name+"-")
-		if _, ok := ips[ip]; !ok {
+		if _, ok := ips[pubip.Spec.IPAddress]; !ok {
 			a.logger.Info("Deleting publicipaddress", "name", pubip.Name, "namespace", pubip.Namespace)
-			if err := a.client.Delete(ctx, &pubip); err != nil {
+			if err := client.IgnoreNotFound(a.client.Delete(ctx, &pubip)); err != nil {
 				return 0, false, errors.Wrap(err, "could not delete publicipaddress")
 			}
 		}
@@ -128,12 +129,24 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 			},
 		}
 		a.logger.Info("Deleting publicipaddress", "name", pubip.Name, "namespace", pubip.Namespace)
-		if err := a.client.Delete(ctx, pubip); err != nil {
+		if err := client.IgnoreNotFound(a.client.Delete(ctx, pubip)); err != nil {
 			return errors.Wrap(err, "could not delete publicipaddress")
 		}
 	}
 
 	return nil
+}
+
+func getServiceLoadBalancerIPs(svc *corev1.Service) map[string]bool {
+	ips := make(map[string]bool)
+	if svc.Spec.Type == corev1.ServiceTypeLoadBalancer {
+		for _, ingress := range svc.Status.LoadBalancer.Ingress {
+			if ingress.IP != "" {
+				ips[ingress.IP] = true
+			}
+		}
+	}
+	return ips
 }
 
 func generatePublicIPAddressName(serviceName, ip string) string {

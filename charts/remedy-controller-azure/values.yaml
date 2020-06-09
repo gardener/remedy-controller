@@ -29,6 +29,6 @@ config:
       requeueInterval: 30s
       deletionGracePeriod: 5m
 
-imagePullSecret: ~
+imagePullSecret: ""
 
 cloudProviderConfig: ~

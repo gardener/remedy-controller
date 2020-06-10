@@ -21,6 +21,7 @@ import (
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/azure"
 	remedycontroller "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
+	utilsazure "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils/azure"
 
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -71,7 +72,8 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 	}
 
 	return remedycontroller.Add(mgr, remedycontroller.AddArgs{
-		Actuator:          NewActuator(azureClients, credentials.ResourceGroup, options.Config, log.Log.WithName(ActuatorName)),
+		Actuator: NewActuator(utilsazure.NewPublicIPAddressUtils(azureClients, credentials.ResourceGroup),
+			options.Config, log.Log.WithName(ActuatorName)),
 		ControllerName:    ControllerName,
 		FinalizerName:     FinalizerName,
 		ControllerOptions: options.Controller,

@@ -11,10 +11,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client"
 	azclient "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/azure"
 	k8sclient "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/k8s"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/remedies/pubips"
+	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/remedies/azure"
+	utilsazure "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils/azure"
 )
 
 // GetRootCommand TODO
@@ -25,7 +25,7 @@ func GetRootCommand() *cobra.Command {
 			Use:  "azure-remedy-applier",
 			Long: "TODO",
 			Run: func(cmd *cobra.Command, args []string) {
-				client.ConfigureLogger(logLevel)
+				configureLogger(logLevel)
 
 				// Register a signal handler and create root context to shutdown the app with a graceperiod.
 				ctx, cancel := context.WithCancel(context.Background())
@@ -50,7 +50,8 @@ func GetRootCommand() *cobra.Command {
 					os.Exit(1)
 				}
 
-				go pubips.CleanPubIps(ctx, k8sClientSet, clients, credentials.ResourceGroup)
+				go azure.CleanPublicIps(ctx, k8sClientSet, utilsazure.NewPublicIPAddressUtils(clients, credentials.ResourceGroup),
+					credentials.ResourceGroup)
 
 				select { // nolint:gosimple
 				case <-interuptCh:
@@ -73,4 +74,26 @@ func GetRootCommand() *cobra.Command {
 	cmd.AddCommand(getVersionCommand())
 
 	return cmd
+}
+
+// configureLogger configures the Logger. The info log level will be ensured if no valid log level passed.
+func configureLogger(level string) {
+	// Format log output.
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp: true,
+		DisableColors: true,
+	})
+
+	// Set the log level.
+	switch level {
+	case "error":
+		log.SetLevel(log.ErrorLevel)
+	case "info":
+		log.SetLevel(log.InfoLevel)
+	case "debug":
+		log.SetLevel(log.DebugLevel)
+	default:
+		log.Infof("Log level %s can't be applied. Use info log level.", level)
+		log.SetLevel(log.InfoLevel)
+	}
 }

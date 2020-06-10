@@ -94,7 +94,6 @@ github.com/gardener/gardener/pkg/client/core/clientset/versioned/typed/core/v1be
 github.com/gardener/gardener/pkg/client/extensions/clientset/versioned/scheme
 github.com/gardener/gardener/pkg/client/kubernetes
 github.com/gardener/gardener/pkg/logger
-github.com/gardener/gardener/pkg/mock/controller-runtime/client
 github.com/gardener/gardener/pkg/utils
 github.com/gardener/gardener/pkg/utils/context
 github.com/gardener/gardener/pkg/utils/errors
@@ -761,6 +760,7 @@ k8s.io/kube-openapi/pkg/generators/rules
 k8s.io/kube-openapi/pkg/util/proto
 k8s.io/kube-openapi/pkg/util/sets
 # k8s.io/utils v0.0.0-20200327001022-6496210b90e8
+## explicit
 k8s.io/utils/buffer
 k8s.io/utils/integer
 k8s.io/utils/pointer

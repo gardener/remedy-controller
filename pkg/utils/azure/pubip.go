@@ -42,10 +42,7 @@ type PublicIPAddressUtils interface {
 }
 
 // NewPublicIPAddressUtils creates a new instance of PublicIPAddressUtils.
-func NewPublicIPAddressUtils(
-	azureClients *azure.Clients,
-	resourceGroup string,
-) PublicIPAddressUtils {
+func NewPublicIPAddressUtils(azureClients *azure.Clients, resourceGroup string) PublicIPAddressUtils {
 	return &publicIPAddressUtils{
 		azureClients:  azureClients,
 		resourceGroup: resourceGroup,
@@ -133,14 +130,14 @@ func (p *publicIPAddressUtils) RemoveFromLoadBalancer(ctx context.Context, publi
 // Delete deletes the PublicIPAddress with the given name.
 func (p *publicIPAddressUtils) Delete(ctx context.Context, name string) error {
 	// Delete the Azure PublicIPAddress
-	deleteResult, err := p.azureClients.PublicIPAddressesClient.Delete(ctx, p.resourceGroup, name)
+	result, err := p.azureClients.PublicIPAddressesClient.Delete(ctx, p.resourceGroup, name)
 	if err != nil {
 		if isAzureNotFoundError(err) {
 			return nil
 		}
 		return errors.Wrap(err, "could not delete Azure PublicIPAddress")
 	}
-	if err := deleteResult.WaitForCompletionRef(ctx, p.azureClients.PublicIPAddressesClient.Client()); err != nil {
+	if err := result.WaitForCompletionRef(ctx, p.azureClients.PublicIPAddressesClient.Client()); err != nil {
 		return errors.Wrap(err, "could not wait for the Azure PublicIPAddress deletion to complete")
 	}
 

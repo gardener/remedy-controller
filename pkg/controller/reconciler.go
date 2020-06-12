@@ -47,13 +47,15 @@ type reconciler struct {
 
 // NewReconciler creates a new generic Reconciler.
 func NewReconciler(mgr manager.Manager, actuator Actuator, controllerName, finalizerName string, typ runtime.Object) reconcile.Reconciler {
+	logger := log.Log.WithName(controllerName)
+	logger.Info("Creating reconciler", "controllerName", controllerName)
 	return &reconciler{
 		actuator:       actuator,
 		controllerName: controllerName,
 		finalizerName:  finalizerName,
 		typ:            typ,
 		recorder:       mgr.GetEventRecorderFor(controllerName),
-		logger:         log.Log.WithName(controllerName),
+		logger:         logger,
 	}
 }
 

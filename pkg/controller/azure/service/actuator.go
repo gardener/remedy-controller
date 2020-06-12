@@ -43,6 +43,7 @@ type actuator struct {
 
 // NewActuator creates a new Actuator.
 func NewActuator(logger logr.Logger) controller.Actuator {
+	logger.Info("Creating actuator")
 	return &actuator{
 		logger: logger,
 	}

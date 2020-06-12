@@ -16,18 +16,19 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	azureinstall "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/install"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/cmd"
 	azurepublicipaddress "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/publicipaddress"
 	azureservice "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/service"
+	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/version"
 
 	"github.com/gardener/gardener/extensions/pkg/controller"
 	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
 	"github.com/gardener/gardener/extensions/pkg/util"
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -74,20 +75,26 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use: fmt.Sprintf("%s-controller-manager", Name),
+		Use: Name,
 
 		Run: func(cmd *cobra.Command, args []string) {
+			logger := log.Log.WithName(Name)
+			logger.Info("Initializing", "version", version.Version)
+
+			logger.Info("Completing options")
 			if err := aggOption.Complete(); err != nil {
 				controllercmd.LogErrAndExit(err, "Could not complete options")
 			}
 
 			util.ApplyClientConnectionConfigurationToRESTConfig(configFileOpts.Completed().Config.ClientConnection, restOpts.Completed().Config)
 
+			logger.Info("Creating manager")
 			mgr, err := manager.New(restOpts.Completed().Config, mgrOpts.Completed().Options())
 			if err != nil {
-				controllercmd.LogErrAndExit(err, "Could not instantiate manager")
+				controllercmd.LogErrAndExit(err, "Could not create manager")
 			}
 
+			logger.Info("Updating manager scheme")
 			scheme := mgr.GetScheme()
 			if err := controller.AddToScheme(scheme); err != nil {
 				controllercmd.LogErrAndExit(err, "Could not update manager scheme")
@@ -101,10 +108,12 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			serviceCtrlOpts.Completed().Apply(&azureservice.DefaultAddOptions.Controller)
 			reconcilerOpts.Completed().Apply(&azurepublicipaddress.DefaultAddOptions.InfraConfigPath)
 
+			logger.Info("Adding controllers to manager")
 			if err := controllerSwitches.Completed().AddToManager(mgr); err != nil {
 				controllercmd.LogErrAndExit(err, "Could not add controllers to manager")
 			}
 
+			logger.Info("Starting manager")
 			if err := mgr.Start(ctx.Done()); err != nil {
 				controllercmd.LogErrAndExit(err, "Error running manager")
 			}

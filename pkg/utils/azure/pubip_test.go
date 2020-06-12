@@ -27,6 +27,7 @@ import (
 	"k8s.io/utils/pointer"
 
 	clientazure "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/azure"
+	mockprometheus "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/prometheus"
 	mockclientazure "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/remedy-controller/client/azure"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils/azure"
 )
@@ -63,6 +64,8 @@ var _ = Describe("Azure", func() {
 		publicIPAddressesClient *mockclientazure.MockPublicIPAddressesClient
 		loadBalancersClient     *mockclientazure.MockLoadBalancersClient
 		future                  *mockclientazure.MockFuture
+		readRequestsCounter     *mockprometheus.MockCounter
+		writeRequestsCounter    *mockprometheus.MockCounter
 
 		pubipUtils azure.PublicIPAddressUtils
 
@@ -89,12 +92,14 @@ var _ = Describe("Azure", func() {
 		publicIPAddressesClient = mockclientazure.NewMockPublicIPAddressesClient(ctrl)
 		loadBalancersClient = mockclientazure.NewMockLoadBalancersClient(ctrl)
 		future = mockclientazure.NewMockFuture(ctrl)
+		readRequestsCounter = mockprometheus.NewMockCounter(ctrl)
+		writeRequestsCounter = mockprometheus.NewMockCounter(ctrl)
 		clients := &clientazure.Clients{
 			PublicIPAddressesClient: publicIPAddressesClient,
 			LoadBalancersClient:     loadBalancersClient,
 		}
 
-		pubipUtils = azure.NewPublicIPAddressUtils(clients, resourceGroup)
+		pubipUtils = azure.NewPublicIPAddressUtils(clients, resourceGroup, readRequestsCounter, writeRequestsCounter)
 
 		publicIPAddress = network.PublicIPAddress{
 			ID:   pointer.StringPtr(publicIPAddressID),
@@ -205,6 +210,7 @@ var _ = Describe("Azure", func() {
 	Describe("#GetByName", func() {
 		It("should return the Azure PublicIPAddress if it is found", func() {
 			publicIPAddressesClient.EXPECT().Get(ctx, resourceGroup, publicIPAddressName, "").Return(publicIPAddress, nil)
+			readRequestsCounter.EXPECT().Inc()
 
 			result, err := pubipUtils.GetByName(ctx, publicIPAddressName)
 			Expect(err).NotTo(HaveOccurred())
@@ -213,6 +219,7 @@ var _ = Describe("Azure", func() {
 
 		It("should return nil if the Azure PublicIPAddress is not found", func() {
 			publicIPAddressesClient.EXPECT().Get(ctx, resourceGroup, publicIPAddressName, "").Return(network.PublicIPAddress{}, notFoundError)
+			readRequestsCounter.EXPECT().Inc()
 
 			result, err := pubipUtils.GetByName(ctx, publicIPAddressName)
 			Expect(err).NotTo(HaveOccurred())
@@ -221,6 +228,7 @@ var _ = Describe("Azure", func() {
 
 		It("should fail if getting the Azure PublicIPAddress fails", func() {
 			publicIPAddressesClient.EXPECT().Get(ctx, resourceGroup, publicIPAddressName, "").Return(network.PublicIPAddress{}, errors.New("test"))
+			readRequestsCounter.EXPECT().Inc()
 
 			_, err := pubipUtils.GetByName(ctx, publicIPAddressName)
 			Expect(err).To(MatchError("could not get Azure PublicIPAddress: test"))
@@ -231,6 +239,7 @@ var _ = Describe("Azure", func() {
 		It("should return the Azure PublicIPAddress if it is found", func() {
 			page := newPublicIPAddressListResultPage([]network.PublicIPAddress{publicIPAddress, publicIPAddress2}, false)
 			publicIPAddressesClient.EXPECT().List(ctx, resourceGroup).Return(page, nil)
+			readRequestsCounter.EXPECT().Inc()
 
 			result, err := pubipUtils.GetByIP(ctx, ip)
 			Expect(err).NotTo(HaveOccurred())
@@ -240,6 +249,7 @@ var _ = Describe("Azure", func() {
 		It("should return nil if the Azure PublicIPAddress is not found", func() {
 			page := newPublicIPAddressListResultPage([]network.PublicIPAddress{publicIPAddress2}, false)
 			publicIPAddressesClient.EXPECT().List(ctx, resourceGroup).Return(page, nil)
+			readRequestsCounter.EXPECT().Inc().Times(2)
 
 			result, err := pubipUtils.GetByIP(ctx, ip)
 			Expect(err).NotTo(HaveOccurred())
@@ -248,6 +258,7 @@ var _ = Describe("Azure", func() {
 
 		It("should fail if listing Azure PublicIPAddresses fails", func() {
 			publicIPAddressesClient.EXPECT().List(ctx, resourceGroup).Return(network.PublicIPAddressListResultPage{}, errors.New("test"))
+			readRequestsCounter.EXPECT().Inc()
 
 			_, err := pubipUtils.GetByIP(ctx, ip)
 			Expect(err).To(MatchError("could not list Azure PublicIPAddresses: test"))
@@ -256,6 +267,7 @@ var _ = Describe("Azure", func() {
 		It("should fail if advancing to the next page of Azure PublicIPAddresses fails", func() {
 			page := newPublicIPAddressListResultPage([]network.PublicIPAddress{publicIPAddress2}, true)
 			publicIPAddressesClient.EXPECT().List(ctx, resourceGroup).Return(page, nil)
+			readRequestsCounter.EXPECT().Inc().Times(2)
 
 			_, err := pubipUtils.GetByIP(ctx, ip)
 			Expect(err).To(MatchError("could not advance to the next page of Azure PublicIPAddresses: test"))
@@ -267,6 +279,7 @@ var _ = Describe("Azure", func() {
 			azurePublicIPAddresses := []network.PublicIPAddress{publicIPAddress, publicIPAddress2}
 			page := newPublicIPAddressListResultPage(azurePublicIPAddresses, false)
 			publicIPAddressesClient.EXPECT().List(ctx, resourceGroup).Return(page, nil)
+			readRequestsCounter.EXPECT().Inc().Times(2)
 
 			result, err := pubipUtils.GetAll(ctx)
 			Expect(err).NotTo(HaveOccurred())
@@ -275,6 +288,7 @@ var _ = Describe("Azure", func() {
 
 		It("should fail if listing Azure PublicIPAddresses fails", func() {
 			publicIPAddressesClient.EXPECT().List(ctx, resourceGroup).Return(network.PublicIPAddressListResultPage{}, errors.New("test"))
+			readRequestsCounter.EXPECT().Inc()
 
 			_, err := pubipUtils.GetAll(ctx)
 			Expect(err).To(MatchError("could not list Azure PublicIPAddresses: test"))
@@ -283,6 +297,7 @@ var _ = Describe("Azure", func() {
 		It("should fail if advancing to the next page of Azure PublicIPAddresses fails", func() {
 			page := newPublicIPAddressListResultPage([]network.PublicIPAddress{publicIPAddress}, true)
 			publicIPAddressesClient.EXPECT().List(ctx, resourceGroup).Return(page, nil)
+			readRequestsCounter.EXPECT().Inc().Times(2)
 
 			_, err := pubipUtils.GetAll(ctx)
 			Expect(err).To(MatchError("could not advance to the next page of Azure PublicIPAddresses: test"))
@@ -303,12 +318,15 @@ var _ = Describe("Azure", func() {
 			)).Return(future, nil)
 			loadBalancersClient.EXPECT().Client().Return(autorest.Client{})
 			future.EXPECT().WaitForCompletionRef(ctx, autorest.Client{}).Return(nil)
+			readRequestsCounter.EXPECT().Inc().Times(2)
+			writeRequestsCounter.EXPECT().Inc()
 
 			Expect(pubipUtils.RemoveFromLoadBalancer(ctx, []string{publicIPAddressID})).To(Succeed())
 		})
 
 		It("should fail if getting the Azure LoadBalancer fails", func() {
 			loadBalancersClient.EXPECT().Get(ctx, resourceGroup, loadBalancerName, "").Return(network.LoadBalancer{}, errors.New("test"))
+			readRequestsCounter.EXPECT().Inc()
 
 			err := pubipUtils.RemoveFromLoadBalancer(ctx, []string{publicIPAddressID})
 			Expect(err).To(MatchError("could not get Azure LoadBalancer: test"))
@@ -317,6 +335,8 @@ var _ = Describe("Azure", func() {
 		It("should fail if updating the Azure LoadBalancer fails", func() {
 			loadBalancersClient.EXPECT().Get(ctx, resourceGroup, loadBalancerName, "").Return(newLoadBalancer(nil, nil, nil), nil)
 			loadBalancersClient.EXPECT().CreateOrUpdate(ctx, resourceGroup, loadBalancerName, newLoadBalancer(nil, nil, nil)).Return(future, errors.New("test"))
+			readRequestsCounter.EXPECT().Inc()
+			writeRequestsCounter.EXPECT().Inc()
 
 			err := pubipUtils.RemoveFromLoadBalancer(ctx, []string{publicIPAddressID})
 			Expect(err).To(MatchError("could not update Azure LoadBalancer: test"))
@@ -327,6 +347,8 @@ var _ = Describe("Azure", func() {
 			loadBalancersClient.EXPECT().CreateOrUpdate(ctx, resourceGroup, loadBalancerName, newLoadBalancer(nil, nil, nil)).Return(future, nil)
 			loadBalancersClient.EXPECT().Client().Return(autorest.Client{})
 			future.EXPECT().WaitForCompletionRef(ctx, autorest.Client{}).Return(errors.New("test"))
+			readRequestsCounter.EXPECT().Inc().Times(2)
+			writeRequestsCounter.EXPECT().Inc()
 
 			err := pubipUtils.RemoveFromLoadBalancer(ctx, []string{publicIPAddressID})
 			Expect(err).To(MatchError("could not wait for the Azure LoadBalancer update to complete: test"))
@@ -338,18 +360,22 @@ var _ = Describe("Azure", func() {
 			publicIPAddressesClient.EXPECT().Delete(ctx, resourceGroup, publicIPAddressName).Return(future, nil)
 			publicIPAddressesClient.EXPECT().Client().Return(autorest.Client{})
 			future.EXPECT().WaitForCompletionRef(ctx, autorest.Client{}).Return(nil)
+			readRequestsCounter.EXPECT().Inc()
+			writeRequestsCounter.EXPECT().Inc()
 
 			Expect(pubipUtils.Delete(ctx, publicIPAddressName)).To(Succeed())
 		})
 
 		It("should not fail if the Azure PublicIPAddress is not found", func() {
 			publicIPAddressesClient.EXPECT().Delete(ctx, resourceGroup, publicIPAddressName).Return(future, notFoundError)
+			writeRequestsCounter.EXPECT().Inc()
 
 			Expect(pubipUtils.Delete(ctx, publicIPAddressName)).To(Succeed())
 		})
 
 		It("should fail if deleting the Azure PublicIPAddress fails", func() {
 			publicIPAddressesClient.EXPECT().Delete(ctx, resourceGroup, publicIPAddressName).Return(future, errors.New("test"))
+			writeRequestsCounter.EXPECT().Inc()
 
 			err := pubipUtils.Delete(ctx, publicIPAddressName)
 			Expect(err).To(MatchError("could not delete Azure PublicIPAddress: test"))
@@ -359,6 +385,8 @@ var _ = Describe("Azure", func() {
 			publicIPAddressesClient.EXPECT().Delete(ctx, resourceGroup, publicIPAddressName).Return(future, nil)
 			publicIPAddressesClient.EXPECT().Client().Return(autorest.Client{})
 			future.EXPECT().WaitForCompletionRef(ctx, autorest.Client{}).Return(errors.New("test"))
+			readRequestsCounter.EXPECT().Inc()
+			writeRequestsCounter.EXPECT().Inc()
 
 			err := pubipUtils.Delete(ctx, publicIPAddressName)
 			Expect(err).To(MatchError("could not wait for the Azure PublicIPAddress deletion to complete: test"))

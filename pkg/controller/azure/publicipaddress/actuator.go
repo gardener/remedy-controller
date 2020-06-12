@@ -28,16 +28,18 @@ import (
 	controllererror "github.com/gardener/gardener/extensions/pkg/controller/error"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type actuator struct {
-	client     client.Client
-	pubipUtils azure.PublicIPAddressUtils
-	config     config.AzurePublicIPRemedyConfiguration
-	logger     logr.Logger
+	client            client.Client
+	pubipUtils        azure.PublicIPAddressUtils
+	config            config.AzurePublicIPRemedyConfiguration
+	logger            logr.Logger
+	cleanedIPsCounter prometheus.Counter
 }
 
 // NewActuator creates a new Actuator.
@@ -45,12 +47,14 @@ func NewActuator(
 	pubipUtils azure.PublicIPAddressUtils,
 	config config.AzurePublicIPRemedyConfiguration,
 	logger logr.Logger,
+	cleanedIPsCounter prometheus.Counter,
 ) controller.Actuator {
 	logger.Info("Creating actuator", "config", config)
 	return &actuator{
-		pubipUtils: pubipUtils,
-		config:     config,
-		logger:     logger,
+		pubipUtils:        pubipUtils,
+		config:            config,
+		logger:            logger,
+		cleanedIPsCounter: cleanedIPsCounter,
 	}
 }
 
@@ -142,7 +146,11 @@ func (a *actuator) cleanAzurePublicIPAddress(ctx context.Context, pubip *azurev1
 		return errors.Wrap(err, "could not remove Azure public IP address from the load balancer")
 	}
 	a.logger.Info("Deleting Azure public IP address", "name", *pubip.Status.Name)
-	return errors.Wrap(a.pubipUtils.Delete(ctx, *pubip.Status.Name), "could not delete Azure public IP address")
+	if err := a.pubipUtils.Delete(ctx, *pubip.Status.Name); err != nil {
+		return errors.Wrap(err, "could not delete Azure public IP address")
+	}
+	a.cleanedIPsCounter.Inc()
+	return nil
 }
 
 func (a *actuator) updatePublicIPAddressStatus(ctx context.Context, pubip *azurev1alpha1.PublicIPAddress, azurePublicIP *network.PublicIPAddress) error {

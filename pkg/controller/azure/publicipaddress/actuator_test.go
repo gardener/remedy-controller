@@ -23,6 +23,7 @@ import (
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/publicipaddress"
 	mockclient "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/controller-runtime/client"
+	mockprometheus "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/prometheus"
 	mockutilsazure "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/remedy-controller/utils/azure"
 
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
@@ -43,17 +44,18 @@ var _ = Describe("Actuator", func() {
 		serviceName              = "test-service"
 		namespace                = "test"
 		ip                       = "1.2.3.4"
-		azurePublicIPAddressID   = "/subscriptions/00d2caa5-cd29-46f7-845a-2f8ee0360ef5/resourceGroups/shoot--dev--test/providers/Microsoft.Network/publicIPAddresses/shoot--dev--test-a8d62a199dcbd4735bb9c90dc8b05bd1"
-		azurePublicIPAddressName = "shoot--dev--test-a8d62a199dcbd4735bb9c90dc8b05bd1"
+		azurePublicIPAddressID   = "/subscriptions/xxx/resourceGroups/shoot--dev--test/providers/Microsoft.Network/publicIPAddresses/shoot--dev--test-ip1"
+		azurePublicIPAddressName = "shoot--dev--test-ip1"
 	)
 
 	var (
 		ctrl *gomock.Controller
 		ctx  context.Context
 
-		c          *mockclient.MockClient
-		sw         *mockclient.MockStatusWriter
-		pubipUtils *mockutilsazure.MockPublicIPAddressUtils
+		c                 *mockclient.MockClient
+		sw                *mockclient.MockStatusWriter
+		pubipUtils        *mockutilsazure.MockPublicIPAddressUtils
+		cleanedIPsCounter *mockprometheus.MockCounter
 
 		cfg      config.AzurePublicIPRemedyConfiguration
 		logger   logr.Logger
@@ -72,13 +74,14 @@ var _ = Describe("Actuator", func() {
 		sw = mockclient.NewMockStatusWriter(ctrl)
 		c.EXPECT().Status().Return(sw).AnyTimes()
 		pubipUtils = mockutilsazure.NewMockPublicIPAddressUtils(ctrl)
+		cleanedIPsCounter = mockprometheus.NewMockCounter(ctrl)
 
 		cfg = config.AzurePublicIPRemedyConfiguration{
 			RequeueInterval:     metav1.Duration{Duration: 1 * time.Second},
 			DeletionGracePeriod: metav1.Duration{Duration: 1 * time.Second},
 		}
 		logger = log.Log.WithName("test")
-		actuator = publicipaddress.NewActuator(pubipUtils, cfg, logger)
+		actuator = publicipaddress.NewActuator(pubipUtils, cfg, logger, cleanedIPsCounter)
 		Expect(actuator.(inject.Client).InjectClient(c)).To(Succeed())
 
 		pubip = &azurev1alpha1.PublicIPAddress{

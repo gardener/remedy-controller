@@ -33,6 +33,7 @@ start-azure:
 		./cmd/$(NAME)-azure \
 		--config-file=./example/00-config.yaml \
 		--leader-election=$(LEADER_ELECTION) \
+		--metrics-bind-address=":6000" \
 		--infrastructure-config=dev/credentials.json
 
 .PHONY: start-applier-azure

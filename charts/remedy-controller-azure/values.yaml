@@ -9,6 +9,9 @@ vpa:
   enabled: false
   updatePolicy:
     updateMode: "Auto"
+    
+manager:
+  metricsPort: 6000
 
 controllers:
   publicipaddress:

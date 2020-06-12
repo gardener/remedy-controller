@@ -39,10 +39,13 @@ const (
 func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 	var (
 		restOpts = &controllercmd.RESTOptions{}
-		mgrOpts  = &controllercmd.ManagerOptions{
-			LeaderElection:          true,
-			LeaderElectionID:        controllercmd.LeaderElectionNameID(Name),
-			LeaderElectionNamespace: os.Getenv("LEADER_ELECTION_NAMESPACE"),
+		mgrOpts  = &cmd.ManagerOptions{
+			ManagerOptions: controllercmd.ManagerOptions{
+				LeaderElection:          true,
+				LeaderElectionID:        controllercmd.LeaderElectionNameID(Name),
+				LeaderElectionNamespace: os.Getenv("LEADER_ELECTION_NAMESPACE"),
+			},
+			MetricsBindAddress: ":6000",
 		}
 
 		// options for the publicipaddress controller

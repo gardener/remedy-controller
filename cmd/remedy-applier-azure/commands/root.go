@@ -50,7 +50,8 @@ func GetRootCommand() *cobra.Command {
 					os.Exit(1)
 				}
 
-				go azure.CleanPublicIps(ctx, k8sClientSet, utilsazure.NewPublicIPAddressUtils(clients, credentials.ResourceGroup),
+				go azure.CleanPublicIps(ctx, k8sClientSet,
+					utilsazure.NewPublicIPAddressUtils(clients, credentials.ResourceGroup, utilsazure.ReadRequestsCounter, utilsazure.WriteRequestsCounter),
 					credentials.ResourceGroup)
 
 				select { // nolint:gosimple

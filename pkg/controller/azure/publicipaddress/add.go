@@ -24,10 +24,12 @@ import (
 	utilsazure "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils/azure"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
@@ -45,6 +47,14 @@ var (
 			DeletionGracePeriod: metav1.Duration{Duration: 5 * time.Minute},
 		},
 	}
+
+	// CleanedIPsCounter is a global counter for cleaned Azure public IP addresses.
+	CleanedIPsCounter = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "cleaned_azure_public_ips_total",
+			Help: "Number of cleaned Azure public IPs",
+		},
+	)
 )
 
 // AddOptions are options to apply when adding a controller to a manager.
@@ -72,8 +82,8 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 	}
 
 	return remedycontroller.Add(mgr, remedycontroller.AddArgs{
-		Actuator: NewActuator(utilsazure.NewPublicIPAddressUtils(azureClients, credentials.ResourceGroup),
-			options.Config, log.Log.WithName(ActuatorName)),
+		Actuator: NewActuator(utilsazure.NewPublicIPAddressUtils(azureClients, credentials.ResourceGroup, utilsazure.ReadRequestsCounter, utilsazure.WriteRequestsCounter),
+			options.Config, log.Log.WithName(ActuatorName), CleanedIPsCounter),
 		ControllerName:    ControllerName,
 		FinalizerName:     FinalizerName,
 		ControllerOptions: options.Controller,
@@ -87,4 +97,9 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 // AddToManager adds a controller with the default AddOptions to the given manager.
 func AddToManager(mgr manager.Manager) error {
 	return AddToManagerWithOptions(mgr, DefaultAddOptions)
+}
+
+func init() {
+	// Register metrics with the global Prometheus registry
+	metrics.Registry.MustRegister(CleanedIPsCounter)
 }

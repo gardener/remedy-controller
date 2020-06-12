@@ -18,10 +18,11 @@ import (
 	"context"
 	"net/http"
 
-	network "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
-	autorest "github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
+	"github.com/Azure/go-autorest/autorest"
 	gardenerutils "github.com/gardener/gardener/pkg/utils"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/azure"
 )
@@ -42,20 +43,30 @@ type PublicIPAddressUtils interface {
 }
 
 // NewPublicIPAddressUtils creates a new instance of PublicIPAddressUtils.
-func NewPublicIPAddressUtils(azureClients *azure.Clients, resourceGroup string) PublicIPAddressUtils {
+func NewPublicIPAddressUtils(
+	azureClients *azure.Clients,
+	resourceGroup string,
+	readRequestsCounter prometheus.Counter,
+	writeRequestsCounter prometheus.Counter,
+) PublicIPAddressUtils {
 	return &publicIPAddressUtils{
-		azureClients:  azureClients,
-		resourceGroup: resourceGroup,
+		azureClients:         azureClients,
+		resourceGroup:        resourceGroup,
+		readRequestsCounter:  readRequestsCounter,
+		writeRequestsCounter: writeRequestsCounter,
 	}
 }
 
 type publicIPAddressUtils struct {
-	azureClients  *azure.Clients
-	resourceGroup string
+	azureClients         *azure.Clients
+	resourceGroup        string
+	readRequestsCounter  prometheus.Counter
+	writeRequestsCounter prometheus.Counter
 }
 
 // GetByName returns the PublicIPAddress with the given name, or nil if not found.
 func (p *publicIPAddressUtils) GetByName(ctx context.Context, name string) (*network.PublicIPAddress, error) {
+	p.readRequestsCounter.Inc()
 	azurePublicIP, err := p.azureClients.PublicIPAddressesClient.Get(ctx, p.resourceGroup, name, "")
 	if err != nil {
 		if isAzureNotFoundError(err) {
@@ -68,6 +79,7 @@ func (p *publicIPAddressUtils) GetByName(ctx context.Context, name string) (*net
 
 // GetByIP returns the PublicIPAddress with the given IP, or nil if not found.
 func (p *publicIPAddressUtils) GetByIP(ctx context.Context, ip string) (*network.PublicIPAddress, error) {
+	p.readRequestsCounter.Inc()
 	azurePublicIPList, err := p.azureClients.PublicIPAddressesClient.List(ctx, p.resourceGroup)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not list Azure PublicIPAddresses")
@@ -78,6 +90,7 @@ func (p *publicIPAddressUtils) GetByIP(ctx context.Context, ip string) (*network
 				return &azurePublicIP, nil
 			}
 		}
+		p.readRequestsCounter.Inc()
 		if err := azurePublicIPList.NextWithContext(ctx); err != nil {
 			return nil, errors.Wrap(err, "could not advance to the next page of Azure PublicIPAddresses")
 		}
@@ -88,6 +101,7 @@ func (p *publicIPAddressUtils) GetByIP(ctx context.Context, ip string) (*network
 
 // GetAll returns all PublicIPAddresses.
 func (p *publicIPAddressUtils) GetAll(ctx context.Context) ([]network.PublicIPAddress, error) {
+	p.readRequestsCounter.Inc()
 	azurePublicIPList, err := p.azureClients.PublicIPAddressesClient.List(ctx, p.resourceGroup)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not list Azure PublicIPAddresses")
@@ -95,6 +109,7 @@ func (p *publicIPAddressUtils) GetAll(ctx context.Context) ([]network.PublicIPAd
 	var azurePublicIPs []network.PublicIPAddress
 	for azurePublicIPList.NotDone() {
 		azurePublicIPs = append(azurePublicIPs, azurePublicIPList.Values()...)
+		p.readRequestsCounter.Inc()
 		if err := azurePublicIPList.NextWithContext(ctx); err != nil {
 			return nil, errors.Wrap(err, "could not advance to the next page of Azure PublicIPAddresses")
 		}
@@ -107,6 +122,7 @@ func (p *publicIPAddressUtils) GetAll(ctx context.Context) ([]network.PublicIPAd
 func (p *publicIPAddressUtils) RemoveFromLoadBalancer(ctx context.Context, publicIPAddressIDs []string) error {
 	// Get the Azure LoadBalancer
 	lbName := p.resourceGroup // TODO
+	p.readRequestsCounter.Inc()
 	lb, err := p.azureClients.LoadBalancersClient.Get(ctx, p.resourceGroup, lbName, "")
 	if err != nil {
 		return errors.Wrap(err, "could not get Azure LoadBalancer")
@@ -116,10 +132,12 @@ func (p *publicIPAddressUtils) RemoveFromLoadBalancer(ctx context.Context, publi
 	fcIDs := updateFrontendIPConfigurations(lb, publicIPAddressIDs)
 	ruleIDs := updateLoadBalancingRules(lb, fcIDs)
 	updateProbes(lb, ruleIDs)
+	p.writeRequestsCounter.Inc()
 	result, err := p.azureClients.LoadBalancersClient.CreateOrUpdate(ctx, p.resourceGroup, lbName, lb)
 	if err != nil {
 		return errors.Wrap(err, "could not update Azure LoadBalancer")
 	}
+	p.readRequestsCounter.Inc()
 	if err := result.WaitForCompletionRef(ctx, p.azureClients.LoadBalancersClient.Client()); err != nil {
 		return errors.Wrap(err, "could not wait for the Azure LoadBalancer update to complete")
 	}
@@ -130,6 +148,7 @@ func (p *publicIPAddressUtils) RemoveFromLoadBalancer(ctx context.Context, publi
 // Delete deletes the PublicIPAddress with the given name.
 func (p *publicIPAddressUtils) Delete(ctx context.Context, name string) error {
 	// Delete the Azure PublicIPAddress
+	p.writeRequestsCounter.Inc()
 	result, err := p.azureClients.PublicIPAddressesClient.Delete(ctx, p.resourceGroup, name)
 	if err != nil {
 		if isAzureNotFoundError(err) {
@@ -137,6 +156,7 @@ func (p *publicIPAddressUtils) Delete(ctx context.Context, name string) error {
 		}
 		return errors.Wrap(err, "could not delete Azure PublicIPAddress")
 	}
+	p.readRequestsCounter.Inc()
 	if err := result.WaitForCompletionRef(ctx, p.azureClients.PublicIPAddressesClient.Client()); err != nil {
 		return errors.Wrap(err, "could not wait for the Azure PublicIPAddress deletion to complete")
 	}

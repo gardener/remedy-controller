@@ -16,6 +16,7 @@ package controller
 
 import (
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -58,17 +59,17 @@ func add(mgr manager.Manager, args AddArgs) error {
 	// Create controller
 	ctrl, err := controller.New(args.ControllerName, mgr, args.ControllerOptions)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not create controller")
 	}
 
 	// Add primary watch
 	if err := ctrl.Watch(&source.Kind{Type: args.Type}, &handler.EnqueueRequestForObject{}, args.Predicates...); err != nil {
-		return err
+		return errors.Wrap(err, "could not setup primary watch")
 	}
 
 	// Add additional watches to the controller besides the primary one.
 	if err = args.WatchBuilder.AddToController(ctrl); err != nil {
-		return err
+		return errors.Wrap(err, "could not setup additional watches")
 	}
 
 	return nil

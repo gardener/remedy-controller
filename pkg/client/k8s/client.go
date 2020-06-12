@@ -1,38 +1,44 @@
 package k8s
 
 import (
-	"fmt"
 	"io/ioutil"
 
+	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// GetClientSet TODO
+// GetClientSet returns a Kubernetes clientset from the given kubeconfig path.
 func GetClientSet(path string) (*kubernetes.Clientset, error) {
+	// Load Kubernetes config
 	kubeconfigRaw, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not open kubeconfig file")
 	}
-	configObj, err := clientcmd.Load(kubeconfigRaw)
+	config, err := clientcmd.Load(kubeconfigRaw)
 	if err != nil {
-		return nil, err
-	} else if configObj == nil {
-		return nil, fmt.Errorf("config object is nil")
+		return nil, errors.Wrap(err, "could not load Kubernetes config from kubeconfig file")
 	}
-
-	config, err := clientcmd.NewDefaultClientConfig(*configObj, &clientcmd.ConfigOverrides{}).ClientConfig()
-	if err != nil {
-		return nil, err
-	} else if config == nil {
-		return nil, fmt.Errorf("client config is nil")
+	if config == nil {
+		return nil, errors.New("Kubernetes config is nil")
 	}
 
-	clientSet, err := kubernetes.NewForConfig(config)
+	// Create client config
+	clientConfig, err := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{}).ClientConfig()
 	if err != nil {
-		return nil, err
-	} else if clientSet == nil {
-		return nil, fmt.Errorf("clientset is nil")
+		return nil, errors.Wrap(err, "could not create client config from Kubernetes config")
+	}
+	if clientConfig == nil {
+		return nil, errors.New("client config is nil")
+	}
+
+	// Create clientset
+	clientSet, err := kubernetes.NewForConfig(clientConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create clientset from client config")
+	}
+	if clientSet == nil {
+		return nil, errors.New("clientset is nil")
 	}
 
 	return clientSet, nil

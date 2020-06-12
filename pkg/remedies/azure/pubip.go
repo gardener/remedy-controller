@@ -22,6 +22,7 @@ import (
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils/azure"
 
 	aznetwork "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -59,7 +60,7 @@ func clean(ctx context.Context, k8sClientSet *kubernetes.Clientset, pubipUtils a
 	// Get all Azure public ips
 	azureIps, err := pubipUtils.GetAll(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not get Azure public IPs")
 	}
 
 	// Separate Azure public ips into orphan and known
@@ -76,26 +77,27 @@ func clean(ctx context.Context, k8sClientSet *kubernetes.Clientset, pubipUtils a
 	}
 
 	// Remove the orphan public ips from the LoadBalancer
+	log.Info("Removing orphan public IPs from the load balancer")
 	if err = pubipUtils.RemoveFromLoadBalancer(ctx, orphanIpIds); err != nil {
-		return err
+		return errors.Wrap(err, "could not remove orphan public IPs from the load balancer")
 	}
 
 	// Remove the orphan public ips
 	for _, ip := range orphanIps {
-		log.Infof("Removing orphan public IP: %s", *ip.Name)
+		log.Infof("Deleting orphan public IP: %s", *ip.Name)
 		if err := pubipUtils.Delete(ctx, *ip.Name); err != nil {
-			return err
+			return errors.Wrap(err, "could not delete orphan public IP")
 		}
 	}
 
-	log.Info("Removed all orphan public IPs")
+	log.Info("Deleted all orphan public IPs")
 	return nil
 }
 
 func getKnownK8sIps(k8sClientSet *kubernetes.Clientset) ([]string, error) {
 	services, err := k8sClientSet.CoreV1().Services(metav1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "could not list Kubernetes services")
 	}
 	var ips []string
 	for _, svc := range services.Items {

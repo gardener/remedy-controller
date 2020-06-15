@@ -44,6 +44,15 @@ start-applier-azure:
 		./cmd/$(APPLIER_NAME)-azure \
 		--kubeconfig=$(KUBECONFIG) \
 		--infrastructure-config=dev/credentials.json
+		
+.PHONY: start-failedvm-simulator-azure
+VM_NAME = ""
+start-failedvm-simulator-azure:
+	@GO111MODULE=on go run \
+		-mod=vendor \
+		-ldflags $(LD_FLAGS) \
+		./cmd/failedvm-simulator-azure \
+		$(VM_NAME)
 
 #################################################################
 # Rules related to binary build, Docker image build and release #

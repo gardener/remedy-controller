@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	azurenode "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/node"
 	azurepublicipaddress "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/publicipaddress"
 	azureservice "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/service"
 
@@ -26,5 +27,6 @@ func ControllerSwitchOptions() *controllercmd.SwitchOptions {
 	return controllercmd.NewSwitchOptions(
 		controllercmd.Switch(azurepublicipaddress.ControllerName, azurepublicipaddress.AddToManager),
 		controllercmd.Switch(azureservice.ControllerName, azureservice.AddToManager),
+		controllercmd.Switch(azurenode.ControllerName, azurenode.AddToManager),
 	)
 }

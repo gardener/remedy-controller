@@ -11,12 +11,15 @@ rules:
   resources:
   - publicipaddresses
   - publicipaddresses/status
+  - virutalmachines
+  - virutalmachines/status
   verbs:
   - "*"
 - apiGroups:
   - ""
   resources:
   - services
+  - nodes
   verbs:
   - "*"
 - apiGroups:

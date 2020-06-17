@@ -19,10 +19,9 @@ import (
 	"errors"
 	"time"
 
-	azureinstall "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/install"
 	azurev1alpha1 "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/v1alpha1"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/service"
+	azureservice "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/service"
 	mockclient "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/controller-runtime/client"
 
 	"github.com/go-logr/logr"
@@ -32,7 +31,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -50,8 +48,6 @@ var _ = Describe("Actuator", func() {
 		ctrl *gomock.Controller
 		ctx  context.Context
 
-		scheme *runtime.Scheme
-
 		c *mockclient.MockClient
 
 		logger   logr.Logger
@@ -68,13 +64,10 @@ var _ = Describe("Actuator", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		ctx = context.TODO()
 
-		scheme = runtime.NewScheme()
-		Expect(azureinstall.AddToScheme(scheme)).To(Succeed())
-
 		c = mockclient.NewMockClient(ctrl)
 
 		logger = log.Log.WithName("test")
-		actuator = service.NewActuator(logger)
+		actuator = azureservice.NewActuator(logger)
 		Expect(actuator.(inject.Client).InjectClient(c)).To(Succeed())
 
 		svc = &corev1.Service{
@@ -103,7 +96,7 @@ var _ = Describe("Actuator", func() {
 			},
 		}
 		pubipLabels = map[string]string{
-			service.Label: serviceName,
+			azureservice.Label: serviceName,
 		}
 		emptyPubip = &azurev1alpha1.PublicIPAddress{
 			ObjectMeta: metav1.ObjectMeta{

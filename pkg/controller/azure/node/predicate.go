@@ -12,35 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package service
+package node
 
 import (
-	"reflect"
-
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-func NewLoadBalancerIPsChangedPredicate(logger logr.Logger) predicate.Predicate {
+func NewReadyUnreachableChangedPredicate(logger logr.Logger) predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
 			if e.Object == nil {
 				logger.Error(nil, "CreateEvent has no object", "event", e)
 				return false
 			}
-			var service *corev1.Service
-			var ok bool
-			if service, ok = e.Object.(*corev1.Service); !ok {
+			if _, ok := e.Object.(*corev1.Node); !ok {
 				return false
 			}
-			ips := getServiceLoadBalancerIPs(service)
-			if len(ips) > 0 {
-				logger.Info("Creating a service with LoadBalancer IPs")
-				return true
-			}
-			return false
+			logger.Info("Creating a node")
+			return true
 		},
 
 		UpdateFunc: func(e event.UpdateEvent) bool {
@@ -48,21 +40,20 @@ func NewLoadBalancerIPsChangedPredicate(logger logr.Logger) predicate.Predicate 
 				logger.Error(nil, "UpdateEvent has no old or new metadata, or no old or new object", "event", e)
 				return false
 			}
-			var oldService, newService *corev1.Service
+			var oldNode, newNode *corev1.Node
 			var ok bool
-			if oldService, ok = e.ObjectOld.(*corev1.Service); !ok {
+			if oldNode, ok = e.ObjectOld.(*corev1.Node); !ok {
 				return false
 			}
-			if newService, ok = e.ObjectNew.(*corev1.Service); !ok {
+			if newNode, ok = e.ObjectNew.(*corev1.Node); !ok {
 				return false
 			}
-			oldIPs, newIPs := getServiceLoadBalancerIPs(oldService), getServiceLoadBalancerIPs(newService)
-			if len(newIPs) > 0 && e.MetaOld.GetDeletionTimestamp() != e.MetaNew.GetDeletionTimestamp() {
-				logger.Info("Updating the deletion timestamp of a service with LoadBalancer IPs")
+			if e.MetaOld.GetDeletionTimestamp() != e.MetaNew.GetDeletionTimestamp() {
+				logger.Info("Updating the deletion timestamp of a node")
 				return true
 			}
-			if !reflect.DeepEqual(oldIPs, newIPs) {
-				logger.Info("Updating service LoadBalancer IPs")
+			if isNodeReady(oldNode) != isNodeReady(newNode) || isNodeUnreachable(oldNode) != isNodeUnreachable(newNode) {
+				logger.Info("Updating the ready condition or unreachable taint of a node")
 				return true
 			}
 			return false
@@ -73,17 +64,11 @@ func NewLoadBalancerIPsChangedPredicate(logger logr.Logger) predicate.Predicate 
 				logger.Error(nil, "DeleteEvent has no object", "event", e)
 				return false
 			}
-			var service *corev1.Service
-			var ok bool
-			if service, ok = e.Object.(*corev1.Service); !ok {
+			if _, ok := e.Object.(*corev1.Node); !ok {
 				return false
 			}
-			ips := getServiceLoadBalancerIPs(service)
-			if len(ips) > 0 {
-				logger.Info("Deleting a service with LoadBalancer IPs")
-				return true
-			}
-			return false
+			logger.Info("Deleting a node")
+			return true
 		},
 
 		GenericFunc: func(e event.GenericEvent) bool {

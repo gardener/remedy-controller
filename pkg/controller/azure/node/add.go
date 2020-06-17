@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package service
+package node
 
 import (
 	remedycontroller "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
@@ -25,10 +25,10 @@ import (
 )
 
 const (
-	ControllerName = "azureservice-controller"
-	ActuatorName   = "azureservice-actuator"
-	PredicateName  = "azureservice-load-balancer-ips-changed-predicate"
-	FinalizerName  = "azure.remedy.gardener.cloud/service"
+	ControllerName = "azurenode-controller"
+	ActuatorName   = "azurenode-actuator"
+	PredicateName  = "azurenode-ready-unreachable-changed-predicate"
+	FinalizerName  = "azure.remedy.gardener.cloud/node"
 )
 
 var (
@@ -49,9 +49,9 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 		ControllerName:    ControllerName,
 		FinalizerName:     FinalizerName,
 		ControllerOptions: options.Controller,
-		Type:              &corev1.Service{},
+		Type:              &corev1.Node{},
 		Predicates: []predicate.Predicate{
-			NewLoadBalancerIPsChangedPredicate(log.Log.WithName(PredicateName)),
+			NewReadyUnreachableChangedPredicate(log.Log.WithName(PredicateName)),
 		},
 	})
 }

@@ -20,6 +20,7 @@ import (
 
 	azureinstall "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/install"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/cmd"
+	azurenode "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/node"
 	azurepublicipaddress "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/publicipaddress"
 	azureservice "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/service"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/version"
@@ -59,6 +60,11 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			MaxConcurrentReconciles: 5,
 		}
 
+		// options for the node controller
+		nodeCtrlOpts = &controllercmd.ControllerOptions{
+			MaxConcurrentReconciles: 5,
+		}
+
 		configFileOpts     = &cmd.ConfigOptions{}
 		controllerSwitches = cmd.ControllerSwitchOptions()
 		reconcilerOpts     = &cmd.ReconcilerOptions{}
@@ -68,6 +74,7 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			mgrOpts,
 			controllercmd.PrefixOption("publicipaddress-", publicIPAddressCtrlOpts),
 			controllercmd.PrefixOption("service-", serviceCtrlOpts),
+			controllercmd.PrefixOption("node-", nodeCtrlOpts),
 			configFileOpts,
 			controllerSwitches,
 			reconcilerOpts,
@@ -106,6 +113,7 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			publicIPAddressCtrlOpts.Completed().Apply(&azurepublicipaddress.DefaultAddOptions.Controller)
 			configFileOpts.Completed().ApplyAzurePublicIPRemedy(&azurepublicipaddress.DefaultAddOptions.Config)
 			serviceCtrlOpts.Completed().Apply(&azureservice.DefaultAddOptions.Controller)
+			nodeCtrlOpts.Completed().Apply(&azurenode.DefaultAddOptions.Controller)
 			reconcilerOpts.Completed().Apply(&azurepublicipaddress.DefaultAddOptions.InfraConfigPath)
 
 			logger.Info("Adding controllers to manager")

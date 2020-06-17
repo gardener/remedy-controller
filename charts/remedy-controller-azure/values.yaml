@@ -9,7 +9,7 @@ vpa:
   enabled: false
   updatePolicy:
     updateMode: "Auto"
-    
+
 manager:
   metricsPort: 6000
 
@@ -32,6 +32,9 @@ config:
       requeueInterval: 30s
       deletionGracePeriod: 5m
 
-imagePullSecret: ""
+imagePullSecret:
+  registry: ''
+  username: ''
+  password: ''
 
 cloudProviderConfig: ~

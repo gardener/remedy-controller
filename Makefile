@@ -81,7 +81,11 @@ install-requirements:
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/gobuffalo/packr/v2/packr2
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/golang/mock/mockgen
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/onsi/ginkgo/ginkgo
+
 	@$(REPO_ROOT)/hack/install-requirements.sh
+	@python3 -m venv $(REPO_ROOT)/.env
+	@. $(REPO_ROOT)/.env/bin/activate && pip3 install -r $(REPO_ROOT)/test/requirements.txt
+
 
 .PHONY: revendor
 revendor:
@@ -103,6 +107,7 @@ check-generate:
 check:
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check.sh --golangci-lint-config=./.golangci.yaml ./cmd/... ./pkg/...
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check-charts.sh ./charts
+	@. $(REPO_ROOT)/.env/bin/activate && flake8 $(REPO_ROOT)/test
 
 .PHONY: generate
 generate:
@@ -129,4 +134,8 @@ verify: check test
 
 .PHONY: verify-extended
 verify-extended: install-requirements check-generate check test-cov test-clean
+
+.PHONY: pubip-remedy-test
+pubip-remedy-test:
+	@. $(REPO_ROOT)/.env/bin/activate && python3 $(REPO_ROOT)/test/pubip_remedy_test.py --credentials-path "$(REPO_ROOT)/dev/credentials.json"
 

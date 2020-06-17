@@ -1,6 +1,6 @@
 remedy-controller:
   jobs:
-    manual-release:
+    force-release:
       traits:
         version:
           preprocess: 'finalize'
@@ -16,6 +16,10 @@ remedy-controller:
         release:
           nextversion: 'bump_minor'
           release_notes_policy: disabled
+          rebase_before_release: true
+          release_commit_publishing_policy: 'push_to_branch'
+          commit_message_prefix: '[ci skip]'
+
     head-update:
       steps:
         verify:
@@ -36,3 +40,31 @@ remedy-controller:
           image: 'golang:1.14.4'
       traits:
         pull-request: ~
+
+    release:
+      repo:
+        trigger: false
+      steps:
+        test:
+          execute:
+            - integration_test.sh
+          depends:
+            - publish
+        trigger_release:
+          execute:
+            - trigger_release.py
+          vars:
+            RELEASE_JOB_NAME: 'pipeline.variant("force-release").job_name()'
+          depends:
+            - test
+      traits:
+        version:
+          inject_effective_version: True
+        component_descriptor: ~
+        publish:
+          dockerimages:
+            remedy-controller-image:
+              registry: 'gcr-readwrite-sap-se-gcp-scp-k8s'
+              image: 'eu.gcr.io/sap-se-gcp-scp-k8s/remedy-controller/remedy-controller-azure'
+              dockerfile: 'Dockerfile'
+              target: remedy-controller-azure

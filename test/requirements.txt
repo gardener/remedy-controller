@@ -1,0 +1,5 @@
+azure.mgmt.network
+flake8
+kubernetes
+pyyaml
+wheel

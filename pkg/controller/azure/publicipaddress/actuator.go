@@ -157,7 +157,7 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 	if azurePublicIP != nil {
 		// If within the deletion grace period, requeue so we could check again
 		if pubip.DeletionTimestamp != nil &&
-			!time.Now().After(pubip.DeletionTimestamp.Add(a.config.DeletionGracePeriod.Duration)) {
+			!a.timestamper.Now().After(pubip.DeletionTimestamp.Add(a.config.DeletionGracePeriod.Duration)) {
 			return &controllererror.RequeueAfterError{
 				Cause:        errors.New("public IP address still exists"),
 				RequeueAfter: a.config.RequeueInterval.Duration,

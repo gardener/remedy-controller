@@ -17,7 +17,9 @@ data:
       qps: {{ required ".Values.config.clientConnection.qps is required" .Values.config.clientConnection.qps }}
       burst: {{ required ".Values.config.clientConnection.burst is required" .Values.config.clientConnection.burst }}
     azure:
-      publicIPRemedy:
-        requeueInterval: {{ required ".Values.config.azure.publicIPRemedy.requeueInterval is required" .Values.config.azure.publicIPRemedy.requeueInterval }}
-        deletionGracePeriod: {{ required ".Values.config.azure.publicIPRemedy.deletionGracePeriod is required" .Values.config.azure.publicIPRemedy.deletionGracePeriod }}
+      orphanedPublicIPRemedy:
+        requeueInterval: {{ required ".Values.config.azure.orphanedPublicIPRemedy.requeueInterval is required" .Values.config.azure.orphanedPublicIPRemedy.requeueInterval }}
+        deletionGracePeriod: {{ required ".Values.config.azure.orphanedPublicIPRemedy.deletionGracePeriod is required" .Values.config.azure.orphanedPublicIPRemedy.deletionGracePeriod }}
+      failedVMRemedy:
+        requeueInterval: {{ required ".Values.config.azure.failedVMRemedy.requeueInterval is required" .Values.config.azure.failedVMRemedy.requeueInterval }}
 {{- end }}

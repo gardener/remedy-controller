@@ -57,12 +57,11 @@ var _ = Describe("Actuator", func() {
 		pubipUtils        *mockutilsazure.MockPublicIPAddressUtils
 		cleanedIPsCounter *mockprometheus.MockCounter
 
-		cfg      config.AzurePublicIPRemedyConfiguration
+		cfg      config.AzureOrphanedPublicIPRemedyConfiguration
 		logger   logr.Logger
 		actuator controller.Actuator
 
-		pubip                *azurev1alpha1.PublicIPAddress
-		pubipWithStatus      *azurev1alpha1.PublicIPAddress
+		newPubip             func(bool) *azurev1alpha1.PublicIPAddress
 		azurePublicIPAddress *network.PublicIPAddress
 	)
 
@@ -76,7 +75,7 @@ var _ = Describe("Actuator", func() {
 		pubipUtils = mockutilsazure.NewMockPublicIPAddressUtils(ctrl)
 		cleanedIPsCounter = mockprometheus.NewMockCounter(ctrl)
 
-		cfg = config.AzurePublicIPRemedyConfiguration{
+		cfg = config.AzureOrphanedPublicIPRemedyConfiguration{
 			RequeueInterval:     metav1.Duration{Duration: 1 * time.Second},
 			DeletionGracePeriod: metav1.Duration{Duration: 1 * time.Second},
 		}
@@ -84,29 +83,26 @@ var _ = Describe("Actuator", func() {
 		actuator = publicipaddress.NewActuator(pubipUtils, cfg, logger, cleanedIPsCounter)
 		Expect(actuator.(inject.Client).InjectClient(c)).To(Succeed())
 
-		pubip = &azurev1alpha1.PublicIPAddress{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      serviceName + "-" + ip,
-				Namespace: namespace,
-			},
-			Spec: azurev1alpha1.PublicIPAddressSpec{
-				IPAddress: ip,
-			},
-		}
-		pubipWithStatus = &azurev1alpha1.PublicIPAddress{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      serviceName + "-" + ip,
-				Namespace: namespace,
-			},
-			Spec: azurev1alpha1.PublicIPAddressSpec{
-				IPAddress: ip,
-			},
-			Status: azurev1alpha1.PublicIPAddressStatus{
-				Exists:            true,
-				ID:                pointer.StringPtr(azurePublicIPAddressID),
-				Name:              pointer.StringPtr(azurePublicIPAddressName),
-				ProvisioningState: pointer.StringPtr(string(network.Succeeded)),
-			},
+		newPubip = func(withStatus bool) *azurev1alpha1.PublicIPAddress {
+			var status azurev1alpha1.PublicIPAddressStatus
+			if withStatus {
+				status = azurev1alpha1.PublicIPAddressStatus{
+					Exists:            true,
+					ID:                pointer.StringPtr(azurePublicIPAddressID),
+					Name:              pointer.StringPtr(azurePublicIPAddressName),
+					ProvisioningState: pointer.StringPtr(string(network.Succeeded)),
+				}
+			}
+			return &azurev1alpha1.PublicIPAddress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      serviceName + "-" + ip,
+					Namespace: namespace,
+				},
+				Spec: azurev1alpha1.PublicIPAddressSpec{
+					IPAddress: ip,
+				},
+				Status: status,
+			}
 		}
 		azurePublicIPAddress = &network.PublicIPAddress{
 			ID:   pointer.StringPtr(azurePublicIPAddressID),
@@ -124,6 +120,7 @@ var _ = Describe("Actuator", func() {
 
 	Describe("#CreateOrUpdate", func() {
 		It("should update the PublicIPAddress object status if the IP is found", func() {
+			pubip, pubipWithStatus := newPubip(false), newPubip(true)
 			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(azurePublicIPAddress, nil)
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubipWithStatus).Return(nil)
@@ -135,6 +132,7 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should not update the PublicIPAddress object status if the IP is not found", func() {
+			pubip := newPubip(false)
 			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(nil, nil)
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
 
@@ -145,6 +143,7 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should not update the PublicIPAddress object status if the IP is found and the status is already initialized", func() {
+			pubipWithStatus := newPubip(true)
 			pubipUtils.EXPECT().GetByName(ctx, azurePublicIPAddressName).Return(azurePublicIPAddress, nil)
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubipWithStatus.Namespace, Name: pubipWithStatus.Name}, pubipWithStatus).Return(nil)
 
@@ -154,14 +153,8 @@ var _ = Describe("Actuator", func() {
 			Expect(removeFinalizer).To(Equal(false))
 		})
 
-		It("should fail if getting an Azure IP address by IP fails", func() {
-			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(nil, errors.New("test"))
-
-			_, _, err := actuator.CreateOrUpdate(ctx, pubip)
-			Expect(err).To(MatchError("could not get Azure public IP address by IP: test"))
-		})
-
 		It("should update the PublicIPAddress object status if the IP is not found and the status is already initialized", func() {
+			pubip, pubipWithStatus := newPubip(false), newPubip(true)
 			pubipUtils.EXPECT().GetByName(ctx, azurePublicIPAddressName).Return(nil, nil)
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubipWithStatus.Namespace, Name: pubipWithStatus.Name}, pubipWithStatus).Return(nil)
 			sw.EXPECT().Update(ctx, pubip).Return(nil)
@@ -170,6 +163,24 @@ var _ = Describe("Actuator", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(1 * time.Second))
 			Expect(removeFinalizer).To(Equal(false))
+		})
+
+		It("should fail if getting an Azure IP address by IP fails", func() {
+			pubip := newPubip(false)
+			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(nil, errors.New("test"))
+
+			_, _, err := actuator.CreateOrUpdate(ctx, pubip)
+			Expect(err).To(MatchError("could not get Azure public IP address by IP: test"))
+		})
+
+		It("should fail if updating the PublicIPAddress object status fails", func() {
+			pubip, pubipWithStatus := newPubip(false), newPubip(true)
+			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(azurePublicIPAddress, nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
+			sw.EXPECT().Update(ctx, pubipWithStatus).Return(errors.New("test"))
+
+			_, _, err := actuator.CreateOrUpdate(ctx, pubip)
+			Expect(err).To(MatchError("could not update publicipaddress status: test"))
 		})
 	})
 })

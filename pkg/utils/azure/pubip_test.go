@@ -32,7 +32,7 @@ import (
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils/azure"
 )
 
-var _ = Describe("Azure", func() {
+var _ = Describe("PublicIPAddressUtils", func() {
 	const (
 		ip                           = "1.2.3.4"
 		ip2                          = "5.6.7.8"

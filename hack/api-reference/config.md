@@ -92,10 +92,23 @@ AzureConfiguration
 <tbody>
 <tr>
 <td>
-<code>publicIPRemedy</code></br>
+<code>orphanedPublicIPRemedy</code></br>
 <em>
-<a href="#%22remedy.config.gardener.cloud%22/v1alpha1.AzurePublicIPRemedyConfiguration">
-AzurePublicIPRemedyConfiguration
+<a href="#%22remedy.config.gardener.cloud%22/v1alpha1.AzureOrphanedPublicIPRemedyConfiguration">
+AzureOrphanedPublicIPRemedyConfiguration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+</td>
+</tr>
+<tr>
+<td>
+<code>failedVMRemedy</code></br>
+<em>
+<a href="#%22remedy.config.gardener.cloud%22/v1alpha1.AzureFailedVMRemedyConfiguration">
+AzureFailedVMRemedyConfiguration
 </a>
 </em>
 </td>
@@ -105,14 +118,47 @@ AzurePublicIPRemedyConfiguration
 </tr>
 </tbody>
 </table>
-<h3 id="&#34;remedy.config.gardener.cloud&#34;/v1alpha1.AzurePublicIPRemedyConfiguration">AzurePublicIPRemedyConfiguration
+<h3 id="&#34;remedy.config.gardener.cloud&#34;/v1alpha1.AzureFailedVMRemedyConfiguration">AzureFailedVMRemedyConfiguration
 </h3>
 <p>
 (<em>Appears on:</em>
 <a href="#%22remedy.config.gardener.cloud%22/v1alpha1.AzureConfiguration">AzureConfiguration</a>)
 </p>
 <p>
-<p>AzurePublicIPRemedyConfiguration defines the configuration for the public IP remedy.</p>
+<p>AzureFailedVMRemedyConfiguration defines the configuration for the Azure failed VM remedy.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>requeueInterval</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#duration-v1-meta">
+Kubernetes meta/v1.Duration
+</a>
+</em>
+</td>
+<td>
+<p>RequeueInterval specifies the time after which reconciliation requests will be
+requeued. Applies to both creation/update and deletion.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="&#34;remedy.config.gardener.cloud&#34;/v1alpha1.AzureOrphanedPublicIPRemedyConfiguration">AzureOrphanedPublicIPRemedyConfiguration
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#%22remedy.config.gardener.cloud%22/v1alpha1.AzureConfiguration">AzureConfiguration</a>)
+</p>
+<p>
+<p>AzureOrphanedPublicIPRemedyConfiguration defines the configuration for the Azure orphaned public IP remedy.</p>
 </p>
 <table>
 <thead>

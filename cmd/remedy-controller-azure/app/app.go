@@ -23,6 +23,7 @@ import (
 	azurenode "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/node"
 	azurepublicipaddress "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/publicipaddress"
 	azureservice "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/service"
+	azurevirtualmachine "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/virtualmachine"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/version"
 
 	"github.com/gardener/gardener/extensions/pkg/controller"
@@ -55,6 +56,11 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			MaxConcurrentReconciles: 5,
 		}
 
+		// options for the virtualmachine controller
+		virtualMachineCtrlOpts = &controllercmd.ControllerOptions{
+			MaxConcurrentReconciles: 5,
+		}
+
 		// options for the service controller
 		serviceCtrlOpts = &controllercmd.ControllerOptions{
 			MaxConcurrentReconciles: 5,
@@ -73,6 +79,7 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			restOpts,
 			mgrOpts,
 			controllercmd.PrefixOption("publicipaddress-", publicIPAddressCtrlOpts),
+			controllercmd.PrefixOption("virtualmachine-", virtualMachineCtrlOpts),
 			controllercmd.PrefixOption("service-", serviceCtrlOpts),
 			controllercmd.PrefixOption("node-", nodeCtrlOpts),
 			configFileOpts,
@@ -111,10 +118,13 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			}
 
 			publicIPAddressCtrlOpts.Completed().Apply(&azurepublicipaddress.DefaultAddOptions.Controller)
-			configFileOpts.Completed().ApplyAzurePublicIPRemedy(&azurepublicipaddress.DefaultAddOptions.Config)
+			configFileOpts.Completed().ApplyAzureOrphanedPublicIPRemedy(&azurepublicipaddress.DefaultAddOptions.Config)
+			virtualMachineCtrlOpts.Completed().Apply(&azurevirtualmachine.DefaultAddOptions.Controller)
+			configFileOpts.Completed().ApplyAzureFailedVMRemedy(&azurevirtualmachine.DefaultAddOptions.Config)
 			serviceCtrlOpts.Completed().Apply(&azureservice.DefaultAddOptions.Controller)
 			nodeCtrlOpts.Completed().Apply(&azurenode.DefaultAddOptions.Controller)
 			reconcilerOpts.Completed().Apply(&azurepublicipaddress.DefaultAddOptions.InfraConfigPath)
+			reconcilerOpts.Completed().Apply(&azurevirtualmachine.DefaultAddOptions.InfraConfigPath)
 
 			logger.Info("Adding controllers to manager")
 			if err := controllerSwitches.Completed().AddToManager(mgr); err != nil {

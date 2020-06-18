@@ -39,11 +39,13 @@ type ControllerConfiguration struct {
 // AzureConfiguration defines the configuration for the Azure remedy controller.
 type AzureConfiguration struct {
 	// +optional
-	PublicIPRemedy *AzurePublicIPRemedyConfiguration `json:"publicIPRemedy,omitempty"`
+	OrphanedPublicIPRemedy *AzureOrphanedPublicIPRemedyConfiguration `json:"orphanedPublicIPRemedy,omitempty"`
+	// +optional
+	FailedVMRemedy *AzureFailedVMRemedyConfiguration `json:"failedVMRemedy,omitempty"`
 }
 
-// AzurePublicIPRemedyConfiguration defines the configuration for the public IP remedy.
-type AzurePublicIPRemedyConfiguration struct {
+// AzureOrphanedPublicIPRemedyConfiguration defines the configuration for the Azure orphaned public IP remedy.
+type AzureOrphanedPublicIPRemedyConfiguration struct {
 	// RequeueInterval specifies the time after which reconciliation requests will be
 	// requeued. Applies to both creation/update and deletion.
 	// +optional
@@ -52,4 +54,11 @@ type AzurePublicIPRemedyConfiguration struct {
 	// deleted by the controller if it still exists.
 	// +optional
 	DeletionGracePeriod metav1.Duration `json:"deletionGracePeriod,omitempty"`
+}
+
+// AzureFailedVMRemedyConfiguration defines the configuration for the Azure failed VM remedy.
+type AzureFailedVMRemedyConfiguration struct {
+	// RequeueInterval specifies the time after which reconciliation requests will be
+	// requeued. Applies to both creation/update and deletion.
+	RequeueInterval metav1.Duration `json:"requeueInterval,omitempty"`
 }

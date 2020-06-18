@@ -31,6 +31,7 @@ spec:
         - --infrastructure-config=/etc/kubernetes/cloudprovider/cloudprovider.conf
         - --leader-election=true
         - --publicipaddress-max-concurrent-reconciles={{ .Values.controllers.publicipaddress.concurrentSyncs }}
+        - --virtualmachine-max-concurrent-reconciles={{ .Values.controllers.virtualmachine.concurrentSyncs }}
         - --service-max-concurrent-reconciles={{ .Values.controllers.service.concurrentSyncs }}
         - --node-max-concurrent-reconciles={{ .Values.controllers.node.concurrentSyncs }}
         - --metrics-bind-address=:{{.Values.manager.metricsPort}}

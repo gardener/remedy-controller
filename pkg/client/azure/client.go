@@ -20,6 +20,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-07-01/compute"
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
@@ -64,6 +65,16 @@ type LoadBalancersClient interface {
 	Client() autorest.Client
 }
 
+// VirtualMachinesClient contains the methods of compute.VirtualMachinesClient.
+type VirtualMachinesClient interface {
+	// Get gets the specified virtual machine.
+	Get(context.Context, string, string, compute.InstanceViewTypes) (compute.VirtualMachine, error)
+	// Reapply reapplies the virtual machine's state.
+	Reapply(context.Context, string, string) (Future, error)
+	// Client returns the autorest.Client
+	Client() autorest.Client
+}
+
 // PublicIPAddressesClientImpl is an implementation of PublicIPAddressesClient based on network.PublicIPAddressesClient.
 type PublicIPAddressesClientImpl struct {
 	network.PublicIPAddressesClient
@@ -96,10 +107,27 @@ func (c LoadBalancersClientImpl) Client() autorest.Client {
 	return c.LoadBalancersClient.Client
 }
 
+// VirtualMachinesClientImpl is an implementation of VirtualMachinesClient based on compute.VirtualMachinesClient.
+type VirtualMachinesClientImpl struct {
+	compute.VirtualMachinesClient
+}
+
+// CreateOrUpdate implements VirtualMachinesClient.
+func (c VirtualMachinesClientImpl) Reapply(ctx context.Context, resourceGroupName string, vmName string) (Future, error) {
+	f, err := c.VirtualMachinesClient.Reapply(ctx, resourceGroupName, vmName)
+	return &f, err
+}
+
+// Client implements VirtualMachinesClient.
+func (c VirtualMachinesClientImpl) Client() autorest.Client {
+	return c.VirtualMachinesClient.Client
+}
+
 // Clients contains all needed Azure clients.
 type Clients struct {
 	PublicIPAddressesClient PublicIPAddressesClient
 	LoadBalancersClient     LoadBalancersClient
+	VirtualMachinesClient   VirtualMachinesClient
 }
 
 // ReadConfig creates new Azure credentials by reading the configuration file at the given path.
@@ -140,9 +168,12 @@ func NewClients(credentials *Credentials) (*Clients, error) {
 	ipAddressesClient.Authorizer = authorizer
 	loadBalancersClient := network.NewLoadBalancersClient(credentials.SubscriptionID)
 	loadBalancersClient.Authorizer = authorizer
+	vmClient := compute.NewVirtualMachinesClient(credentials.SubscriptionID)
+	vmClient.Authorizer = authorizer
 
 	return &Clients{
 		PublicIPAddressesClient: PublicIPAddressesClientImpl{PublicIPAddressesClient: ipAddressesClient},
 		LoadBalancersClient:     LoadBalancersClientImpl{LoadBalancersClient: loadBalancersClient},
+		VirtualMachinesClient:   VirtualMachinesClientImpl{VirtualMachinesClient: vmClient},
 	}, nil
 }

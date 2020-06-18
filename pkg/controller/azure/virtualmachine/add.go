@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package publicipaddress
+package virtualmachine
 
 import (
 	"time"
@@ -34,25 +34,24 @@ import (
 )
 
 const (
-	ControllerName = "azurepublicipaddress-controller"
-	ActuatorName   = "azurepublicipaddress-actuator"
-	FinalizerName  = "azure.remedy.gardener.cloud/publicipaddress"
+	ControllerName = "azurevirtualmachine-controller"
+	ActuatorName   = "azurevirtualmachine-actuator"
+	FinalizerName  = "azure.remedy.gardener.cloud/virtualmachine"
 )
 
 var (
 	// DefaultAddOptions are the default AddOptions for AddToManager.
 	DefaultAddOptions = AddOptions{
-		Config: config.AzureOrphanedPublicIPRemedyConfiguration{
-			RequeueInterval:     metav1.Duration{Duration: 30 * time.Second},
-			DeletionGracePeriod: metav1.Duration{Duration: 5 * time.Minute},
+		Config: config.AzureFailedVMRemedyConfiguration{
+			RequeueInterval: metav1.Duration{Duration: 30 * time.Second},
 		},
 	}
 
-	// CleanedIPsCounter is a global counter for cleaned Azure public IP addresses.
-	CleanedIPsCounter = prometheus.NewCounter(
+	// ReappliedVMsCounter is a global counter for reapplied Azure virtual machines.
+	ReappliedVMsCounter = prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Name: "cleaned_azure_public_ips_total",
-			Help: "Number of cleaned Azure public IPs",
+			Name: "reapplied_azure_virtual_machines",
+			Help: "Number of reapplied Azure virtual machines",
 		},
 	)
 )
@@ -63,8 +62,8 @@ type AddOptions struct {
 	Controller controller.Options
 	// InfraConfigPath is the path to the infrastructure configuration file.
 	InfraConfigPath string
-	// Config is the configuration for the Azure orphaned public IP remedy.
-	Config config.AzureOrphanedPublicIPRemedyConfiguration
+	// Config is the configuration for the Azure failed virtual machine remedy.
+	Config config.AzureFailedVMRemedyConfiguration
 }
 
 // AddToManagerWithOptions adds a controller with the given AddOptions to the given manager.
@@ -82,12 +81,12 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 	}
 
 	return remedycontroller.Add(mgr, remedycontroller.AddArgs{
-		Actuator: NewActuator(utilsazure.NewPublicIPAddressUtils(azureClients, credentials.ResourceGroup, utilsazure.ReadRequestsCounter, utilsazure.WriteRequestsCounter),
-			options.Config, log.Log.WithName(ActuatorName), CleanedIPsCounter),
+		Actuator: NewActuator(utilsazure.NewVirtualMachineUtils(azureClients, credentials.ResourceGroup, utilsazure.ReadRequestsCounter, utilsazure.WriteRequestsCounter),
+			options.Config, log.Log.WithName(ActuatorName), ReappliedVMsCounter),
 		ControllerName:    ControllerName,
 		FinalizerName:     FinalizerName,
 		ControllerOptions: options.Controller,
-		Type:              &azurev1alpha1.PublicIPAddress{},
+		Type:              &azurev1alpha1.VirtualMachine{},
 		Predicates: []predicate.Predicate{
 			predicate.GenerationChangedPredicate{},
 		},
@@ -101,5 +100,5 @@ func AddToManager(mgr manager.Manager) error {
 
 func init() {
 	// Register metrics with the global Prometheus registry
-	metrics.Registry.MustRegister(CleanedIPsCounter)
+	metrics.Registry.MustRegister(ReappliedVMsCounter)
 }

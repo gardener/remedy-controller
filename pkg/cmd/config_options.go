@@ -77,10 +77,16 @@ func (c *Config) Options() config.ControllerConfiguration {
 	return cfg
 }
 
-// ApplyAzurePublicIPRemedy sets the given Azure public ID remedy configuration to that of
-// this Config.
-func (c *Config) ApplyAzurePublicIPRemedy(cfg *config.AzurePublicIPRemedyConfiguration) {
-	if c.Config.Azure != nil && c.Config.Azure.PublicIPRemedy != nil {
-		*cfg = *c.Config.Azure.PublicIPRemedy
+// ApplyAzureOrphanedPublicIPRemedy sets the given Azure orphaned public IP remedy configuration to that of this Config.
+func (c *Config) ApplyAzureOrphanedPublicIPRemedy(cfg *config.AzureOrphanedPublicIPRemedyConfiguration) {
+	if c.Config.Azure != nil && c.Config.Azure.OrphanedPublicIPRemedy != nil {
+		*cfg = *c.Config.Azure.OrphanedPublicIPRemedy
+	}
+}
+
+// ApplyAzureFailedVMRemedy sets the given Azure failed VM remedy configuration to that of this Config.
+func (c *Config) ApplyAzureFailedVMRemedy(cfg *config.AzureFailedVMRemedyConfiguration) {
+	if c.Config.Azure != nil && c.Config.Azure.FailedVMRemedy != nil {
+		*cfg = *c.Config.Azure.FailedVMRemedy
 	}
 }

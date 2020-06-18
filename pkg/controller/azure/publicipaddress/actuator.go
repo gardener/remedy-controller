@@ -37,7 +37,7 @@ import (
 type actuator struct {
 	client            client.Client
 	pubipUtils        azure.PublicIPAddressUtils
-	config            config.AzurePublicIPRemedyConfiguration
+	config            config.AzureOrphanedPublicIPRemedyConfiguration
 	logger            logr.Logger
 	cleanedIPsCounter prometheus.Counter
 }
@@ -45,7 +45,7 @@ type actuator struct {
 // NewActuator creates a new Actuator.
 func NewActuator(
 	pubipUtils azure.PublicIPAddressUtils,
-	config config.AzurePublicIPRemedyConfiguration,
+	config config.AzureOrphanedPublicIPRemedyConfiguration,
 	logger logr.Logger,
 	cleanedIPsCounter prometheus.Counter,
 ) controller.Actuator {
@@ -72,7 +72,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 		return 0, false, errors.New("reconciled object is not a publicipaddress")
 	}
 
-	// Get the public IP address in Azure
+	// Get the Azure public IP address
 	azurePublicIP, err := a.getAzurePublicIPAddress(ctx, pubip)
 	if err != nil {
 		return 0, false, err
@@ -83,7 +83,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 		return 0, false, err
 	}
 
-	// Requeue if the public IP address doesn't exist or is in a transient state
+	// Requeue if the Azure public IP address doesn't exist or is in a transient state
 	requeueAfter = 0
 	if azurePublicIP == nil || (getProvisioningState(azurePublicIP) != network.Succeeded && getProvisioningState(azurePublicIP) != network.Failed) {
 		requeueAfter = a.config.RequeueInterval.Duration
@@ -101,19 +101,20 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 		return errors.New("reconciled object is not a publicipaddress")
 	}
 
-	// Get the public IP address in Azure
+	// Get the Azure public IP address
 	azurePublicIP, err := a.getAzurePublicIPAddress(ctx, pubip)
 	if err != nil {
 		return err
 	}
 
-	if azurePublicIP != nil {
-		// Update resource status
-		if err := a.updatePublicIPAddressStatus(ctx, pubip, azurePublicIP); err != nil {
-			return err
-		}
+	// Update resource status
+	if err := a.updatePublicIPAddressStatus(ctx, pubip, azurePublicIP); err != nil {
+		return err
+	}
 
-		// If within a configurable duration after the deletion timestamp, requeue so we could check again
+	// Clean the Azure public IP address if it still exists and the deletion grace period has elapsed
+	if azurePublicIP != nil {
+		// If within the deletion grace period, requeue so we could check again
 		if pubip.DeletionTimestamp != nil &&
 			!time.Now().After(pubip.DeletionTimestamp.Add(a.config.DeletionGracePeriod.Duration)) {
 			return &controllererror.RequeueAfterError{
@@ -122,7 +123,7 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 			}
 		}
 
-		// Clean the public IP address from Azure
+		// Clean the Azure public IP address
 		if err := a.cleanAzurePublicIPAddress(ctx, pubip); err != nil {
 			return err
 		}

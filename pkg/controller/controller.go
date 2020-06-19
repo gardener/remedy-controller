@@ -15,15 +15,27 @@
 package controller
 
 import (
+	"context"
+	"time"
+
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
+
+// Actuator acts upon objects being reconciled by a Reconciler.
+type Actuator interface {
+	// CreateOrUpdate reconciles object creation or update.
+	CreateOrUpdate(context.Context, runtime.Object) (time.Duration, bool, error)
+	// Delete reconciles object deletion.
+	Delete(context.Context, runtime.Object) error
+}
 
 // AddArgs are arguments for adding a controller to a manager.
 type AddArgs struct {
@@ -51,7 +63,7 @@ func DefaultPredicates() []predicate.Predicate {
 
 // Add creates a new controller and adds it to the given manager using the given args.
 func Add(mgr manager.Manager, args AddArgs) error {
-	args.ControllerOptions.Reconciler = NewReconciler(mgr, args.Actuator, args.ControllerName, args.FinalizerName, args.Type)
+	args.ControllerOptions.Reconciler = NewReconciler(mgr, args.Actuator, args.ControllerName, args.FinalizerName, args.Type, log.Log.WithName(args.ControllerName))
 	return add(mgr, args)
 }
 

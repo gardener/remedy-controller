@@ -26,9 +26,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
@@ -41,20 +39,17 @@ type reconciler struct {
 	typ            runtime.Object
 	ctx            context.Context
 	client         client.Client
-	recorder       record.EventRecorder
 	logger         logr.Logger
 }
 
 // NewReconciler creates a new generic Reconciler.
-func NewReconciler(mgr manager.Manager, actuator Actuator, controllerName, finalizerName string, typ runtime.Object) reconcile.Reconciler {
-	logger := log.Log.WithName(controllerName)
+func NewReconciler(mgr manager.Manager, actuator Actuator, controllerName, finalizerName string, typ runtime.Object, logger logr.Logger) reconcile.Reconciler {
 	logger.Info("Creating reconciler", "controllerName", controllerName)
 	return &reconciler{
 		actuator:       actuator,
 		controllerName: controllerName,
 		finalizerName:  finalizerName,
 		typ:            typ,
-		recorder:       mgr.GetEventRecorderFor(controllerName),
 		logger:         logger,
 	}
 }

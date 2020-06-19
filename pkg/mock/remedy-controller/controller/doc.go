@@ -12,19 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:generate mockgen -package controller -destination=mocks.go github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller Actuator
+
 package controller
-
-import (
-	"context"
-	"time"
-
-	"k8s.io/apimachinery/pkg/runtime"
-)
-
-// Actuator acts upon objects being reconciled by a Reconciler.
-type Actuator interface {
-	// CreateOrUpdate reconciles object creation or update.
-	CreateOrUpdate(context.Context, runtime.Object) (time.Duration, bool, error)
-	// Delete reconciles object deletion.
-	Delete(context.Context, runtime.Object) error
-}

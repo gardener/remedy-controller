@@ -21,6 +21,7 @@ import (
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/azure"
 	remedycontroller "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
+	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils"
 	utilsazure "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils/azure"
 
 	"github.com/pkg/errors"
@@ -43,7 +44,9 @@ var (
 	// DefaultAddOptions are the default AddOptions for AddToManager.
 	DefaultAddOptions = AddOptions{
 		Config: config.AzureFailedVMRemedyConfiguration{
-			RequeueInterval: metav1.Duration{Duration: 30 * time.Second},
+			RequeueInterval:    metav1.Duration{Duration: 1 * time.Minute},
+			MaxGetAttempts:     5,
+			MaxReapplyAttempts: 5,
 		},
 	}
 
@@ -82,7 +85,7 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 
 	return remedycontroller.Add(mgr, remedycontroller.AddArgs{
 		Actuator: NewActuator(utilsazure.NewVirtualMachineUtils(azureClients, credentials.ResourceGroup, utilsazure.ReadRequestsCounter, utilsazure.WriteRequestsCounter),
-			options.Config, log.Log.WithName(ActuatorName), ReappliedVMsCounter),
+			options.Config, utils.TimestamperFunc(metav1.Now), log.Log.WithName(ActuatorName), ReappliedVMsCounter),
 		ControllerName:    ControllerName,
 		FinalizerName:     FinalizerName,
 		ControllerOptions: options.Controller,

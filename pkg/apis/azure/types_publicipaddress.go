@@ -45,6 +45,8 @@ type PublicIPAddressStatus struct {
 	Name *string
 	// ProvisioningState is the provisioning state of the public IP address resource in Azure.
 	ProvisioningState *string
+	// FailedOperations is a list of all failed operations on the virtual machine resource in Azure.
+	FailedOperations []FailedOperation
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

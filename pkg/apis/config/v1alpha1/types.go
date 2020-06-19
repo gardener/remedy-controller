@@ -54,11 +54,24 @@ type AzureOrphanedPublicIPRemedyConfiguration struct {
 	// deleted by the controller if it still exists.
 	// +optional
 	DeletionGracePeriod metav1.Duration `json:"deletionGracePeriod,omitempty"`
+	// MaxGetAttempts specifies the max attempts to get an Azure public ip address.
+	// +optional
+	MaxGetAttempts int `json:"maxGetAttempts,omitempty"`
+	// MaxCleanAttempts specifies the max attempts to clean an Azure public ip address.
+	// +optional
+	MaxCleanAttempts int `json:"maxCleanAttempts,omitempty"`
 }
 
 // AzureFailedVMRemedyConfiguration defines the configuration for the Azure failed VM remedy.
 type AzureFailedVMRemedyConfiguration struct {
 	// RequeueInterval specifies the time after which reconciliation requests will be
 	// requeued. Applies to both creation/update and deletion.
+	// +optional
 	RequeueInterval metav1.Duration `json:"requeueInterval,omitempty"`
+	// MaxGetAttempts specifies the max attempts to get an Azure VM.
+	// +optional
+	MaxGetAttempts int `json:"maxGetAttempts,omitempty"`
+	// MaxReapplyAttempts specifies the max attempts to reapply an Azure VM.
+	// +optional
+	MaxReapplyAttempts int `json:"maxReapplyAttempts,omitempty"`
 }

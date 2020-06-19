@@ -217,6 +217,83 @@ VirtualMachineStatus
 </tr>
 </tbody>
 </table>
+<h3 id="&#34;azure.remedy.gardener.cloud&#34;/v1alpha1.FailedOperation">FailedOperation
+</h3>
+<p>
+(<em>Appears on:</em>
+<a href="#%22azure.remedy.gardener.cloud%22/v1alpha1.PublicIPAddressStatus">PublicIPAddressStatus</a>, 
+<a href="#%22azure.remedy.gardener.cloud%22/v1alpha1.VirtualMachineStatus">VirtualMachineStatus</a>)
+</p>
+<p>
+<p>FailedOperation describes a failed Azure operation that has been attempted a certain number of times.</p>
+</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>type</code></br>
+<em>
+<a href="#%22azure.remedy.gardener.cloud%22/v1alpha1.OperationType">
+OperationType
+</a>
+</em>
+</td>
+<td>
+<p>Type is the operation type.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>attempts</code></br>
+<em>
+int
+</em>
+</td>
+<td>
+<p>Attempts is the number of times the operation was attempted so far.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>errorMessage</code></br>
+<em>
+string
+</em>
+</td>
+<td>
+<p>ErrorMessage is a the error message from the last operation failure.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>timestamp</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#time-v1-meta">
+Kubernetes meta/v1.Time
+</a>
+</em>
+</td>
+<td>
+<p>Timestamp is the timestamp of the last operation failure.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<h3 id="&#34;azure.remedy.gardener.cloud&#34;/v1alpha1.OperationType">OperationType
+(<code>string</code> alias)</p></h3>
+<p>
+(<em>Appears on:</em>
+<a href="#%22azure.remedy.gardener.cloud%22/v1alpha1.FailedOperation">FailedOperation</a>)
+</p>
+<p>
+<p>OperationType is a string alias.</p>
+</p>
 <h3 id="&#34;azure.remedy.gardener.cloud&#34;/v1alpha1.PublicIPAddressSpec">PublicIPAddressSpec
 </h3>
 <p>
@@ -306,6 +383,19 @@ string
 </td>
 <td>
 <p>ProvisioningState is the provisioning state of the public IP address resource in Azure.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>failedOperations</code></br>
+<em>
+<a href="#%22azure.remedy.gardener.cloud%22/v1alpha1.FailedOperation">
+[]FailedOperation
+</a>
+</em>
+</td>
+<td>
+<p>FailedOperations is a list of all failed operations on the virtual machine resource in Azure.</p>
 </td>
 </tr>
 </tbody>
@@ -432,6 +522,19 @@ string
 </td>
 <td>
 <p>ProvisioningState is the provisioning state of the virtual machine resource in Azure.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>failedOperations</code></br>
+<em>
+<a href="#%22azure.remedy.gardener.cloud%22/v1alpha1.FailedOperation">
+[]FailedOperation
+</a>
+</em>
+</td>
+<td>
+<p>FailedOperations is a list of all failed operations on the virtual machine resource in Azure.</p>
 </td>
 </tr>
 </tbody>

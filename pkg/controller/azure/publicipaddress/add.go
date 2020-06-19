@@ -21,6 +21,7 @@ import (
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/azure"
 	remedycontroller "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
+	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils"
 	utilsazure "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils/azure"
 
 	"github.com/pkg/errors"
@@ -43,8 +44,10 @@ var (
 	// DefaultAddOptions are the default AddOptions for AddToManager.
 	DefaultAddOptions = AddOptions{
 		Config: config.AzureOrphanedPublicIPRemedyConfiguration{
-			RequeueInterval:     metav1.Duration{Duration: 30 * time.Second},
+			RequeueInterval:     metav1.Duration{Duration: 1 * time.Minute},
 			DeletionGracePeriod: metav1.Duration{Duration: 5 * time.Minute},
+			MaxGetAttempts:      5,
+			MaxCleanAttempts:    5,
 		},
 	}
 
@@ -83,7 +86,7 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 
 	return remedycontroller.Add(mgr, remedycontroller.AddArgs{
 		Actuator: NewActuator(utilsazure.NewPublicIPAddressUtils(azureClients, credentials.ResourceGroup, utilsazure.ReadRequestsCounter, utilsazure.WriteRequestsCounter),
-			options.Config, log.Log.WithName(ActuatorName), CleanedIPsCounter),
+			options.Config, utils.TimestamperFunc(metav1.Now), log.Log.WithName(ActuatorName), CleanedIPsCounter),
 		ControllerName:    ControllerName,
 		FinalizerName:     FinalizerName,
 		ControllerOptions: options.Controller,

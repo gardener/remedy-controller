@@ -22,10 +22,12 @@ import (
 	azurev1alpha1 "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/v1alpha1"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
+	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils/azure"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-07-01/compute"
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
+	controllererror "github.com/gardener/gardener/extensions/pkg/controller/error"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -38,6 +40,7 @@ type actuator struct {
 	client              client.Client
 	vmUtils             azure.VirtualMachineUtils
 	config              config.AzureFailedVMRemedyConfiguration
+	timestamper         utils.Timestamper
 	logger              logr.Logger
 	reappliedVMsCounter prometheus.Counter
 }
@@ -46,6 +49,7 @@ type actuator struct {
 func NewActuator(
 	vmUtils azure.VirtualMachineUtils,
 	config config.AzureFailedVMRemedyConfiguration,
+	timestamper utils.Timestamper,
 	logger logr.Logger,
 	reappliedVMsCounter prometheus.Counter,
 ) controller.Actuator {
@@ -53,6 +57,7 @@ func NewActuator(
 	return &actuator{
 		vmUtils:             vmUtils,
 		config:              config,
+		timestamper:         timestamper,
 		logger:              logger,
 		reappliedVMsCounter: reappliedVMsCounter,
 	}
@@ -72,14 +77,60 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 		return 0, false, errors.New("reconciled object is not a virtualmachine")
 	}
 
+	// Initialize failed operations from VirtualMachine status
+	failedOperations := getFailedOperations(vm)
+
 	// Get the Azure virtual machine
 	azureVM, err := a.getAzureVirtualMachine(ctx, vm)
 	if err != nil {
-		return 0, false, err
+		// Add or update the failed operation
+		failedOperation := azurev1alpha1.AddOrUpdateFailedOperation(&failedOperations,
+			azurev1alpha1.OperationTypeGetVirtualMachine, err.Error(), a.timestamper.Now())
+		a.logger.Error(err, "Getting Azure virtual machine failed", "attempts", failedOperation.Attempts)
+
+		// Update resource status
+		if err := a.updateVirtualMachineStatus(ctx, vm, azureVM, failedOperations); err != nil {
+			return 0, false, err
+		}
+
+		// If the failed operation has been attempted less than the configured max attempts, requeue with exponential backoff
+		if failedOperation.Attempts < a.config.MaxGetAttempts {
+			return 0, false, &controllererror.RequeueAfterError{
+				Cause:        err,
+				RequeueAfter: a.config.RequeueInterval.Duration * (1 << (failedOperation.Attempts - 1)),
+			}
+		}
+		return 0, false, nil
+	}
+	azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeGetVirtualMachine)
+
+	// Reapply the Azure virtual machine if it's in a Failed state
+	if azureVM != nil && getProvisioningState(azureVM) == compute.ProvisioningStateFailed {
+		if err := a.reapplyAzureVirtualMachine(ctx, vm); err != nil {
+			// Add or update the failed operation
+			failedOperation := azurev1alpha1.AddOrUpdateFailedOperation(&failedOperations,
+				azurev1alpha1.OperationTypeReapplyVirtualMachine, err.Error(), a.timestamper.Now())
+			a.logger.Error(err, "Reapplying Azure virtual machine failed", "attempts", failedOperation.Attempts)
+
+			// Update resource status
+			if err := a.updateVirtualMachineStatus(ctx, vm, azureVM, failedOperations); err != nil {
+				return 0, false, err
+			}
+
+			// If the failed operation has been attempted less than the configured max attempts, requeue with exponential backoff
+			if failedOperation.Attempts < a.config.MaxReapplyAttempts {
+				return 0, false, &controllererror.RequeueAfterError{
+					Cause:        err,
+					RequeueAfter: a.config.RequeueInterval.Duration * (1 << (failedOperation.Attempts - 1)),
+				}
+			}
+			return 0, false, nil
+		}
+		azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeReapplyVirtualMachine)
 	}
 
 	// Update resource status
-	if err := a.updateVirtualMachineStatus(ctx, vm, azureVM); err != nil {
+	if err := a.updateVirtualMachineStatus(ctx, vm, azureVM, failedOperations); err != nil {
 		return 0, false, err
 	}
 
@@ -87,13 +138,6 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 	requeueAfter = 0
 	if azureVM == nil || (getProvisioningState(azureVM) != compute.ProvisioningStateSucceeded && getProvisioningState(azureVM) != compute.ProvisioningStateFailed) {
 		requeueAfter = a.config.RequeueInterval.Duration
-	}
-
-	// Reapply the Azure virtual machine if it's in a Failed state
-	if azureVM != nil && getProvisioningState(azureVM) == compute.ProvisioningStateFailed {
-		if err := a.reapplyAzureVirtualMachine(ctx, vm); err != nil {
-			return 0, false, err
-		}
 	}
 
 	return requeueAfter, false, nil
@@ -108,14 +152,35 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 		return errors.New("reconciled object is not a virtualmachine")
 	}
 
+	// Initialize failed operations from VirtualMachine status
+	failedOperations := getFailedOperations(vm)
+
 	// Get the Azure virtual machine
 	azureVM, err := a.getAzureVirtualMachine(ctx, vm)
 	if err != nil {
-		return err
+		// Add or update the failed operation
+		failedOperation := azurev1alpha1.AddOrUpdateFailedOperation(&failedOperations,
+			azurev1alpha1.OperationTypeGetVirtualMachine, err.Error(), a.timestamper.Now())
+		a.logger.Error(err, "Getting Azure virtual machine failed", "attempts", failedOperation.Attempts)
+
+		// Update resource status
+		if err := a.updateVirtualMachineStatus(ctx, vm, azureVM, failedOperations); err != nil {
+			return err
+		}
+
+		// If the failed operation has been attempted less than the configured max attempts, requeue with exponential backoff
+		if failedOperation.Attempts < a.config.MaxGetAttempts {
+			return &controllererror.RequeueAfterError{
+				Cause:        err,
+				RequeueAfter: a.config.RequeueInterval.Duration * (1 << (failedOperation.Attempts - 1)),
+			}
+		}
+		return nil
 	}
+	azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeGetVirtualMachine)
 
 	// Update resource status
-	if err := a.updateVirtualMachineStatus(ctx, vm, azureVM); err != nil {
+	if err := a.updateVirtualMachineStatus(ctx, vm, azureVM, failedOperations); err != nil {
 		return err
 	}
 
@@ -136,7 +201,12 @@ func (a *actuator) reapplyAzureVirtualMachine(ctx context.Context, vm *azurev1al
 	return nil
 }
 
-func (a *actuator) updateVirtualMachineStatus(ctx context.Context, vm *azurev1alpha1.VirtualMachine, azureVM *compute.VirtualMachine) error {
+func (a *actuator) updateVirtualMachineStatus(
+	ctx context.Context,
+	vm *azurev1alpha1.VirtualMachine,
+	azureVM *compute.VirtualMachine,
+	failedOperations []azurev1alpha1.FailedOperation,
+) error {
 	// Build status
 	status := azurev1alpha1.VirtualMachineStatus{}
 	if azureVM != nil {
@@ -147,6 +217,7 @@ func (a *actuator) updateVirtualMachineStatus(ctx context.Context, vm *azurev1al
 			ProvisioningState: azureVM.ProvisioningState,
 		}
 	}
+	status.FailedOperations = failedOperations
 
 	// Update resource status
 	a.logger.Info("Updating virtualmachine status", "name", vm.Name, "status", status)
@@ -168,6 +239,15 @@ func getVirtualMachineName(vm *azurev1alpha1.VirtualMachine) string {
 		return vm.Spec.ProviderID[lsi+1:]
 	}
 	return vm.Name
+}
+
+func getFailedOperations(vm *azurev1alpha1.VirtualMachine) []azurev1alpha1.FailedOperation {
+	var failedOperations []azurev1alpha1.FailedOperation
+	if len(vm.Status.FailedOperations) > 0 {
+		failedOperations = make([]azurev1alpha1.FailedOperation, len(vm.Status.FailedOperations))
+		copy(failedOperations, vm.Status.FailedOperations)
+	}
+	return failedOperations
 }
 
 func getProvisioningState(azureVM *compute.VirtualMachine) compute.ProvisioningState {

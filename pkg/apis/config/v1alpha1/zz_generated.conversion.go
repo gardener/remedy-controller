@@ -104,6 +104,8 @@ func Convert_config_AzureConfiguration_To_v1alpha1_AzureConfiguration(in *config
 
 func autoConvert_v1alpha1_AzureFailedVMRemedyConfiguration_To_config_AzureFailedVMRemedyConfiguration(in *AzureFailedVMRemedyConfiguration, out *config.AzureFailedVMRemedyConfiguration, s conversion.Scope) error {
 	out.RequeueInterval = in.RequeueInterval
+	out.MaxGetAttempts = in.MaxGetAttempts
+	out.MaxReapplyAttempts = in.MaxReapplyAttempts
 	return nil
 }
 
@@ -114,6 +116,8 @@ func Convert_v1alpha1_AzureFailedVMRemedyConfiguration_To_config_AzureFailedVMRe
 
 func autoConvert_config_AzureFailedVMRemedyConfiguration_To_v1alpha1_AzureFailedVMRemedyConfiguration(in *config.AzureFailedVMRemedyConfiguration, out *AzureFailedVMRemedyConfiguration, s conversion.Scope) error {
 	out.RequeueInterval = in.RequeueInterval
+	out.MaxGetAttempts = in.MaxGetAttempts
+	out.MaxReapplyAttempts = in.MaxReapplyAttempts
 	return nil
 }
 
@@ -125,6 +129,8 @@ func Convert_config_AzureFailedVMRemedyConfiguration_To_v1alpha1_AzureFailedVMRe
 func autoConvert_v1alpha1_AzureOrphanedPublicIPRemedyConfiguration_To_config_AzureOrphanedPublicIPRemedyConfiguration(in *AzureOrphanedPublicIPRemedyConfiguration, out *config.AzureOrphanedPublicIPRemedyConfiguration, s conversion.Scope) error {
 	out.RequeueInterval = in.RequeueInterval
 	out.DeletionGracePeriod = in.DeletionGracePeriod
+	out.MaxGetAttempts = in.MaxGetAttempts
+	out.MaxCleanAttempts = in.MaxCleanAttempts
 	return nil
 }
 
@@ -136,6 +142,8 @@ func Convert_v1alpha1_AzureOrphanedPublicIPRemedyConfiguration_To_config_AzureOr
 func autoConvert_config_AzureOrphanedPublicIPRemedyConfiguration_To_v1alpha1_AzureOrphanedPublicIPRemedyConfiguration(in *config.AzureOrphanedPublicIPRemedyConfiguration, out *AzureOrphanedPublicIPRemedyConfiguration, s conversion.Scope) error {
 	out.RequeueInterval = in.RequeueInterval
 	out.DeletionGracePeriod = in.DeletionGracePeriod
+	out.MaxGetAttempts = in.MaxGetAttempts
+	out.MaxCleanAttempts = in.MaxCleanAttempts
 	return nil
 }
 

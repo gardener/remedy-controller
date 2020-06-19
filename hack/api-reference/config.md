@@ -145,8 +145,33 @@ Kubernetes meta/v1.Duration
 </em>
 </td>
 <td>
+<em>(Optional)</em>
 <p>RequeueInterval specifies the time after which reconciliation requests will be
 requeued. Applies to both creation/update and deletion.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>maxGetAttempts</code></br>
+<em>
+int
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MaxGetAttempts specifies the max attempts to get an Azure VM.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>maxReapplyAttempts</code></br>
+<em>
+int
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MaxReapplyAttempts specifies the max attempts to reapply an Azure VM.</p>
 </td>
 </tr>
 </tbody>
@@ -196,6 +221,30 @@ Kubernetes meta/v1.Duration
 <em>(Optional)</em>
 <p>DeletionGracePeriod specifies the period after which a public ip address will be
 deleted by the controller if it still exists.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>maxGetAttempts</code></br>
+<em>
+int
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MaxGetAttempts specifies the max attempts to get an Azure public ip address.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>maxCleanAttempts</code></br>
+<em>
+int
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>MaxCleanAttempts specifies the max attempts to clean an Azure public ip address.</p>
 </td>
 </tr>
 </tbody>

@@ -33,10 +33,14 @@ config:
     burst: 130
   azure:
     orphanedPublicIPRemedy:
-      requeueInterval: 30s
+      requeueInterval: 1m
       deletionGracePeriod: 5m
+      maxGetAttempts: 5
+      maxCleanAttempts: 5
     failedVMRemedy:
-      requeueInterval: 30s
+      requeueInterval: 1m
+      maxGetAttempts: 5
+      maxReapplyAttempts: 5
 
 imagePullSecret:
   registry: ''

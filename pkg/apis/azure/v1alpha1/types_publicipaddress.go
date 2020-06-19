@@ -46,6 +46,8 @@ type PublicIPAddressStatus struct {
 	Name *string `json:"name,omitempty"`
 	// ProvisioningState is the provisioning state of the public IP address resource in Azure.
 	ProvisioningState *string `json:"provisioningState,omitempty"`
+	// FailedOperations is a list of all failed operations on the virtual machine resource in Azure.
+	FailedOperations []FailedOperation `json:"failedOperations,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

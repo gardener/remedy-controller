@@ -11,8 +11,8 @@ rules:
   resources:
   - publicipaddresses
   - publicipaddresses/status
-  - virutalmachines
-  - virutalmachines/status
+  - virtualmachines
+  - virtualmachines/status
   verbs:
   - "*"
 - apiGroups:

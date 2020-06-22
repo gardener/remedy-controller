@@ -7,17 +7,27 @@ import time
 import test_util
 
 
+RUN_DURATION = 600
+SVC_MIN_SLEEP = 20
+SVC_MAX_SLEEP = 180
+MIN_SVC_COUNT = 5
+MAX_SVC_COUNT = 20
+OIP_MIN_SLEEP = 60
+OIP_MAX_SLEEP = 70
+SHUTDOWN_GRACE_PERIOD = 900
+
+
 def run_test(
     path_to_credentials_file: str,
     path_to_kubeconfig: str,
-    run_duration: int = 600,
-    svc_min_sleep: int = 20,
-    svc_max_sleep: int = 180,
-    min_svc_count: int = 5,
-    max_svc_count: int = 20,
-    orphaned_ip_min_sleep: int = 60,
-    orphaned_ip_max_sleep: int = 70,
-    shutdown_grace_period: int = 900,
+    run_duration: int = RUN_DURATION,
+    svc_min_sleep: int = SVC_MIN_SLEEP,
+    svc_max_sleep: int = SVC_MAX_SLEEP,
+    min_svc_count: int = MIN_SVC_COUNT,
+    max_svc_count: int = MAX_SVC_COUNT,
+    orphaned_ip_min_sleep: int = OIP_MIN_SLEEP,
+    orphaned_ip_max_sleep: int = OIP_MAX_SLEEP,
+    shutdown_grace_period: int = SHUTDOWN_GRACE_PERIOD,
 ):
     k8s_helper, ip_helper, lb_helper = test_util._initialize_test_helpers(
         path_to_credentials_file=path_to_credentials_file,
@@ -64,7 +74,7 @@ def run_test(
             rule_created = lb_helper.add_rules_for_public_ips(ips)
             if rule_created:
                 k8s_helper.create_publicip_custom_objects(ips)
-                time.sleep(10)
+                time.sleep(random.randint(min_sleep, max_sleep))
                 k8s_helper.delete_publicip_custom_objects(ips)
             else:
                 # Creation of rules failed (probably due to the load balancer being busy). Print
@@ -75,8 +85,6 @@ def run_test(
                 )
                 for ip in ips:
                     ip_helper.delete_public_ip(ip)
-
-            time.sleep(random.randint(min_sleep, max_sleep))
 
     svc_creation_thread = threading.Thread(
         target=svc_creation_test_func,
@@ -130,35 +138,35 @@ def _parse_args():
         dest='run_duration',
         type=int,
         help='How long (in seconds) the test should run',
-        default=600,
+        default=RUN_DURATION,
     )
     parser.add_argument(
         '--svc-min-sleep',
         dest='svc_min_sleep',
         type=int,
         help='Minimum amount of time (in seconds) between service creation and deletion.',
-        default=20,
+        default=SVC_MIN_SLEEP,
     )
     parser.add_argument(
         '--svc-max-sleep',
         dest='svc_max_sleep',
         type=int,
         help='Maximum amount of time (in seconds) between service creation and deletion.',
-        default=180,
+        default=SVC_MAX_SLEEP,
     )
     parser.add_argument(
         '--min-svc-count',
         dest='min_svc_count',
         type=int,
         help='Minimum number of services created in one run',
-        default=5,
+        default=MIN_SVC_COUNT,
     )
     parser.add_argument(
         '--max-svc-count',
         dest='max_svc_count',
         type=int,
         help='Maximum number of services created in one run',
-        default=20,
+        default=MAX_SVC_COUNT,
     )
     parser.add_argument(
         '--shutdown-grace-period',
@@ -168,21 +176,21 @@ def _parse_args():
             'Length of the final shutdown grace period (in seconds) before checking whether '
             'everything was cleaned up properly.'
         ),
-        default=900,
+        default=SHUTDOWN_GRACE_PERIOD,
     )
     parser.add_argument(
         '--orphaned-ip-min-sleep',
         dest='orphaned_ip_min_sleep',
         type=int,
         help='Minimum amount of time (in seconds) between orphaned ip creations.',
-        default=60,
+        default=OIP_MIN_SLEEP,
     )
     parser.add_argument(
         '--orphaned-ip-max-sleep',
         dest='orphaned_ip_max_sleep',
         type=int,
         help='Maximum amount of time (in seconds) between orphaned ip creations.',
-        default=70,
+        default=OIP_MAX_SLEEP,
     )
     parser.add_argument(
         '--kubeconfig-path',

@@ -18,6 +18,7 @@ import (
 	remedycontroller "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
 
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -40,12 +41,16 @@ var (
 type AddOptions struct {
 	// Controller are the controller.Options.
 	Controller controller.Options
+	// Client is the Kubernetes client for the control cluster.
+	Client client.Client
+	// Namespace is the namespace for custom resources in the control cluster.
+	Namespace string
 }
 
 // AddToManagerWithOptions adds a controller with the given AddOptions to the given manager.
 func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 	return remedycontroller.Add(mgr, remedycontroller.AddArgs{
-		Actuator:          NewActuator(log.Log.WithName(ActuatorName)),
+		Actuator:          NewActuator(options.Client, options.Namespace, log.Log.WithName(ActuatorName)),
 		ControllerName:    ControllerName,
 		FinalizerName:     FinalizerName,
 		ControllerOptions: options.Controller,

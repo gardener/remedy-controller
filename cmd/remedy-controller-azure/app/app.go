@@ -17,6 +17,7 @@ package app
 import (
 	"context"
 	"os"
+	"sync"
 
 	azureinstall "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/install"
 	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/cmd"
@@ -49,6 +50,13 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 				LeaderElectionNamespace: os.Getenv("LEADER_ELECTION_NAMESPACE"),
 			},
 			MetricsBindAddress: ":6000",
+			Namespace:          "kube-system",
+		}
+
+		targetRestOpts = &controllercmd.RESTOptions{}
+		targetMgrOpts  = &cmd.ManagerOptions{
+			ManagerOptions:     controllercmd.ManagerOptions{},
+			MetricsBindAddress: ":6001",
 		}
 
 		// options for the publicipaddress controller
@@ -71,19 +79,23 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			MaxConcurrentReconciles: 5,
 		}
 
-		configFileOpts     = &cmd.ConfigOptions{}
-		controllerSwitches = cmd.ControllerSwitchOptions()
-		reconcilerOpts     = &cmd.ReconcilerOptions{}
+		configFileOpts           = &cmd.ConfigOptions{}
+		controllerSwitches       = cmd.ControllerSwitchOptions()
+		targetControllerSwitches = cmd.TargetControllerSwitchOptions()
+		reconcilerOpts           = &cmd.ReconcilerOptions{}
 
 		aggOption = controllercmd.NewOptionAggregator(
 			restOpts,
 			mgrOpts,
+			controllercmd.PrefixOption("target-", targetRestOpts),
+			controllercmd.PrefixOption("target-", targetMgrOpts),
 			controllercmd.PrefixOption("publicipaddress-", publicIPAddressCtrlOpts),
 			controllercmd.PrefixOption("virtualmachine-", virtualMachineCtrlOpts),
 			controllercmd.PrefixOption("service-", serviceCtrlOpts),
 			controllercmd.PrefixOption("node-", nodeCtrlOpts),
 			configFileOpts,
 			controllerSwitches,
+			controllercmd.PrefixOption("target-", targetControllerSwitches),
 			reconcilerOpts,
 		)
 	)
@@ -101,20 +113,29 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			}
 
 			util.ApplyClientConnectionConfigurationToRESTConfig(configFileOpts.Completed().Config.ClientConnection, restOpts.Completed().Config)
+			util.ApplyClientConnectionConfigurationToRESTConfig(configFileOpts.Completed().Config.ClientConnection, targetRestOpts.Completed().Config)
 
-			logger.Info("Creating manager")
+			logger.Info("Creating managers")
 			mgr, err := manager.New(restOpts.Completed().Config, mgrOpts.Completed().Options())
 			if err != nil {
 				controllercmd.LogErrAndExit(err, "Could not create manager")
 			}
+			targetMgr, err := manager.New(targetRestOpts.Completed().Config, targetMgrOpts.Completed().Options())
+			if err != nil {
+				controllercmd.LogErrAndExit(err, "Could not create target cluster manager")
+			}
 
-			logger.Info("Updating manager scheme")
+			logger.Info("Updating manager schemes")
 			scheme := mgr.GetScheme()
 			if err := controller.AddToScheme(scheme); err != nil {
 				controllercmd.LogErrAndExit(err, "Could not update manager scheme")
 			}
 			if err := azureinstall.AddToScheme(scheme); err != nil {
 				controllercmd.LogErrAndExit(err, "Could not update manager scheme")
+			}
+			targetScheme := targetMgr.GetScheme()
+			if err := controller.AddToScheme(targetScheme); err != nil {
+				controllercmd.LogErrAndExit(err, "Could not update target cluster manager scheme")
 			}
 
 			publicIPAddressCtrlOpts.Completed().Apply(&azurepublicipaddress.DefaultAddOptions.Controller)
@@ -125,16 +146,35 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			nodeCtrlOpts.Completed().Apply(&azurenode.DefaultAddOptions.Controller)
 			reconcilerOpts.Completed().Apply(&azurepublicipaddress.DefaultAddOptions.InfraConfigPath)
 			reconcilerOpts.Completed().Apply(&azurevirtualmachine.DefaultAddOptions.InfraConfigPath)
+			azureservice.DefaultAddOptions.Client = mgr.GetClient()
+			azureservice.DefaultAddOptions.Namespace = mgrOpts.Completed().Namespace
+			azurenode.DefaultAddOptions.Client = mgr.GetClient()
+			azurenode.DefaultAddOptions.Namespace = mgrOpts.Completed().Namespace
 
-			logger.Info("Adding controllers to manager")
+			logger.Info("Adding controllers to managers")
 			if err := controllerSwitches.Completed().AddToManager(mgr); err != nil {
 				controllercmd.LogErrAndExit(err, "Could not add controllers to manager")
 			}
-
-			logger.Info("Starting manager")
-			if err := mgr.Start(ctx.Done()); err != nil {
-				controllercmd.LogErrAndExit(err, "Error running manager")
+			if err := targetControllerSwitches.Completed().AddToManager(targetMgr); err != nil {
+				controllercmd.LogErrAndExit(err, "Could not add controllers to target cluster manager")
 			}
+
+			logger.Info("Starting managers")
+			var wg sync.WaitGroup
+			wg.Add(2)
+			go func() {
+				defer wg.Done()
+				if err := mgr.Start(ctx.Done()); err != nil {
+					controllercmd.LogErrAndExit(err, "Error starting manager")
+				}
+			}()
+			go func() {
+				defer wg.Done()
+				if err := targetMgr.Start(ctx.Done()); err != nil {
+					controllercmd.LogErrAndExit(err, "Error starting target cluster manager")
+				}
+			}()
+			wg.Wait()
 		},
 	}
 

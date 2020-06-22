@@ -34,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 )
 
 var _ = Describe("Actuator", func() {
@@ -42,6 +41,7 @@ var _ = Describe("Actuator", func() {
 		nodeName   = "test-node"
 		hostname   = "test-hostname"
 		providerID = "test-provider-id"
+		namespace  = "default"
 	)
 
 	var (
@@ -66,8 +66,7 @@ var _ = Describe("Actuator", func() {
 		c = mockclient.NewMockClient(ctrl)
 
 		logger = log.Log.WithName("test")
-		actuator = azurenode.NewActuator(logger)
-		Expect(actuator.(inject.Client).InjectClient(c)).To(Succeed())
+		actuator = azurenode.NewActuator(c, namespace, logger)
 
 		node = &corev1.Node{
 			ObjectMeta: metav1.ObjectMeta{
@@ -93,13 +92,15 @@ var _ = Describe("Actuator", func() {
 		}
 		emptyVM = &azurev1alpha1.VirtualMachine{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: nodeName,
+				Name:      nodeName,
+				Namespace: namespace,
 			},
 		}
 		vm = &azurev1alpha1.VirtualMachine{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   nodeName,
-				Labels: vmLabels,
+				Name:      nodeName,
+				Namespace: namespace,
+				Labels:    vmLabels,
 			},
 			Spec: azurev1alpha1.VirtualMachineSpec{
 				Hostname:    hostname,
@@ -116,7 +117,7 @@ var _ = Describe("Actuator", func() {
 
 	Describe("#CreateOrUpdate", func() {
 		It("should create the VirtualMachine object for a node if it doesn't exist", func() {
-			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, emptyVM).
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: vm.Namespace, Name: vm.Name}, emptyVM).
 				Return(apierrors.NewNotFound(schema.GroupResource{}, vm.Name))
 			c.EXPECT().Create(ctx, vm).Return(nil)
 
@@ -127,7 +128,7 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should fail when creating the VirtualMachine object for a node and an error occurs", func() {
-			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, emptyVM).
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: vm.Namespace, Name: vm.Name}, emptyVM).
 				Return(apierrors.NewNotFound(schema.GroupResource{}, vm.Name))
 			c.EXPECT().Create(ctx, vm).Return(apierrors.NewInternalError(errors.New("test")))
 
@@ -136,7 +137,7 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should update the VirtualMachine object for a node if it already exists and is not properly initialized", func() {
-			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, emptyVM).
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: vm.Namespace, Name: vm.Name}, emptyVM).
 				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.VirtualMachine) error {
 					obj.Spec.Hostname = "unknown"
 					return nil

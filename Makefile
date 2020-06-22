@@ -33,7 +33,9 @@ start-azure:
 		./cmd/$(NAME)-azure \
 		--config-file=./example/00-config.yaml \
 		--leader-election=$(LEADER_ELECTION) \
+		--namespace=kube-system \
 		--metrics-bind-address=":6000" \
+		--target-metrics-bind-address=":6001" \
 		--infrastructure-config=dev/credentials.json
 
 .PHONY: start-applier-azure

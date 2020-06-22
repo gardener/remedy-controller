@@ -62,7 +62,7 @@ func (c *ConfigOptions) Completed() *Config {
 
 // AddFlags implements Flagger.AddFlags.
 func (c *ConfigOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&c.ConfigFilePath, "config-file", "", "path to the controller manager configuration file")
+	fs.StringVar(&c.ConfigFilePath, "config-file", "", "The path to the controller manager configuration file.")
 }
 
 // Apply sets the values of this Config in the given config.ControllerConfiguration.

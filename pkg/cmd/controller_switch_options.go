@@ -23,11 +23,17 @@ import (
 	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
 )
 
-// ControllerSwitchOptions are the controllercmd.SwitchOptions for the provider controllers.
+// ControllerSwitchOptions are the controllercmd.SwitchOptions for the manager controllers.
 func ControllerSwitchOptions() *controllercmd.SwitchOptions {
 	return controllercmd.NewSwitchOptions(
 		controllercmd.Switch(azurepublicipaddress.ControllerName, azurepublicipaddress.AddToManager),
 		controllercmd.Switch(azurevirtualmachine.ControllerName, azurevirtualmachine.AddToManager),
+	)
+}
+
+// TargetControllerSwitchOptions are the controllercmd.SwitchOptions for the target cluster manager controllers.
+func TargetControllerSwitchOptions() *controllercmd.SwitchOptions {
+	return controllercmd.NewSwitchOptions(
 		controllercmd.Switch(azureservice.ControllerName, azureservice.AddToManager),
 		controllercmd.Switch(azurenode.ControllerName, azurenode.AddToManager),
 	)

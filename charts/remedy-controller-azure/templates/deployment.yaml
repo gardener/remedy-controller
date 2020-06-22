@@ -34,8 +34,11 @@ spec:
         - --virtualmachine-max-concurrent-reconciles={{ .Values.controllers.virtualmachine.concurrentSyncs }}
         - --service-max-concurrent-reconciles={{ .Values.controllers.service.concurrentSyncs }}
         - --node-max-concurrent-reconciles={{ .Values.controllers.node.concurrentSyncs }}
+        - --namespace={{ .Release.Namespace }}
         - --metrics-bind-address=:{{.Values.manager.metricsPort}}
+        - --target-metrics-bind-address=:{{.Values.targetManager.metricsPort}}
         - --disable-controllers={{ .Values.disableControllers | join "," }}
+        - --target-disable-controllers={{ .Values.targetDisableControllers | join "," }}
         env:
         - name: LEADER_ELECTION_NAMESPACE
           valueFrom:
@@ -53,7 +56,7 @@ spec:
         - name: config
           mountPath: /etc/{{ include "name" . }}/config
         - name: cloud-provider-config
-          mountPath: /etc/kubernetes/cloudprovider          
+          mountPath: /etc/kubernetes/cloudprovider
       serviceAccountName: {{ include "name" . }}
       affinity:
         podAntiAffinity:

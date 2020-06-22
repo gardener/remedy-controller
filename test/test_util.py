@@ -439,7 +439,7 @@ class KubernetesHelper:
     def create_service(
         self,
         service_name: str,
-        namespace: str ='default',
+        namespace: str,
         port: int = 80,
         protocol: str = 'TCP',
         service_type: str = 'LoadBalancer',
@@ -518,7 +518,7 @@ class KubernetesHelper:
     def create_publicip_custom_objects(
         self,
         ips: list,
-        namespace: str = 'default',
+        namespace: str = 'kube-system',
     ):
         for ip in ips:
             self._create_pubip_resource(
@@ -530,7 +530,7 @@ class KubernetesHelper:
     def delete_publicip_custom_objects(
         self,
         ips: list,
-        namespace: str = 'default',
+        namespace: str = 'kube-system',
     ):
         for ip in ips:
             self.custom_objects_api.delete_namespaced_custom_object(
@@ -543,7 +543,7 @@ class KubernetesHelper:
 
     def cleanup_publicip_custom_objects(
         self,
-        namespace: str = 'default',
+        namespace: str = 'kube-system',
     ):
         response = self.custom_objects_api.list_namespaced_custom_object(
                     group=PUBIP_RESOURCE_API_GROUP,

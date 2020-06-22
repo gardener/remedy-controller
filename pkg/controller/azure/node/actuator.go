@@ -41,21 +41,19 @@ const (
 )
 
 type actuator struct {
-	client client.Client
-	logger logr.Logger
+	client    client.Client
+	namespace string
+	logger    logr.Logger
 }
 
 // NewActuator creates a new Actuator.
-func NewActuator(logger logr.Logger) controller.Actuator {
-	logger.Info("Creating actuator")
+func NewActuator(client client.Client, namespace string, logger logr.Logger) controller.Actuator {
+	logger.Info("Creating actuator", "namespace", namespace)
 	return &actuator{
-		logger: logger,
+		client:    client,
+		namespace: namespace,
+		logger:    logger,
 	}
-}
-
-func (a *actuator) InjectClient(client client.Client) error {
-	a.client = client
-	return nil
 }
 
 // CreateOrUpdate reconciles object creation or update.
@@ -81,10 +79,11 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 	// Create or update the VirtualMachine object for the node
 	vm := &azurev1alpha1.VirtualMachine{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: node.Name,
+			Name:      node.Name,
+			Namespace: a.namespace,
 		},
 	}
-	a.logger.Info("Creating or updating virtualmachine", "name", vm.Name)
+	a.logger.Info("Creating or updating virtualmachine", "name", vm.Name, "namespace", vm.Namespace)
 	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		_, err := controllerutil.CreateOrUpdate(ctx, a.client, vm, func() error {
 			vm.Labels = vmLabels
@@ -114,10 +113,11 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 	// Delete the VirtualMachine object for the node
 	vm := &azurev1alpha1.VirtualMachine{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: node.Name,
+			Name:      node.Name,
+			Namespace: a.namespace,
 		},
 	}
-	a.logger.Info("Deleting virtualmachine", "name", vm.Name)
+	a.logger.Info("Deleting virtualmachine", "name", vm.Name, "namespace", vm.Namespace)
 	if err := client.IgnoreNotFound(a.client.Delete(ctx, vm)); err != nil {
 		return errors.Wrap(err, "could not delete virtualmachine")
 	}

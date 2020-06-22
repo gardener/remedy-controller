@@ -34,14 +34,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 )
 
 var _ = Describe("Actuator", func() {
 	const (
-		serviceName = "test-service"
-		namespace   = "test"
-		ip          = "1.2.3.4"
+		serviceName      = "test-service"
+		serviceNamespace = "test"
+		namespace        = "default"
+		ip               = "1.2.3.4"
 	)
 
 	var (
@@ -67,13 +67,12 @@ var _ = Describe("Actuator", func() {
 		c = mockclient.NewMockClient(ctrl)
 
 		logger = log.Log.WithName("test")
-		actuator = azureservice.NewActuator(logger)
-		Expect(actuator.(inject.Client).InjectClient(c)).To(Succeed())
+		actuator = azureservice.NewActuator(c, namespace, logger)
 
 		svc = &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      serviceName,
-				Namespace: namespace,
+				Namespace: serviceNamespace,
 			},
 			Spec: corev1.ServiceSpec{
 				Type: corev1.ServiceTypeLoadBalancer,
@@ -89,24 +88,24 @@ var _ = Describe("Actuator", func() {
 		clusterIPSvc = &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      serviceName,
-				Namespace: namespace,
+				Namespace: serviceNamespace,
 			},
 			Spec: corev1.ServiceSpec{
 				Type: corev1.ServiceTypeClusterIP,
 			},
 		}
 		pubipLabels = map[string]string{
-			azureservice.Label: serviceName,
+			azureservice.Label: serviceNamespace + "." + serviceName,
 		}
 		emptyPubip = &azurev1alpha1.PublicIPAddress{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      serviceName + "-" + ip,
+				Name:      serviceNamespace + "-" + serviceName + "-" + ip,
 				Namespace: namespace,
 			},
 		}
 		pubip = &azurev1alpha1.PublicIPAddress{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      serviceName + "-" + ip,
+				Name:      serviceNamespace + "-" + serviceName + "-" + ip,
 				Namespace: namespace,
 				Labels:    pubipLabels,
 			},
@@ -125,7 +124,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, emptyPubip).
 				Return(apierrors.NewNotFound(schema.GroupResource{}, pubip.Name))
 			c.EXPECT().Create(ctx, pubip).Return(nil)
-			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(svc.Namespace), client.MatchingLabels(pubipLabels)).
+			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(namespace), client.MatchingLabels(pubipLabels)).
 				DoAndReturn(func(_ context.Context, list *azurev1alpha1.PublicIPAddressList, _ ...client.ListOption) error {
 					list.Items = append(list.Items, *pubip)
 					return nil
@@ -150,7 +149,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, emptyPubip).
 				Return(apierrors.NewNotFound(schema.GroupResource{}, pubip.Name))
 			c.EXPECT().Create(ctx, pubip).Return(nil)
-			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(svc.Namespace), client.MatchingLabels(pubipLabels)).
+			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(namespace), client.MatchingLabels(pubipLabels)).
 				Return(apierrors.NewInternalError(errors.New("test")))
 
 			_, _, err := actuator.CreateOrUpdate(ctx, svc)
@@ -164,7 +163,7 @@ var _ = Describe("Actuator", func() {
 					return nil
 				})
 			c.EXPECT().Update(ctx, pubip).Return(nil)
-			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(svc.Namespace), client.MatchingLabels(pubipLabels)).
+			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(namespace), client.MatchingLabels(pubipLabels)).
 				DoAndReturn(func(_ context.Context, list *azurev1alpha1.PublicIPAddressList, _ ...client.ListOption) error {
 					list.Items = append(list.Items, *pubip)
 					return nil
@@ -182,7 +181,7 @@ var _ = Describe("Actuator", func() {
 					*obj = *pubip
 					return nil
 				})
-			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(svc.Namespace), client.MatchingLabels(pubipLabels)).
+			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(namespace), client.MatchingLabels(pubipLabels)).
 				DoAndReturn(func(_ context.Context, list *azurev1alpha1.PublicIPAddressList, _ ...client.ListOption) error {
 					list.Items = append(list.Items, *pubip)
 					return nil
@@ -207,7 +206,7 @@ var _ = Describe("Actuator", func() {
 					return nil
 				})
 			c.EXPECT().Update(ctx, pubip).Return(nil)
-			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(svc.Namespace), client.MatchingLabels(pubipLabels)).
+			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(namespace), client.MatchingLabels(pubipLabels)).
 				DoAndReturn(func(_ context.Context, list *azurev1alpha1.PublicIPAddressList, _ ...client.ListOption) error {
 					list.Items = append(list.Items, *pubip)
 					return nil
@@ -232,7 +231,7 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should delete the PublicIPAddress object for a non-existing service IP", func() {
-			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(svc.Namespace), client.MatchingLabels(pubipLabels)).
+			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(namespace), client.MatchingLabels(pubipLabels)).
 				DoAndReturn(func(_ context.Context, list *azurev1alpha1.PublicIPAddressList, _ ...client.ListOption) error {
 					list.Items = append(list.Items, *pubip)
 					return nil
@@ -246,7 +245,7 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should succeed when deleting the PublicIPAddress object for a non-existing service IP and a NotFound error occurs", func() {
-			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(svc.Namespace), client.MatchingLabels(pubipLabels)).
+			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(namespace), client.MatchingLabels(pubipLabels)).
 				DoAndReturn(func(_ context.Context, list *azurev1alpha1.PublicIPAddressList, _ ...client.ListOption) error {
 					list.Items = append(list.Items, *pubip)
 					return nil
@@ -260,7 +259,7 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should fail when deleting the PublicIPAddress object for a non-existing service IP an error different from NotFound occurs", func() {
-			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(svc.Namespace), client.MatchingLabels(pubipLabels)).
+			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(namespace), client.MatchingLabels(pubipLabels)).
 				DoAndReturn(func(_ context.Context, list *azurev1alpha1.PublicIPAddressList, _ ...client.ListOption) error {
 					list.Items = append(list.Items, *pubip)
 					return nil

@@ -10,7 +10,7 @@ spec:
     served: true
     storage: true
   version: v1alpha1
-  scope: Cluster
+  scope: Namespaced
   names:
     plural: virtualmachines
     singular: virtualmachine

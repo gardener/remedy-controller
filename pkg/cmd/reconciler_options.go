@@ -18,6 +18,11 @@ import (
 	"github.com/spf13/pflag"
 )
 
+const (
+	// InfraConfigPathFlag is the name of the command line flag to specify the path to the infrastructure configuration file.
+	InfraConfigPathFlag = "infrastructure-config"
+)
+
 // ReconcilerOptions are command line options that can be set for controller.Options.
 type ReconcilerOptions struct {
 	// InfraConfigPath is the path to the infrastructure configuration file.
@@ -28,7 +33,7 @@ type ReconcilerOptions struct {
 
 // AddFlags implements Flagger.AddFlags.
 func (c *ReconcilerOptions) AddFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&c.InfraConfigPath, "infrastructure-config", "", "path to the infrastructure configuration file")
+	fs.StringVar(&c.InfraConfigPath, InfraConfigPathFlag, c.InfraConfigPath, "The path to the infrastructure configuration file.")
 }
 
 // Complete implements Completer.Complete.
@@ -48,7 +53,7 @@ type ReconcilerConfig struct {
 	InfraConfigPath string
 }
 
-// Apply sets the values of this ReconcilerConfig in the given controller.Options.
+// Apply sets the values of this ReconcilerConfig in the given parameters.
 func (c *ReconcilerConfig) Apply(path *string) {
 	*path = c.InfraConfigPath
 }

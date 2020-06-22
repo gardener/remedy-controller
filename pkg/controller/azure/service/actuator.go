@@ -37,21 +37,19 @@ const (
 )
 
 type actuator struct {
-	client client.Client
-	logger logr.Logger
+	client    client.Client
+	namespace string
+	logger    logr.Logger
 }
 
 // NewActuator creates a new Actuator.
-func NewActuator(logger logr.Logger) controller.Actuator {
-	logger.Info("Creating actuator")
+func NewActuator(client client.Client, namespace string, logger logr.Logger) controller.Actuator {
+	logger.Info("Creating actuator", "namespace", namespace)
 	return &actuator{
-		logger: logger,
+		client:    client,
+		namespace: namespace,
+		logger:    logger,
 	}
-}
-
-func (a *actuator) InjectClient(client client.Client) error {
-	a.client = client
-	return nil
 }
 
 // CreateOrUpdate reconciles object creation or update.
@@ -65,7 +63,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 
 	// Initialize labels
 	pubipLabels := map[string]string{
-		Label: svc.Name,
+		Label: svc.Namespace + "." + svc.Name,
 	}
 
 	// Get LoadBalancer IPs
@@ -75,8 +73,8 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 	for ip := range ips {
 		pubip := &azurev1alpha1.PublicIPAddress{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      generatePublicIPAddressName(svc.Name, ip),
-				Namespace: svc.Namespace,
+				Name:      generatePublicIPAddressName(svc.Namespace, svc.Name, ip),
+				Namespace: a.namespace,
 			},
 		}
 		a.logger.Info("Creating or updating publicipaddress", "name", pubip.Name, "namespace", pubip.Namespace)
@@ -94,7 +92,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 
 	// Delete PublicIPAddress objects for non-existing LoadBalancer IPs
 	pubipList := &azurev1alpha1.PublicIPAddressList{}
-	if err := a.client.List(ctx, pubipList, client.InNamespace(svc.Namespace), client.MatchingLabels(pubipLabels)); err != nil {
+	if err := a.client.List(ctx, pubipList, client.InNamespace(a.namespace), client.MatchingLabels(pubipLabels)); err != nil {
 		return 0, false, errors.Wrap(err, "could not list publicipaddresses")
 	}
 	for _, pubip := range pubipList.Items {
@@ -125,8 +123,8 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 	for ip := range ips {
 		pubip := &azurev1alpha1.PublicIPAddress{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      generatePublicIPAddressName(svc.Name, ip),
-				Namespace: svc.Namespace,
+				Name:      generatePublicIPAddressName(svc.Namespace, svc.Name, ip),
+				Namespace: a.namespace,
 			},
 		}
 		a.logger.Info("Deleting publicipaddress", "name", pubip.Name, "namespace", pubip.Namespace)
@@ -150,6 +148,6 @@ func getServiceLoadBalancerIPs(svc *corev1.Service) map[string]bool {
 	return ips
 }
 
-func generatePublicIPAddressName(serviceName, ip string) string {
-	return serviceName + "-" + ip
+func generatePublicIPAddressName(serviceNamespace, serviceName, ip string) string {
+	return serviceNamespace + "-" + serviceName + "-" + ip
 }

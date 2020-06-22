@@ -21,6 +21,8 @@ import (
 )
 
 const (
+	// NamespaceFlag is the name of the command line flag to specify the namespace to watch objects in.
+	NamespaceFlag = "namespace"
 	// MetricsBindAddressFlag is the name of the command line flag to specify the metrics bind address.
 	MetricsBindAddressFlag = "metrics-bind-address"
 )
@@ -28,6 +30,9 @@ const (
 // ManagerOptions are command line options that can be set for manager.Options.
 type ManagerOptions struct {
 	controllercmd.ManagerOptions
+	// Namespace is the namespace to watch objects in.
+	// If not specified, defaults to all namespaces.
+	Namespace string
 	// MetricsBindAddress is the TCP address that the controller should bind to for serving prometheus metrics.
 	// It can be set to "0" to disable the metrics serving.
 	MetricsBindAddress string
@@ -38,6 +43,7 @@ type ManagerOptions struct {
 // AddFlags implements Flagger.AddFlags.
 func (m *ManagerOptions) AddFlags(fs *pflag.FlagSet) {
 	m.ManagerOptions.AddFlags(fs)
+	fs.StringVar(&m.Namespace, NamespaceFlag, m.Namespace, "The namespace to watch objects in.")
 	fs.StringVar(&m.MetricsBindAddress, MetricsBindAddressFlag, m.MetricsBindAddress, "The TCP address that the controller should bind to for serving prometheus metrics.")
 }
 
@@ -48,6 +54,7 @@ func (m *ManagerOptions) Complete() error {
 	}
 	m.config = &ManagerConfig{
 		ManagerConfig:      *m.ManagerOptions.Completed(),
+		Namespace:          m.Namespace,
 		MetricsBindAddress: m.MetricsBindAddress,
 	}
 	return nil
@@ -61,6 +68,9 @@ func (m *ManagerOptions) Completed() *ManagerConfig {
 // ManagerConfig is a completed manager configuration.
 type ManagerConfig struct {
 	controllercmd.ManagerConfig
+	// Namespace is the namespace to watch objects in.
+	// If not specified, defaults to all namespaces.
+	Namespace string
 	// MetricsBindAddress is the TCP address that the controller should bind to for serving prometheus metrics.
 	// It can be set to "0" to disable the metrics serving.
 	MetricsBindAddress string
@@ -69,6 +79,7 @@ type ManagerConfig struct {
 // Apply sets the values of this ManagerConfig in the given manager.Options.
 func (c *ManagerConfig) Apply(opts *manager.Options) {
 	c.ManagerConfig.Apply(opts)
+	opts.Namespace = c.Namespace
 	opts.MetricsBindAddress = c.MetricsBindAddress
 }
 

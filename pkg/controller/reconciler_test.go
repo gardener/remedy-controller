@@ -23,10 +23,6 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
-	mockclient "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/controller-runtime/client"
-	mockmanager "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/controller-runtime/manager"
-	mockcontroller "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/remedy-controller/controller"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,6 +32,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
+
+	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
+	mockclient "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/controller-runtime/client"
+	mockmanager "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/controller-runtime/manager"
+	mockcontroller "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/remedy-controller/controller"
 )
 
 var _ = Describe("Controller", func() {

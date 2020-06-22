@@ -12,6 +12,8 @@ vpa:
 
 manager:
   metricsPort: 6000
+targetManager:
+  metricsPort: 6001
 
 controllers:
   publicipaddress:
@@ -24,6 +26,7 @@ controllers:
     concurrentSyncs: 5
 
 disableControllers: []
+targetDisableControllers: []
 
 config:
   clientConnection:

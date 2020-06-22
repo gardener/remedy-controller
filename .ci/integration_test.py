@@ -93,7 +93,7 @@ def create_helm_values(chart_dir, version, container_registry_config, path_to_cr
     with open(os.path.join(chart_dir, 'values.yaml')) as values_file:
         values = yaml.safe_load(values_file)
 
-    values['tag'] = version
+    values['image']['tag'] = version
     values['cloudProviderConfig'] = json.dumps(credentials)
 
     cr_credentials = container_registry_config.credentials()

@@ -28,7 +28,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--kubeconfig-name', default='remedy-test-cluster')
     parser.add_argument('--credentials-config-name', default='integration_test')
-    parser.add_argument('--container-registry-config-name', default='gcr-readwrite-sap-se-gcp-scp-k8s')
+    parser.add_argument('--container-registry-config-name', default='gcr-readonly')
     parsed = parser.parse_args()
 
     cfg_factory = ci.util.ctx().cfg_factory()

@@ -14,7 +14,7 @@
 
 NAME                        := remedy-controller
 APPLIER_NAME                := remedy-applier
-REGISTRY                    := eu.gcr.io/sap-se-gcp-scp-k8s/remedy-controller
+REGISTRY                    := eu.gcr.io/gardener-project/gardener/remedy-controller
 IMAGE_PREFIX                := $(REGISTRY)
 REPO_ROOT                   := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 VERSION                     := $(shell cat "$(REPO_ROOT)/VERSION")
@@ -46,7 +46,7 @@ start-applier-azure:
 		./cmd/$(APPLIER_NAME)-azure \
 		--kubeconfig=$(KUBECONFIG) \
 		--infrastructure-config=dev/credentials.json
-		
+
 .PHONY: start-failedvm-simulator-azure
 VM_NAME = ""
 start-failedvm-simulator-azure:

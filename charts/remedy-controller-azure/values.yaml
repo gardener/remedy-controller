@@ -1,5 +1,5 @@
 image:
-  repository: eu.gcr.io/sap-se-gcp-scp-k8s/remedy-controller/remedy-controller-azure
+  repository: eu.gcr.io/gardener-project/gardener/remedy-controller/remedy-controller-azure
   tag: latest
   pullPolicy: IfNotPresent
 

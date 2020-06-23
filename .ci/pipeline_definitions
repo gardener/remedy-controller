@@ -9,8 +9,8 @@ remedy-controller:
         publish:
           dockerimages:
             remedy-controller-image:
-              registry: 'gcr-readwrite-sap-se-gcp-scp-k8s'
-              image: 'eu.gcr.io/sap-se-gcp-scp-k8s/remedy-controller/remedy-controller-azure'
+              registry: 'gcr-readonly'
+              image: 'eu.gcr.io/gardener-project/gardener/remedy-controller/remedy-controller-azure'
               dockerfile: 'Dockerfile'
               target: remedy-controller-azure
               tag_as_latest: True
@@ -31,8 +31,8 @@ remedy-controller:
         publish:
           dockerimages:
             remedy-controller-image:
-              registry: 'gcr-readwrite-sap-se-gcp-scp-k8s'
-              image: 'eu.gcr.io/sap-se-gcp-scp-k8s/remedy-controller/remedy-controller-azure'
+              registry: 'gcr-readonly'
+              image: 'eu.gcr.io/gardener-project/gardener/remedy-controller/remedy-controller-azure'
               dockerfile: 'Dockerfile'
               target: remedy-controller-azure
     pull-request:
@@ -65,7 +65,7 @@ remedy-controller:
         publish:
           dockerimages:
             remedy-controller-image:
-              registry: 'gcr-readwrite-sap-se-gcp-scp-k8s'
-              image: 'eu.gcr.io/sap-se-gcp-scp-k8s/remedy-controller/remedy-controller-azure'
+              registry: 'gcr-readonly'
+              image: 'eu.gcr.io/gardener-project/gardener/remedy-controller/remedy-controller-azure'
               dockerfile: 'Dockerfile'
               target: remedy-controller-azure

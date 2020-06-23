@@ -5,6 +5,7 @@ remedy-controller:
         version:
           preprocess: 'finalize'
           inject_effective_version: True
+        component_descriptor: ~
         publish:
           dockerimages:
             remedy-controller-image:

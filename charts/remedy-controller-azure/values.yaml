@@ -1,14 +1,15 @@
+replicas: 1
 image:
   repository: eu.gcr.io/gardener-project/gardener/remedy-controller/remedy-controller-azure
   tag: latest
   pullPolicy: IfNotPresent
-
-replicaCount: 1
-resources: {}
-vpa:
-  enabled: false
-  updatePolicy:
-    updateMode: "Auto"
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
 
 manager:
   metricsPort: 6000
@@ -44,10 +45,5 @@ config:
       requeueInterval: 1m
       maxGetAttempts: 5
       maxReapplyAttempts: 5
-
-imagePullSecret:
-  registry: ''
-  username: ''
-  password: ''
 
 cloudProviderConfig: ~

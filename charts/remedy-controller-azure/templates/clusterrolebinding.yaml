@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: remedy-controller-azure
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: remedy-controller-azure
+subjects:
+- kind: ServiceAccount
+  name: remedy-controller-azure
+  namespace: {{ .Release.Namespace }}

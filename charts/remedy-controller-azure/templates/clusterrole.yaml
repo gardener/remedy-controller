@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: remedy-controller-azure
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - services
+  - nodes
+  verbs:
+  - "*"

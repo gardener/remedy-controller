@@ -15,11 +15,13 @@ MAX_SVC_COUNT = 20
 OIP_MIN_SLEEP = 60
 OIP_MAX_SLEEP = 70
 SHUTDOWN_GRACE_PERIOD = 900
+TEST_NAMESPACE = "kube-system"
 
 
 def run_test(
     path_to_credentials_file: str,
     path_to_kubeconfig: str,
+    test_namespace: str = TEST_NAMESPACE,
     run_duration: int = RUN_DURATION,
     svc_min_sleep: int = SVC_MIN_SLEEP,
     svc_max_sleep: int = SVC_MAX_SLEEP,
@@ -66,16 +68,22 @@ def run_test(
 
             k8s_helper.cleanup_test_services(service_names=service_names)
 
-    def orphaned_ip_creation_test_func(thread_name, run_duration, min_sleep, max_sleep):
+    def orphaned_ip_creation_test_func(
+        thread_name,
+        run_duration,
+        min_sleep,
+        max_sleep,
+        test_namespace,
+    ):
         current_time = time.monotonic()
 
         while time.monotonic() - current_time < run_duration:
             ips = ip_helper.create_public_ips(count=1)
             rule_created = lb_helper.add_rules_for_public_ips(ips)
             if rule_created:
-                k8s_helper.create_publicip_custom_objects(ips)
+                k8s_helper.create_publicip_custom_objects(ips, namespace=test_namespace)
                 time.sleep(random.randint(min_sleep, max_sleep))
-                k8s_helper.delete_publicip_custom_objects(ips)
+                k8s_helper.delete_publicip_custom_objects(ips, namespace=test_namespace)
             else:
                 # Creation of rules failed (probably due to the load balancer being busy). Print
                 # warning and clean up the IPs created in this iteration.
@@ -104,6 +112,7 @@ def run_test(
             'run_duration': run_duration,
             'min_sleep': orphaned_ip_min_sleep,
             'max_sleep': orphaned_ip_max_sleep,
+            'test_namespace': test_namespace,
         },
     )
 
@@ -206,6 +215,13 @@ def _parse_args():
         help='Path to credentials file.',
         required=True
     )
+    parser.add_argument(
+        '--test-namespace',
+        dest='test_namespace',
+        type=str,
+        help='Namespace in the cluster in which the test will create publicipaddress objects.',
+        default=TEST_NAMESPACE,
+    )
     return parser.parse_args()
 
 
@@ -224,6 +240,7 @@ if __name__ == '__main__':
     run_test(
         path_to_kubeconfig=path_to_kubeconfig,
         path_to_credentials_file=args.credentials_path,
+        test_namespace=args.test_namespace,
         svc_min_sleep=args.svc_min_sleep,
         svc_max_sleep=args.svc_max_sleep,
         min_svc_count=args.min_svc_count,

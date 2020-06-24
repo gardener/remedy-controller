@@ -69,6 +69,7 @@ def main():
         test.run_test(
             path_to_credentials_file=credentials_path,
             path_to_kubeconfig=kubeconfig_path,
+            test_namespace=HELM_CHART_DEPLOYMENT_NAMESPACE,
         )
     finally:
         uninstall_helm_deployment(

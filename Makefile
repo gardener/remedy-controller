@@ -36,7 +36,7 @@ start-azure:
 		--namespace=kube-system \
 		--metrics-bind-address=":6000" \
 		--target-metrics-bind-address=":6001" \
-		--infrastructure-config=dev/credentials.json
+		--infrastructure-config=dev/credentials.yaml
 
 .PHONY: start-applier-azure
 start-applier-azure:
@@ -45,7 +45,7 @@ start-applier-azure:
 		-ldflags $(LD_FLAGS) \
 		./cmd/$(APPLIER_NAME)-azure \
 		--kubeconfig=$(KUBECONFIG) \
-		--infrastructure-config=dev/credentials.json
+		--infrastructure-config=dev/credentials.yaml
 
 .PHONY: start-failedvm-simulator-azure
 VM_NAME = ""

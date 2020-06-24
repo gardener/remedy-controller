@@ -75,13 +75,13 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 	// Read Azure credentials from infrastructure config file
 	credentials, err := azure.ReadConfig(options.InfraConfigPath)
 	if err != nil {
-		return errors.New("could not read Azure credentials from infrastructure configuration file")
+		return errors.Wrap(err, "could not read Azure credentials from infrastructure configuration file")
 	}
 
 	// Create Azure clients
 	azureClients, err := azure.NewClients(credentials)
 	if err != nil {
-		return errors.New("could not create Azure clients")
+		return errors.Wrap(err, "could not create Azure clients")
 	}
 
 	return remedycontroller.Add(mgr, remedycontroller.AddArgs{

@@ -16,7 +16,6 @@ package azure
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"os"
 
@@ -26,15 +25,16 @@ import (
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
 )
 
 // Credentials contains credentials and other parameters needed to work with Azure objects.
 type Credentials struct {
-	ClientID       string `json:"aadClientId"`
-	ClientSecret   string `json:"aadClientSecret"`
-	TenantID       string `json:"tenantId"`
-	SubscriptionID string `json:"subscriptionId"`
-	ResourceGroup  string `json:"resourceGroup"`
+	ClientID       string `yaml:"aadClientId"`
+	ClientSecret   string `yaml:"aadClientSecret"`
+	TenantID       string `yaml:"tenantId"`
+	SubscriptionID string `yaml:"subscriptionId"`
+	ResourceGroup  string `yaml:"resourceGroup"`
 }
 
 // Future contains the method WaitForCompletionRef.
@@ -140,7 +140,7 @@ func ReadConfig(path string) (*Credentials, error) {
 	defer input.Close()
 
 	// Decode Azure credentials from JSON
-	decoder := json.NewDecoder(io.Reader(input))
+	decoder := yaml.NewDecoder(io.Reader(input))
 	credentials := &Credentials{}
 	if err := decoder.Decode(credentials); err != nil {
 		return nil, errors.Wrap(err, "could not decode Azure credentials from JSON")

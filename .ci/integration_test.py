@@ -28,7 +28,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--kubeconfig-name', default='remedy-test-cluster')
     parser.add_argument('--credentials-config-name', default='integration_test')
-    parser.add_argument('--container-registry-config-name', default='gcr-readonly')
     parsed = parser.parse_args()
 
     cfg_factory = ci.util.ctx().cfg_factory()
@@ -37,7 +36,6 @@ def main():
         cfg_type_name='remedy_test',
         cfg_name=parsed.credentials_config_name,
     )
-    container_registry_config = cfg_factory.container_registry(parsed.container_registry_config_name)
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as kubeconfig_file:
         yaml.safe_dump(kubernetes_config.kubeconfig(), kubeconfig_file)
@@ -52,7 +50,7 @@ def main():
         version = version_file.read()
 
     chart_dir = os.path.join(repo_dir, 'charts', HELM_CHART_NAME)
-    values = create_helm_values(chart_dir, version, container_registry_config, credentials_path)
+    values = create_helm_values(chart_dir, version, credentials_path)
 
     # TODO: Uncomment as soon as the python client for 1.16 is released & included
     # apply_crd(path_to_kubeconfig=kubeconfig_path)
@@ -86,7 +84,7 @@ def apply_crd(path_to_kubeconfig):
     k8s_client.create_custom_resource_definition(crd)
 
 
-def create_helm_values(chart_dir, version, container_registry_config, path_to_credentials_file):
+def create_helm_values(chart_dir, version, path_to_credentials_file):
 
     with open(os.path.join(path_to_credentials_file)) as credentials_file:
         credentials = yaml.safe_load(credentials_file)
@@ -96,14 +94,6 @@ def create_helm_values(chart_dir, version, container_registry_config, path_to_cr
 
     values['image']['tag'] = version
     values['cloudProviderConfig'] = json.dumps(credentials)
-
-    cr_credentials = container_registry_config.credentials()
-
-    values['imagePullSecret'] = {
-        'registry': cr_credentials.host(),
-        'username': cr_credentials.username(),
-        'password': cr_credentials.passwd(),
-    }
 
     return values
 

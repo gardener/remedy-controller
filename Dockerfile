@@ -1,12 +1,12 @@
 ############# builder
-FROM golang:1.14.2 AS builder
+FROM golang:1.14.4 AS builder
 
 WORKDIR /go/src/github.wdf.sap.corp/kubernetes/remedy-controller
 COPY . .
 RUN make install
 
 ############# base image
-FROM alpine:3.11.6 AS base
+FROM alpine:3.12.0 AS base
 
 ############# remedy-controller-azure
 FROM base AS remedy-controller-azure

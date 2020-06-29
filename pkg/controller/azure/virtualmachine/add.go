@@ -53,7 +53,7 @@ var (
 	// ReappliedVMsCounter is a global counter for reapplied Azure virtual machines.
 	ReappliedVMsCounter = prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Name: "reapplied_azure_virtual_machines",
+			Name: "reapplied_azure_virtual_machines_total",
 			Help: "Number of reapplied Azure virtual machines",
 		},
 	)

@@ -139,5 +139,5 @@ verify-extended: install-requirements check-generate check test-cov test-clean
 
 .PHONY: pubip-remedy-test
 pubip-remedy-test:
-	@. $(REPO_ROOT)/.env/bin/activate && python3 $(REPO_ROOT)/test/pubip_remedy_test.py --credentials-path "$(REPO_ROOT)/dev/credentials.json"
+	@. $(REPO_ROOT)/.env/bin/activate && python3 $(REPO_ROOT)/test/pubip_remedy_test.py --credentials-path "$(REPO_ROOT)/dev/credentials.yaml"
 

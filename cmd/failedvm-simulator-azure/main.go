@@ -26,7 +26,7 @@ func main() {
 	}
 
 	// Read Azure credentials
-	credentials, err := azclient.ReadConfig("dev/credentials.json")
+	credentials, err := azclient.ReadConfig("dev/credentials.yaml")
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)

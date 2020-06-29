@@ -4,16 +4,14 @@
 
 Before running the test you should check whether you have the necessary files prepared. The test currently expects two things:
 
-1. A `credentials.json` that contains the necessary credentials (and as of now: region information) for interacting with the shoots' resources on azure. The file is expected to have the following structure:
-    ```json
-    {
-        "aadClientId": "<client id>",
-        "aadClientSecret": "<client secret>",
-        "tenantId": "<tenant id>",
-        "subscriptionId": "<subscription id>",
-        "resourceGroup": "<resource group name>",
-        "location": "<name of the azure region the azure resources are in>"
-    }
+1. A `credentials.yaml` that contains the necessary credentials (and as of now: region information) for interacting with the shoots' resources on azure. The file is expected to have the following structure:
+    ```yaml
+    aadClientId: "<client id>"
+    aadClientSecret: "<client secret>"
+    tenantId: "<tenant id>"
+    subscriptionId: "<subscription id>"
+    resourceGroup: "<resource group name>"
+    location: "<azure region name>"
     ```
 2. A `kubeconfig` that points to the shoot cluster.
 

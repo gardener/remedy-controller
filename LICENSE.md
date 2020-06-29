@@ -227,6 +227,16 @@ https://git.k8s.io/apiserver.
 Copyright 2017 The Kubernetes Authors.
 Apache 2 license (https://git.k8s.io/apiserver/LICENSE).
 
+Azure SDK for Go.
+Copyright 2014-2017 Microsoft.
+https://github.com/Azure/azure-sdk-for-go
+Apache 2 license (https://github.com/Azure/azure-sdk-for-go/blob/master/LICENSE)
+
+Azure go-autorest.
+Copyright 2014-2017 Microsoft.
+https://github.com/Azure/go-autorest
+Apache 2 license (https://github.com/Azure/go-autorest/blob/master/LICENSE)
+
 Client-Go.
 https://git.k8s.io/client-go.
 Copyright 2017 The Kubernetes Authors.
@@ -241,6 +251,16 @@ Gengo.
 https://git.k8s.io/gengo.
 Copyright 2017 The Kubernetes Authors.
 Apache 2 license (https://git.k8s.io/gengo/LICENSE)
+
+Kubernetes Custom Resource API Reference Docs generator.
+https://github.com/ahmetb/gen-crd-api-reference-docs
+Copyright 2018 Ahmet Alp Balkan
+Apache 2 license (https://github.com/ahmetb/gen-crd-api-reference-docs/blob/master/LICENSE)
+
+Gardener
+https://github.com/gardener/gardener
+Copyright 2017-2019 SAP SE
+Apache 2 license (https://github.com/gardener/gardener/blob/master/LICENSE.md)
 
 Helm.
 https://git.k8s.io/helm.
@@ -267,35 +287,31 @@ https://github.com/sirupsen/logrus.
 Copyright (c) 2014 Simon Eskildsen
 MIT license (https://github.com/sirupsen/logrus/blob/master/LICENSE)
 
+logr
+https://github.com/go-logr/logr
+Copyright 2016 Tim Hockin
+Apache 2 license (https://github.com/go-logr/logr/blob/master/LICENSE)
+
+packr
+https://github.com/gobuffalo/packr
+Copyright 2016 Mark Bates
+MIT license (https://github.com/gobuffalo/packr/blob/master/LICENSE.txt)
+
+pflag
+https://github.com/spf13/pflag
+Copyright (c) 2012 Alex Ogier. All rights reserved.
+Copyright (c) 2012 The Go Authors. All rights reserved.
+BSD 3-Clause "New" or "Revised" license (https://github.com/spf13/pflag/blob/master/LICENSE)
+
 Prometheus Go Client Library.
 https://github.com/prometheus/client_golang.
 Copyright 2015 The Prometheus Authors.
 Apache 2 license (https://github.com/prometheus/client_golang/blob/master/LICENSE)
 
-SemVer
-https://github.com/Masterminds/semver.
-Copyright (C) 2014-2015, Matt Butcher and Matt Farina
-MIT license (https://github.com/Masterminds/semver/blob/master/LICENSE.txt)
-
-Cron.
-https://github.com/robfig/cron.
-Copyright (C) 2012 Rob Figueiredo.
-MIT license (https://github.com/robfig/cron/blob/master/LICENSE)
-
 errors
 https://github.com/pkg/errors
 Copyright (c) 2015, Dave Cheney.
 BSD 2-Clause "Simplified" License (https://github.com/pkg/errors/blob/master/LICENSE)
-
-go-multierror
-https://github.com/hashicorp/go-multierror
-Copyright (c) 2015, Hashicorp.
-MPL-2.0 (https://github.com/hashicorp/go-multierror/blob/master/LICENSE)
-
-go-jmespath
-https://github.com/jmespath/go-jmespath
-Copyright 2015 James Saryerwinnie
-Apache License, Version 2 (https://github.com/jmespath/go-jmespath/blob/master/LICENSE)
 
 ------
 ## MIT License

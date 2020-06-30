@@ -50,7 +50,6 @@ def run_test(
 
     # prepare functions that will run the actual tests
     def svc_creation_test_func(
-        thread_name,
         run_duration,
         min_sleep,
         max_sleep,
@@ -69,7 +68,6 @@ def run_test(
             k8s_helper.cleanup_test_services(service_names=service_names)
 
     def orphaned_ip_creation_test_func(
-        thread_name,
         run_duration,
         min_sleep,
         max_sleep,
@@ -97,7 +95,6 @@ def run_test(
     svc_creation_thread = threading.Thread(
         target=svc_creation_test_func,
         kwargs={
-            'thread_name': 'service creation thread',
             'run_duration': run_duration,
             'min_svc_count': min_svc_count,
             'max_svc_count': max_svc_count,
@@ -108,7 +105,6 @@ def run_test(
     orphaned_ip_creation_thread = threading.Thread(
         target=orphaned_ip_creation_test_func,
         kwargs={
-            'thread_name': 'orphaned resource creation thread',
             'run_duration': run_duration,
             'min_sleep': orphaned_ip_min_sleep,
             'max_sleep': orphaned_ip_max_sleep,

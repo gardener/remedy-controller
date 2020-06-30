@@ -66,3 +66,9 @@ spec:
       - name: cloud-provider-config
         configMap:
           name: cloud-provider-config
+{{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{- range $key, $value := .Values.nodeSelector }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+{{- end }}

@@ -1,4 +1,4 @@
-## Running the integration test locally
+## Running the tests locally
 
 ### Credentials
 
@@ -21,10 +21,15 @@ Ensure that the virtual environment is created using
 ```
 make install-requirements
 ```
-then, run the test:
+then, run the tests using either:
 ```
 make pubip-remedy-test
 ```
+for the pubip-remedy test, or
+```
+make WORKER_GROUP=<worker-group-name> failed-vm-test
+```
+for the failed-vm-test, giving the name of a gardener worker-group to fail a VM in.
 
 ### Manually running the test with Python3
 
@@ -41,12 +46,12 @@ Finally, the dependencies can now be installed using
 pip3 install -r test/requirements.txt
 ```
 
-With everything set up, running the test is as simple as
+With everything set up, running the tests is as simple as
 ```
-python3 test/pubip-remedy_test.py <args>
+python3 test/<test-name>.py <args>
 ```
 
 To show the help message, detailing supported args and their defaults, use
 ```
-python3 test/pubip_remedy_test.py --help
+python3 test/<test-name>.py --help
 ```

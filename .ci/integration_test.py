@@ -6,6 +6,7 @@ import os
 import sys
 import subprocess
 import tempfile
+import threading
 
 import yaml
 
@@ -17,11 +18,14 @@ repo_dir = os.path.abspath(os.path.join(own_dir, os.pardir))
 
 sys.path.insert(0, os.path.join(repo_dir, 'test'))
 
-import pubip_remedy_test as test # noqa
+import pubip_remedy_test as pubip_test # noqa
+import failed_vm_test as vm_test # noqa
 import test_util # noqa
 
 HELM_CHART_NAME = 'remedy-controller-azure'
 HELM_CHART_DEPLOYMENT_NAMESPACE = 'default'
+
+VM_TEST_REQUIRED_ATTEMPTS = 4
 
 
 def main():
@@ -63,12 +67,32 @@ def main():
         values,
     )
 
+    pubip_runner = threading.Thread(
+        target=pubip_test.run_test,
+        kwargs={
+            'path_to_credentials_file': credentials_path,
+            'path_to_kubeconfig': kubeconfig_path,
+            'test_namespace': HELM_CHART_DEPLOYMENT_NAMESPACE,
+        },
+    )
+    failed_vm_runner = threading.Thread(
+        target=vm_test.run_test,
+        kwargs={
+            'path_to_credentials_file': credentials_path,
+            'path_to_kubeconfig': kubeconfig_path,
+            'required_attempts': VM_TEST_REQUIRED_ATTEMPTS,
+            'check_interval': 10,
+            'run_duration': 360,
+        },
+    )
+
     try:
-        test.run_test(
-            path_to_credentials_file=credentials_path,
-            path_to_kubeconfig=kubeconfig_path,
-            test_namespace=HELM_CHART_DEPLOYMENT_NAMESPACE,
-        )
+        pubip_runner.start()
+        failed_vm_runner.start()
+
+        pubip_runner.join()
+        failed_vm_runner.join()
+
     finally:
         uninstall_helm_deployment(
             kubernetes_config,
@@ -94,6 +118,14 @@ def create_helm_values(chart_dir, version, path_to_credentials_file):
 
     values['image']['tag'] = version
     values['cloudProviderConfig'] = json.dumps(credentials)
+
+    # lower default values in order to speed up failed-vm-test
+    values['config']['azure']['failedVMRemedy']['requeueInterval'] = '30s'
+    values['config']['azure']['failedVMRemedy']['maxReapplyAttempts'] = VM_TEST_REQUIRED_ATTEMPTS
+
+    # set the node selector so that the remedy-controller _wont_ run on the nodes that
+    # will be failed
+    values['nodeSelector'] = {'worker.garden.sapcloud.io/group': 'test-nodes'}
 
     return values
 

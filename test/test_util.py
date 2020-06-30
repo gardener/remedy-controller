@@ -1,6 +1,5 @@
-import kubernetes
+import enum
 import os
-import pprint
 import random
 import string
 
@@ -24,8 +23,15 @@ FIP_NAME_PREFIX = 'fip-'
 IP_NAME_PREFIX = 'ip-'
 PROBE_NAME_PREFIX = 'prb-'
 
-PUBIP_RESOURCE_API_GROUP = 'azure.remedy.gardener.cloud'
+DEFAULT_NAMESPACE = 'kube-system'
+
+REMEDY_API_GROUP = 'azure.remedy.gardener.cloud'
+
 PUBIP_RESOURCE_VERSION = 'v1alpha1'
+PUBIP_PLURAL = 'publicipaddresses'
+
+VM_RESOURCE_VERSION = 'v1alpha1'
+VM_PLURAL = 'virtualmachines'
 
 
 def random_str(prefix=None, length=10):
@@ -61,6 +67,17 @@ class IP:
 
     def ip_address(self):
         return self._ip_address
+
+
+class FailedOperationType(enum.Enum):
+    REAPPLY_VM = 'ReapplyVirtualMachine'
+
+
+class FailedOperation:
+    def __init__(self, raw_dict):
+        self.error_msg = raw_dict.get('errorMessage')
+        self.type = FailedOperationType(raw_dict.get('type'))
+        self.attempts = raw_dict.get('attempts')
 
 
 class PublicIpHelper:
@@ -503,12 +520,12 @@ class KubernetesHelper:
         ip_address: str,
     ):
         self.custom_objects_api.create_namespaced_custom_object(
-            group=PUBIP_RESOURCE_API_GROUP,
+            group=REMEDY_API_GROUP,
             version=PUBIP_RESOURCE_VERSION,
             namespace=namespace,
-            plural='publicipaddresses',
+            plural=PUBIP_PLURAL,
             body={
-                'apiVersion': f'{PUBIP_RESOURCE_API_GROUP}/{PUBIP_RESOURCE_VERSION}',
+                'apiVersion': f'{REMEDY_API_GROUP}/{PUBIP_RESOURCE_VERSION}',
                 'kind': 'PublicIPAddress',
                 'metadata': {'name': resource_name},
                 'spec': {'ipAddress': ip_address},
@@ -518,7 +535,7 @@ class KubernetesHelper:
     def create_publicip_custom_objects(
         self,
         ips: list,
-        namespace: str = 'kube-system',
+        namespace: str = DEFAULT_NAMESPACE,
     ):
         for ip in ips:
             self._create_pubip_resource(
@@ -530,26 +547,26 @@ class KubernetesHelper:
     def delete_publicip_custom_objects(
         self,
         ips: list,
-        namespace: str = 'kube-system',
+        namespace: str = DEFAULT_NAMESPACE,
     ):
         for ip in ips:
             self.custom_objects_api.delete_namespaced_custom_object(
-                group=PUBIP_RESOURCE_API_GROUP,
+                group=REMEDY_API_GROUP,
                 version=PUBIP_RESOURCE_VERSION,
                 namespace=namespace,
-                plural='publicipaddresses',
+                plural=PUBIP_PLURAL,
                 name=f'pubip-{ip.name()}',
             )
 
     def cleanup_publicip_custom_objects(
         self,
-        namespace: str = 'kube-system',
+        namespace: str = DEFAULT_NAMESPACE,
     ):
         response = self.custom_objects_api.list_namespaced_custom_object(
-                    group=PUBIP_RESOURCE_API_GROUP,
+                    group=REMEDY_API_GROUP,
                     version=PUBIP_RESOURCE_VERSION,
                     namespace=namespace,
-                    plural='publicipaddresses',
+                    plural=PUBIP_PLURAL,
                 )
         if not 'items' in response:
             return
@@ -559,10 +576,10 @@ class KubernetesHelper:
             if 'finalizers' in item['metadata']:
                 item['metadata']['finalizers'] = []
                 self.custom_objects_api.patch_namespaced_custom_object(
-                    group=PUBIP_RESOURCE_API_GROUP,
+                    group=REMEDY_API_GROUP,
                     version=PUBIP_RESOURCE_VERSION,
                     namespace=namespace,
-                    plural='publicipaddresses',
+                    plural=PUBIP_PLURAL,
                     name=item['metadata']['name'],
                     body=item,
                 )
@@ -570,10 +587,10 @@ class KubernetesHelper:
         # delete
         for item in response['items']:
             self.custom_objects_api.delete_namespaced_custom_object(
-                group=PUBIP_RESOURCE_API_GROUP,
+                group=REMEDY_API_GROUP,
                 version=PUBIP_RESOURCE_VERSION,
                 namespace=namespace,
-                plural='publicipaddresses',
+                plural=PUBIP_PLURAL,
                 name=item['metadata']['name'],
             )
 
@@ -581,6 +598,52 @@ class KubernetesHelper:
         self.api_extensions_api.create_custom_resource_definition(
             body=custom_resource_definition,
         )
+
+    def node_names(self, worker_group: str = ''):
+        kwargs = {}
+        if worker_group:
+            kwargs['label_selector'] = f'worker.garden.sapcloud.io/group={worker_group}'
+        response = self.core_api.list_node(**kwargs)
+        return [n.metadata.name for n in response.items]
+
+    def get_failed_operations(
+        self,
+        name: str,
+        group: str = REMEDY_API_GROUP,
+        version: str = VM_RESOURCE_VERSION,
+        namespace: str = DEFAULT_NAMESPACE,
+        plural: str = VM_PLURAL,
+    ):
+        try:
+            status_dict = self.get_custom_resource_status(name, group, version, namespace, plural)
+        except kubernetes.client.rest.ApiException as e:
+            if e.status == 404:
+                # Resource was not found. Assume that the VM resource either wasn't created yet
+                # or was already deleted
+                return []
+            raise e
+
+        if status_dict and 'failedOperations' in status_dict:
+            return [FailedOperation(f) for f in status_dict['failedOperations']]
+        else:
+            return []
+
+    def get_custom_resource_status(
+        self,
+        name: str,
+        group: str,
+        version: str,
+        namespace: str,
+        plural: str,
+    ):
+        response = self.custom_objects_api.get_namespaced_custom_object_status(
+            group=group,
+            version=version,
+            namespace=namespace,
+            plural=plural,
+            name=name,
+        )
+        return response['status']
 
 
 def _initialize_test_helpers(path_to_credentials_file, path_to_kubeconfig):
@@ -592,7 +655,6 @@ def _initialize_test_helpers(path_to_credentials_file, path_to_kubeconfig):
 
     with open(path_to_credentials_file) as f:
         credentials_dict = yaml.safe_load(f)
-        pprint.pprint(credentials_dict)
 
     subscription_id = credentials_dict['subscriptionId']
     resource_group_name = credentials_dict['resourceGroup']

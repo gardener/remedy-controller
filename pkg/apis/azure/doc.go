@@ -17,4 +17,4 @@
 
 //go:generate ../../../hack/update-codegen.sh
 
-package azure // import "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure"
+package azure // import "github.com/gardener/remedy-controller/pkg/apis/azure"

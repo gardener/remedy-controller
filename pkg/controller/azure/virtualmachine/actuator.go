@@ -19,11 +19,11 @@ import (
 	"strings"
 	"time"
 
-	azurev1alpha1 "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/v1alpha1"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils/azure"
+	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
+	"github.com/gardener/remedy-controller/pkg/apis/config"
+	"github.com/gardener/remedy-controller/pkg/controller"
+	"github.com/gardener/remedy-controller/pkg/utils"
+	"github.com/gardener/remedy-controller/pkg/utils/azure"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-07-01/compute"
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"

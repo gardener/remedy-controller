@@ -15,7 +15,7 @@
 package main
 
 import (
-	"github.wdf.sap.corp/kubernetes/remedy-controller/cmd/remedy-controller-azure/app"
+	"github.com/gardener/remedy-controller/cmd/remedy-controller-azure/app"
 
 	"github.com/gardener/gardener/extensions/pkg/controller"
 	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"

@@ -15,10 +15,10 @@
 package cmd
 
 import (
-	azurenode "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/node"
-	azurepublicipaddress "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/publicipaddress"
-	azureservice "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/service"
-	azurevirtualmachine "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/virtualmachine"
+	azurenode "github.com/gardener/remedy-controller/pkg/controller/azure/node"
+	azurepublicipaddress "github.com/gardener/remedy-controller/pkg/controller/azure/publicipaddress"
+	azureservice "github.com/gardener/remedy-controller/pkg/controller/azure/service"
+	azurevirtualmachine "github.com/gardener/remedy-controller/pkg/controller/azure/virtualmachine"
 
 	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
 )

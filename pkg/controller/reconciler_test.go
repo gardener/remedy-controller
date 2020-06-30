@@ -33,10 +33,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
-	mockclient "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/controller-runtime/client"
-	mockmanager "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/controller-runtime/manager"
-	mockcontroller "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/remedy-controller/controller"
+	"github.com/gardener/remedy-controller/pkg/controller"
+	mockclient "github.com/gardener/remedy-controller/pkg/mock/controller-runtime/client"
+	mockmanager "github.com/gardener/remedy-controller/pkg/mock/controller-runtime/manager"
+	mockcontroller "github.com/gardener/remedy-controller/pkg/mock/remedy-controller/controller"
 )
 
 var _ = Describe("Controller", func() {

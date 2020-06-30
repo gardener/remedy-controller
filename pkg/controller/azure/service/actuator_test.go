@@ -19,10 +19,10 @@ import (
 	"errors"
 	"time"
 
-	azurev1alpha1 "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/v1alpha1"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
-	azureservice "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller/azure/service"
-	mockclient "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/controller-runtime/client"
+	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
+	"github.com/gardener/remedy-controller/pkg/controller"
+	azureservice "github.com/gardener/remedy-controller/pkg/controller/azure/service"
+	mockclient "github.com/gardener/remedy-controller/pkg/mock/controller-runtime/client"
 
 	"github.com/go-logr/logr"
 	"github.com/golang/mock/gomock"

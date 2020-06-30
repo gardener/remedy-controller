@@ -1,7 +1,7 @@
 ############# builder
 FROM golang:1.14.4 AS builder
 
-WORKDIR /go/src/github.wdf.sap.corp/kubernetes/remedy-controller
+WORKDIR /go/src/github.com/gardener/remedy-controller
 COPY . .
 RUN make install
 

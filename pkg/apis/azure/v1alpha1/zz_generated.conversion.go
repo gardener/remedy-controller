@@ -23,7 +23,7 @@ package v1alpha1
 import (
 	unsafe "unsafe"
 
-	azure "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure"
+	azure "github.com/gardener/remedy-controller/pkg/apis/azure"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )

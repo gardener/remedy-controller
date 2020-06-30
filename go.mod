@@ -1,4 +1,4 @@
-module github.wdf.sap.corp/kubernetes/remedy-controller
+module github.com/gardener/remedy-controller
 
 go 1.14
 

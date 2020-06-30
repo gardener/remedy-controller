@@ -58,10 +58,10 @@ The Azure remedy controller exposes the following custom Prometheus metrics:
 
 ## Deploying to Kubernetes
 
-1. Clone this repository. Unless you are developing in the project, be sure to checkout to a [tagged release](https://github.wdf.sap.corp/kubernetes/remedy-contoller/releases).
+1. Clone this repository. Unless you are developing in the project, be sure to checkout to a [tagged release](https://github.com/gardener/remedy-contoller/releases).
 
     ```bash
-    git clone https://github.wdf.sap.corp/kubernetes/remedy-contoller
+    git clone https://github.com/gardener/remedy-contoller
     cd remedy-contoller
     git checkout <tag>
     ```
@@ -76,7 +76,7 @@ The Azure remedy controller exposes the following custom Prometheus metrics:
     resourceGroup: "<resource group name>"
     location: "<azure region name>"
     ```
-   
+
 3. Ensure that the CRDs for custom resources used by the remedy controller for your platform are deployed to the cluster. For Azure, these CRDs are [example/20-crd-publicipaddress.yaml](example/20-crd-publicipaddress.yaml) and [example/20-crd-virtualmachine.yaml](example/20-crd-virtualmachine.yaml).
 
 4. Create the namespace to deploy the remedy controller for your platform.
@@ -93,12 +93,12 @@ The Azure remedy controller exposes the following custom Prometheus metrics:
     ```
 
     **Note:** The Helm charts are designed to be applied with Helm 3. To install Helm, you can execute `make install-requirements`.
-    
+
 ## Configuration
 
 ### Command Line Options
 
-The remedy controllers for all platforms can be configured using the following command line options: 
+The remedy controllers for all platforms can be configured using the following command line options:
 
 | Option | Type | Description |
 |---|---|---|
@@ -120,7 +120,7 @@ The remedy controllers for all platforms can be configured using the following c
 
 #### Azure-specific
 
-The Azure remedy controller has the following additional command line options: 
+The Azure remedy controller has the following additional command line options:
 
 | Option | Type | Description |
 |---|---|---|
@@ -136,18 +136,18 @@ The remedy controllers accept a configuration file in YAML format via the `--con
 ## Local Development and Testing
 
 To run the remedy controller for a certain platform locally on your machine:
- 
+
 1. Prepare a `credentials.yaml` file with the correct platform credentials and configuration and copy it to `dev/credentials.yaml`. For the correct format of this file, see [Deploying to Kubernetes](#deploying-to-kubernetes).
 
 2. Ensure that the `KUBECONFIG` environment variable points to a kubeconfig file for an existing Azure cluster.
 
-3. Execute `make start-<platform>`. For Azure, execute `make start-azure`. 
+3. Execute `make start-<platform>`. For Azure, execute `make start-azure`.
 
 To run static code checks and unit tests:
 
-1. Execute `make install-requirements` once to ensure that all requirements for are properly installed. 
- 
-2. Execute `make verify` or `make verify-extended`. 
+1. Execute `make install-requirements` once to ensure that all requirements for are properly installed.
+
+2. Execute `make verify` or `make verify-extended`.
 
 We are using Go modules for dependency management and [Ginkgo](https://github.com/onsi/ginkgo) / [Gomega](https://github.com/onsi/gomega) for unit tests.
 
@@ -186,7 +186,7 @@ To test this remedy:
       ipAddress: 51.138.42.226
     ```
 
-7. Delete the `PublicIPAddress` resource. 
+7. Delete the `PublicIPAddress` resource.
 
 8. Make sure that after the configured deletion grace period has elapsed, the public IP address is deleted from Azure.
 
@@ -203,14 +203,14 @@ To test this remedy:
    ```bash
    make start-failedvm-simulator-azure VM_NAME=<node-name>
    ```
-   
+
 4. Monitor the `VirtualMachine` resource. In the status of the resource, you should see `failedOperations` indicating that a number of attempts to reapply the VM have been performed (and they all failed). This number of attempts should increase a few times.
 
 5. After the configured maximum number of attempts for the reapply operation has been reached, you should not see any more changes to the `VirtualMachine` resource status.
 
 ## Feedback and Support
 
-Feedback and contributions are always welcome. Please report bugs or suggestions as [GitHub issues](https://github.wdf.sap.corp/kubernetes/remedy-controller/issues) or join our [Slack channel #gardener](https://kubernetes.slack.com/messages/gardener) (please invite yourself to the Kubernetes workspace [here](http://slack.k8s.io)).
+Feedback and contributions are always welcome. Please report bugs or suggestions as [GitHub issues](https://github.com/gardener/remedy-controller/issues) or join our [Slack channel #gardener](https://kubernetes.slack.com/messages/gardener) (please invite yourself to the Kubernetes workspace [here](http://slack.k8s.io)).
 
 ## Learn More!
 

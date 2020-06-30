@@ -17,8 +17,8 @@ package commands
 import (
 	"fmt"
 
+	"github.com/gardener/remedy-controller/pkg/version"
 	"github.com/spf13/cobra"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/version"
 )
 
 func getVersionCommand() *cobra.Command {

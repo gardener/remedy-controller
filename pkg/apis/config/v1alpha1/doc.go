@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // +k8s:deepcopy-gen=package
-// +k8s:conversion-gen=github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config
+// +k8s:conversion-gen=github.com/gardener/remedy-controller/pkg/apis/config
 // +k8s:openapi-gen=true
 // +k8s:defaulter-gen=TypeMeta
 
@@ -21,4 +21,4 @@
 
 // Package v1alpha1 contains the remedy controller configuration API resources.
 // +groupName="remedy.config.gardener.cloud"
-package v1alpha1 // import "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config/v1alpha1"
+package v1alpha1 // import "github.com/gardener/remedy-controller/pkg/apis/config/v1alpha1"

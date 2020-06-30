@@ -24,7 +24,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/azure"
+	"github.com/gardener/remedy-controller/pkg/client/azure"
 )
 
 // PublicIPAddressUtils provides utility methods for getting and cleaning Azure PublicIPAddress objects.

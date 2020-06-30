@@ -17,8 +17,8 @@ package helper
 import (
 	"io/ioutil"
 
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config/install"
+	"github.com/gardener/remedy-controller/pkg/apis/config"
+	"github.com/gardener/remedy-controller/pkg/apis/config/install"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"

@@ -18,8 +18,8 @@ import (
 	"context"
 	"time"
 
-	azurev1alpha1 "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/v1alpha1"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
+	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
+	"github.com/gardener/remedy-controller/pkg/controller"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"

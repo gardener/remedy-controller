@@ -15,8 +15,8 @@
 package install
 
 import (
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/v1alpha1"
+	"github.com/gardener/remedy-controller/pkg/apis/azure"
+	"github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 )

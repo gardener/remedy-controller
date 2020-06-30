@@ -17,12 +17,12 @@ package virtualmachine
 import (
 	"time"
 
-	azurev1alpha1 "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/v1alpha1"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/azure"
-	remedycontroller "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils"
-	utilsazure "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils/azure"
+	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
+	"github.com/gardener/remedy-controller/pkg/apis/config"
+	"github.com/gardener/remedy-controller/pkg/client/azure"
+	remedycontroller "github.com/gardener/remedy-controller/pkg/controller"
+	"github.com/gardener/remedy-controller/pkg/utils"
+	utilsazure "github.com/gardener/remedy-controller/pkg/utils/azure"
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"

@@ -24,34 +24,34 @@ PROJECT_ROOT=$(dirname $0)/..
 
 bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh \
   deepcopy,defaulter \
-  github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client \
-  github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis \
-  github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis \
+  github.com/gardener/remedy-controller/pkg/client \
+  github.com/gardener/remedy-controller/pkg/apis \
+  github.com/gardener/remedy-controller/pkg/apis \
   "azure:v1alpha1" \
   --go-header-file "${PROJECT_ROOT}/vendor/github.com/gardener/gardener/hack/LICENSE_BOILERPLATE.txt"
 
 bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh \
   conversion \
-  github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client \
-  github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis \
-  github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis \
+  github.com/gardener/remedy-controller/pkg/client \
+  github.com/gardener/remedy-controller/pkg/apis \
+  github.com/gardener/remedy-controller/pkg/apis \
   "azure:v1alpha1" \
-  --extra-peer-dirs=github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure,github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/azure/v1alpha1,k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/conversion,k8s.io/apimachinery/pkg/runtime \
+  --extra-peer-dirs=github.com/gardener/remedy-controller/pkg/apis/azure,github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1,k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/conversion,k8s.io/apimachinery/pkg/runtime \
   --go-header-file "${PROJECT_ROOT}/vendor/github.com/gardener/gardener/hack/LICENSE_BOILERPLATE.txt"
 
 bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh \
   deepcopy,defaulter \
-  github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/componentconfig \
-  github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis \
-  github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis \
+  github.com/gardener/remedy-controller/pkg/client/componentconfig \
+  github.com/gardener/remedy-controller/pkg/apis \
+  github.com/gardener/remedy-controller/pkg/apis \
   "config:v1alpha1" \
   --go-header-file "${PROJECT_ROOT}/vendor/github.com/gardener/gardener/hack/LICENSE_BOILERPLATE.txt"
 
 bash "${PROJECT_ROOT}"/vendor/k8s.io/code-generator/generate-internal-groups.sh \
   conversion \
-  github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/componentconfig \
-  github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis \
-  github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis \
+  github.com/gardener/remedy-controller/pkg/client/componentconfig \
+  github.com/gardener/remedy-controller/pkg/apis \
+  github.com/gardener/remedy-controller/pkg/apis \
   "config:v1alpha1" \
-  --extra-peer-dirs=github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config,github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config/v1alpha1,k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/conversion,k8s.io/apimachinery/pkg/runtime \
+  --extra-peer-dirs=github.com/gardener/remedy-controller/pkg/apis/config,github.com/gardener/remedy-controller/pkg/apis/config/v1alpha1,k8s.io/apimachinery/pkg/apis/meta/v1,k8s.io/apimachinery/pkg/conversion,k8s.io/apimachinery/pkg/runtime \
   --go-header-file "${PROJECT_ROOT}/vendor/github.com/gardener/gardener/hack/LICENSE_BOILERPLATE.txt"

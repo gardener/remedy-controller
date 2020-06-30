@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate mockgen -package azure -destination=mocks.go github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/azure Future,PublicIPAddressesClient,LoadBalancersClient,VirtualMachinesClient
+//go:generate mockgen -package azure -destination=mocks.go github.com/gardener/remedy-controller/pkg/client/azure Future,PublicIPAddressesClient,LoadBalancersClient,VirtualMachinesClient
 
 package azure

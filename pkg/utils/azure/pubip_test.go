@@ -26,10 +26,10 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/utils/pointer"
 
-	clientazure "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/azure"
-	mockprometheus "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/prometheus"
-	mockclientazure "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/mock/remedy-controller/client/azure"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils/azure"
+	clientazure "github.com/gardener/remedy-controller/pkg/client/azure"
+	mockprometheus "github.com/gardener/remedy-controller/pkg/mock/prometheus"
+	mockclientazure "github.com/gardener/remedy-controller/pkg/mock/remedy-controller/client/azure"
+	"github.com/gardener/remedy-controller/pkg/utils/azure"
 )
 
 var _ = Describe("PublicIPAddressUtils", func() {

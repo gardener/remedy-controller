@@ -15,4 +15,4 @@
 // +k8s:deepcopy-gen=package
 // +groupName="remedy.config.gardener.cloud"
 
-package config // import "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config"
+package config // import "github.com/gardener/remedy-controller/pkg/apis/config"

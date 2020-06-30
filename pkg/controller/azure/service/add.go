@@ -15,7 +15,7 @@
 package service
 
 import (
-	remedycontroller "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/controller"
+	remedycontroller "github.com/gardener/remedy-controller/pkg/controller"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"

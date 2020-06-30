@@ -19,7 +19,7 @@ import (
 	"strings"
 	"time"
 
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils/azure"
+	"github.com/gardener/remedy-controller/pkg/utils/azure"
 
 	aznetwork "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
 	"github.com/pkg/errors"

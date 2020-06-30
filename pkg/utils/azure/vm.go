@@ -21,7 +21,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/azure"
+	"github.com/gardener/remedy-controller/pkg/client/azure"
 )
 
 // VirtualMachineUtils provides utility methods for getting and reapplying Azure VirtualMachine objects.

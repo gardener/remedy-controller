@@ -12,7 +12,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 
-	azclient "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/azure"
+	azclient "github.com/gardener/remedy-controller/pkg/client/azure"
 )
 
 func main() {

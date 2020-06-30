@@ -17,8 +17,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config"
-	confighelper "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/apis/config/helper"
+	"github.com/gardener/remedy-controller/pkg/apis/config"
+	confighelper "github.com/gardener/remedy-controller/pkg/apis/config/helper"
 
 	"github.com/spf13/pflag"
 )

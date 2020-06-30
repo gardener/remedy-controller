@@ -18,7 +18,7 @@ REGISTRY                    := eu.gcr.io/gardener-project/gardener/remedy-contro
 IMAGE_PREFIX                := $(REGISTRY)
 REPO_ROOT                   := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 VERSION                     := $(shell cat "$(REPO_ROOT)/VERSION")
-LD_FLAGS                    := "-w -X github.wdf.sap.corp/kubernetes/$(NAME)/pkg/version.Version=$(VERSION) -X github.wdf.sap.corp/kubernetes/$(NAME)/pkg/version.GitCommit=$(shell git rev-parse --verify HEAD) -X github.wdf.sap.corp/kubernetes/$(NAME)/pkg/version.BuildDate=$(shell date --rfc-3339=seconds | sed 's/ /T/')"
+LD_FLAGS                    := "-w -X github.com/gardener/$(NAME)/pkg/version.Version=$(VERSION) -X github.com/gardener/$(NAME)/pkg/version.GitCommit=$(shell git rev-parse --verify HEAD) -X github.com/gardener/$(NAME)/pkg/version.BuildDate=$(shell date --rfc-3339=seconds | sed 's/ /T/')"
 LEADER_ELECTION             := false
 
 #########################################
@@ -62,7 +62,7 @@ start-failedvm-simulator-azure:
 
 .PHONY: install
 install:
-	@LD_FLAGS="-w -X github.wdf.sap.corp/kubernetes/$(NAME)/pkg/version.Version=$(VERSION) -X github.wdf.sap.corp/kubernetes/$(NAME)/pkg/version.GitCommit=$(shell git rev-parse --verify HEAD) -X github.wdf.sap.corp/kubernetes/$(NAME)/pkg/version.BuildDate=$(shell date --rfc-3339=seconds | sed 's/ /T/')" \
+	@LD_FLAGS="-w -X github.com/gardener/$(NAME)/pkg/version.Version=$(VERSION) -X github.com/gardener/$(NAME)/pkg/version.GitCommit=$(shell git rev-parse --verify HEAD) -X github.com/gardener/$(NAME)/pkg/version.BuildDate=$(shell date --rfc-3339=seconds | sed 's/ /T/')" \
 	$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/install.sh ./...
 
 .PHONY: docker-login

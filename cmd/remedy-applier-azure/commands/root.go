@@ -25,10 +25,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	azclient "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/azure"
-	k8sclient "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/client/k8s"
-	"github.wdf.sap.corp/kubernetes/remedy-controller/pkg/remedies/azure"
-	utilsazure "github.wdf.sap.corp/kubernetes/remedy-controller/pkg/utils/azure"
+	azclient "github.com/gardener/remedy-controller/pkg/client/azure"
+	k8sclient "github.com/gardener/remedy-controller/pkg/client/k8s"
+	"github.com/gardener/remedy-controller/pkg/remedies/azure"
+	utilsazure "github.com/gardener/remedy-controller/pkg/utils/azure"
 )
 
 // GetRootCommand TODO

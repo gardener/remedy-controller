@@ -186,6 +186,9 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 			return nil
 		}
 		azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeCleanPublicIPAddress)
+
+		// Increase the cleaned IPs counter
+		a.cleanedIPsCounter.Inc()
 	}
 
 	// Update resource status
@@ -214,7 +217,6 @@ func (a *actuator) cleanAzurePublicIPAddress(ctx context.Context, pubip *azurev1
 	if err := a.pubipUtils.Delete(ctx, *pubip.Status.Name); err != nil {
 		return errors.Wrap(err, "could not delete Azure public IP address")
 	}
-	a.cleanedIPsCounter.Inc()
 	return nil
 }
 

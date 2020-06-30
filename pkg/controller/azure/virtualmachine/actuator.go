@@ -24,6 +24,7 @@ import (
 	"github.com/gardener/remedy-controller/pkg/controller"
 	"github.com/gardener/remedy-controller/pkg/utils"
 	"github.com/gardener/remedy-controller/pkg/utils/azure"
+	utilsprometheus "github.com/gardener/remedy-controller/pkg/utils/prometheus"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-07-01/compute"
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
@@ -36,6 +37,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	VMStateOK                float64 = 0
+	VMStateFailedWillReapply float64 = 1
+	VMStateFailed            float64 = 2
+)
+
 type actuator struct {
 	client              client.Client
 	vmUtils             azure.VirtualMachineUtils
@@ -43,6 +50,7 @@ type actuator struct {
 	timestamper         utils.Timestamper
 	logger              logr.Logger
 	reappliedVMsCounter prometheus.Counter
+	vmStatesGaugeVec    utilsprometheus.GaugeVec
 }
 
 // NewActuator creates a new Actuator.
@@ -52,6 +60,7 @@ func NewActuator(
 	timestamper utils.Timestamper,
 	logger logr.Logger,
 	reappliedVMsCounter prometheus.Counter,
+	vmStatesGaugeVec utilsprometheus.GaugeVec,
 ) controller.Actuator {
 	logger.Info("Creating actuator", "config", config)
 	return &actuator{
@@ -60,6 +69,7 @@ func NewActuator(
 		timestamper:         timestamper,
 		logger:              logger,
 		reappliedVMsCounter: reappliedVMsCounter,
+		vmStatesGaugeVec:    vmStatesGaugeVec,
 	}
 }
 
@@ -77,11 +87,14 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 		return 0, false, errors.New("reconciled object is not a virtualmachine")
 	}
 
+	// Determine VM name
+	vmName := getVirtualMachineName(vm)
+
 	// Initialize failed operations from VirtualMachine status
 	failedOperations := getFailedOperations(vm)
 
 	// Get the Azure virtual machine
-	azureVM, err := a.getAzureVirtualMachine(ctx, vm)
+	azureVM, err := a.getAzureVirtualMachine(ctx, vmName)
 	if err != nil {
 		// Add or update the failed operation
 		failedOperation := azurev1alpha1.AddOrUpdateFailedOperation(&failedOperations,
@@ -106,7 +119,12 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 
 	// Reapply the Azure virtual machine if it's in a Failed state
 	if azureVM != nil && getProvisioningState(azureVM) == compute.ProvisioningStateFailed {
-		if err := a.reapplyAzureVirtualMachine(ctx, vm); err != nil {
+		// Set VM states gauge to "failed will reapply"
+		a.vmStatesGaugeVec.WithLabelValues(vmName).Set(VMStateFailedWillReapply)
+
+		// Reapply the Azure virtual machine
+		reappliedAzureVM, err := a.reapplyAzureVirtualMachine(ctx, vmName)
+		if err != nil {
 			// Add or update the failed operation
 			failedOperation := azurev1alpha1.AddOrUpdateFailedOperation(&failedOperations,
 				azurev1alpha1.OperationTypeReapplyVirtualMachine, err.Error(), a.timestamper.Now())
@@ -124,9 +142,24 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 					RequeueAfter: a.config.RequeueInterval.Duration * (1 << (failedOperation.Attempts - 1)),
 				}
 			}
+
+			// If the configured max attempts has been reached, set VM states gauge to "failed" and return success
+			a.vmStatesGaugeVec.WithLabelValues(vmName).Set(VMStateFailed)
 			return 0, false, nil
 		}
 		azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeReapplyVirtualMachine)
+
+		// Increase the reapplied VMs counter
+		a.reappliedVMsCounter.Inc()
+
+		// Set VM states gauge to "failed" or "ok" depending on the new Azure virtual machine state
+		a.setVMStatesGauge(reappliedAzureVM, vmName)
+	} else if azureVM != nil && getProvisioningState(azureVM) != compute.ProvisioningStateFailed {
+		// Set VM states gauge to "ok"
+		a.vmStatesGaugeVec.WithLabelValues(vmName).Set(VMStateOK)
+	} else if azureVM == nil {
+		// Delete VM states gauge
+		a.vmStatesGaugeVec.DeleteLabelValues(vmName)
 	}
 
 	// Update resource status
@@ -152,11 +185,14 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 		return errors.New("reconciled object is not a virtualmachine")
 	}
 
+	// Determine VM name
+	vmName := getVirtualMachineName(vm)
+
 	// Initialize failed operations from VirtualMachine status
 	failedOperations := getFailedOperations(vm)
 
 	// Get the Azure virtual machine
-	azureVM, err := a.getAzureVirtualMachine(ctx, vm)
+	azureVM, err := a.getAzureVirtualMachine(ctx, vmName)
 	if err != nil {
 		// Add or update the failed operation
 		failedOperation := azurev1alpha1.AddOrUpdateFailedOperation(&failedOperations,
@@ -179,6 +215,9 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 	}
 	azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeGetVirtualMachine)
 
+	// Set VM states gauge to "failed" or "ok" depending on the Azure virtual machine state
+	a.setVMStatesGauge(azureVM, vmName)
+
 	// Update resource status
 	if err := a.updateVirtualMachineStatus(ctx, vm, azureVM, failedOperations); err != nil {
 		return err
@@ -187,18 +226,21 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 	return nil
 }
 
-func (a *actuator) getAzureVirtualMachine(ctx context.Context, vm *azurev1alpha1.VirtualMachine) (*compute.VirtualMachine, error) {
-	azureVM, err := a.vmUtils.Get(ctx, getVirtualMachineName(vm))
+func (a *actuator) getAzureVirtualMachine(ctx context.Context, name string) (*compute.VirtualMachine, error) {
+	azureVM, err := a.vmUtils.Get(ctx, name)
 	return azureVM, errors.Wrap(err, "could not get Azure virtual machine")
 }
 
-func (a *actuator) reapplyAzureVirtualMachine(ctx context.Context, vm *azurev1alpha1.VirtualMachine) error {
-	a.logger.Info("Reapplying Azure virtual machine", "name", getVirtualMachineName(vm))
-	if err := a.vmUtils.Reapply(ctx, getVirtualMachineName(vm)); err != nil {
-		return errors.Wrap(err, "could not reapply Azure virtual machine")
+func (a *actuator) reapplyAzureVirtualMachine(ctx context.Context, name string) (*compute.VirtualMachine, error) {
+	a.logger.Info("Reapplying Azure virtual machine", "name", name)
+	if err := a.vmUtils.Reapply(ctx, name); err != nil {
+		return nil, errors.Wrap(err, "could not reapply Azure virtual machine")
 	}
-	a.reappliedVMsCounter.Inc()
-	return nil
+	azureVM, err := a.vmUtils.Get(ctx, name)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get Azure virtual machine")
+	}
+	return azureVM, nil
 }
 
 func (a *actuator) updateVirtualMachineStatus(
@@ -228,6 +270,17 @@ func (a *actuator) updateVirtualMachineStatus(
 		return errors.Wrap(err, "could not update virtualmachine status")
 	}
 	return nil
+}
+
+func (a *actuator) setVMStatesGauge(azureVM *compute.VirtualMachine, name string) {
+	switch {
+	case azureVM != nil && getProvisioningState(azureVM) == compute.ProvisioningStateFailed:
+		a.vmStatesGaugeVec.WithLabelValues(name).Set(VMStateFailed)
+	case azureVM != nil && getProvisioningState(azureVM) != compute.ProvisioningStateFailed:
+		a.vmStatesGaugeVec.WithLabelValues(name).Set(VMStateOK)
+	case azureVM == nil:
+		a.vmStatesGaugeVec.DeleteLabelValues(name)
+	}
 }
 
 func getVirtualMachineName(vm *azurev1alpha1.VirtualMachine) string {

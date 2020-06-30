@@ -57,6 +57,14 @@ var (
 			Help: "Number of reapplied Azure virtual machines",
 		},
 	)
+
+	// VMStatesGaugeVec is a global gauge vector for the provisioning states of Azure virtual machines.
+	// It could be used to raise an alert if the provisioning state of a VM is Failed and the controller has given
+	// up trying to reapply it.
+	VMStatesGaugeVec = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "azure_virtual_machine_states",
+		Help: "Provisioning states of Azure virtual machines",
+	}, []string{"name"})
 )
 
 // AddOptions are options to apply when adding a controller to a manager.
@@ -85,7 +93,7 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 
 	return remedycontroller.Add(mgr, remedycontroller.AddArgs{
 		Actuator: NewActuator(utilsazure.NewVirtualMachineUtils(azureClients, credentials.ResourceGroup, utilsazure.ReadRequestsCounter, utilsazure.WriteRequestsCounter),
-			options.Config, utils.TimestamperFunc(metav1.Now), log.Log.WithName(ActuatorName), ReappliedVMsCounter),
+			options.Config, utils.TimestamperFunc(metav1.Now), log.Log.WithName(ActuatorName), ReappliedVMsCounter, VMStatesGaugeVec),
 		ControllerName:    ControllerName,
 		FinalizerName:     FinalizerName,
 		ControllerOptions: options.Controller,
@@ -104,4 +112,5 @@ func AddToManager(mgr manager.Manager) error {
 func init() {
 	// Register metrics with the global Prometheus registry
 	metrics.Registry.MustRegister(ReappliedVMsCounter)
+	metrics.Registry.MustRegister(VMStatesGaugeVec)
 }

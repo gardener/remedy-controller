@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate mockgen -package prometheus -destination=mocks.go github.com/prometheus/client_golang/prometheus Counter,Gauge
+//go:generate mockgen -package prometheus -destination=mocks.go github.com/gardener/remedy-controller/pkg/utils/prometheus GaugeVec
 
 package prometheus

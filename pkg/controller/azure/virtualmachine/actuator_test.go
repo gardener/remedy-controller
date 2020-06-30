@@ -25,6 +25,7 @@ import (
 	mockclient "github.com/gardener/remedy-controller/pkg/mock/controller-runtime/client"
 	mockprometheus "github.com/gardener/remedy-controller/pkg/mock/prometheus"
 	mockutilsazure "github.com/gardener/remedy-controller/pkg/mock/remedy-controller/utils/azure"
+	mockutilsprometheus "github.com/gardener/remedy-controller/pkg/mock/remedy-controller/utils/prometheus"
 	"github.com/gardener/remedy-controller/pkg/utils"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-07-01/compute"
@@ -60,6 +61,8 @@ var _ = Describe("Actuator", func() {
 		sw                  *mockclient.MockStatusWriter
 		vmUtils             *mockutilsazure.MockVirtualMachineUtils
 		reappliedVMsCounter *mockprometheus.MockCounter
+		vmStatesGaugeVec    *mockutilsprometheus.MockGaugeVec
+		vmStatesGauge       *mockprometheus.MockGauge
 
 		cfg         config.AzureFailedVMRemedyConfiguration
 		now         metav1.Time
@@ -80,6 +83,8 @@ var _ = Describe("Actuator", func() {
 		c.EXPECT().Status().Return(sw).AnyTimes()
 		vmUtils = mockutilsazure.NewMockVirtualMachineUtils(ctrl)
 		reappliedVMsCounter = mockprometheus.NewMockCounter(ctrl)
+		vmStatesGaugeVec = mockutilsprometheus.NewMockGaugeVec(ctrl)
+		vmStatesGauge = mockprometheus.NewMockGauge(ctrl)
 
 		cfg = config.AzureFailedVMRemedyConfiguration{
 			RequeueInterval:    metav1.Duration{Duration: requeueInterval},
@@ -89,7 +94,7 @@ var _ = Describe("Actuator", func() {
 		now = metav1.Now()
 		timestamper = utils.TimestamperFunc(func() metav1.Time { return now })
 		logger = log.Log.WithName("test")
-		actuator = virtualmachine.NewActuator(vmUtils, cfg, timestamper, logger, reappliedVMsCounter)
+		actuator = virtualmachine.NewActuator(vmUtils, cfg, timestamper, logger, reappliedVMsCounter, vmStatesGaugeVec)
 		Expect(actuator.(inject.Client).InjectClient(c)).To(Succeed())
 
 		newVM = func(ready, unreachable, withStatus bool, provisioningState compute.ProvisioningState, failedOperations []azurev1alpha1.FailedOperation) *azurev1alpha1.VirtualMachine {
@@ -137,6 +142,8 @@ var _ = Describe("Actuator", func() {
 			vmWithStatus := newVM(true, false, true, compute.ProvisioningStateSucceeded, nil)
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
+			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
+			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, vm).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithStatus).Return(nil)
 
@@ -149,6 +156,7 @@ var _ = Describe("Actuator", func() {
 		It("should not update the VirtualMachine object status if the VM is not found", func() {
 			vm := newVM(true, false, false, "", nil)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, nil)
+			vmStatesGaugeVec.EXPECT().DeleteLabelValues(azureVirtualMachineName)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, vm).Return(nil)
 
 			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, vm)
@@ -162,6 +170,8 @@ var _ = Describe("Actuator", func() {
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vmWithStatus.Name}, vmWithStatus).Return(nil)
+			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
+			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
 
 			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, vmWithStatus)
 			Expect(err).NotTo(HaveOccurred())
@@ -173,6 +183,7 @@ var _ = Describe("Actuator", func() {
 			vm := newVM(true, false, false, "", nil)
 			vmWithStatus := newVM(true, false, true, compute.ProvisioningStateSucceeded, nil)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, nil)
+			vmStatesGaugeVec.EXPECT().DeleteLabelValues(azureVirtualMachineName)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vmWithStatus.Name}, vmWithStatus).Return(nil)
 			sw.EXPECT().Update(ctx, vm).Return(nil)
 
@@ -186,9 +197,15 @@ var _ = Describe("Actuator", func() {
 			vm := newVM(false, true, false, "", nil)
 			vmWithStatus := newVM(false, true, true, compute.ProvisioningStateFailed, nil)
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateFailed)
+			azureVirtualMachine2 := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
+			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
+			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateFailedWillReapply)
 			vmUtils.EXPECT().Reapply(ctx, azureVirtualMachineName).Return(nil)
+			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine2, nil)
 			reappliedVMsCounter.EXPECT().Inc()
+			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
+			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, vm).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithStatus).Return(nil)
 
@@ -224,6 +241,8 @@ var _ = Describe("Actuator", func() {
 			vmWithStatus := newVM(true, false, true, compute.ProvisioningStateSucceeded, nil)
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
+			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
+			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, vm).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithStatus).Return(errors.New("test"))
 
@@ -243,6 +262,8 @@ var _ = Describe("Actuator", func() {
 			})
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateFailed)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
+			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
+			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateFailedWillReapply)
 			vmUtils.EXPECT().Reapply(ctx, azureVirtualMachineName).Return(errors.New("test"))
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, vm).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithFailedOps).Return(nil)
@@ -273,7 +294,11 @@ var _ = Describe("Actuator", func() {
 			})
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateFailed)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
+			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
+			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateFailedWillReapply)
 			vmUtils.EXPECT().Reapply(ctx, azureVirtualMachineName).Return(errors.New("test"))
+			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
+			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateFailed)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vmWithFailedOps.Name}, vmWithFailedOps).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithFailedOps2).Return(nil)
 
@@ -294,9 +319,15 @@ var _ = Describe("Actuator", func() {
 			})
 			vm := newVM(false, true, true, compute.ProvisioningStateFailed, []azurev1alpha1.FailedOperation{})
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateFailed)
+			azureVirtualMachine2 := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
+			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
+			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateFailedWillReapply)
 			vmUtils.EXPECT().Reapply(ctx, azureVirtualMachineName).Return(nil)
+			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine2, nil)
 			reappliedVMsCounter.EXPECT().Inc()
+			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
+			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vmWithFailedOps.Name}, vmWithFailedOps).Return(nil)
 			sw.EXPECT().Update(ctx, vm).Return(nil)
 
@@ -313,6 +344,8 @@ var _ = Describe("Actuator", func() {
 			vmWithStatus := newVM(true, false, true, compute.ProvisioningStateSucceeded, nil)
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
+			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
+			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, vm).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithStatus).Return(nil)
 
@@ -322,6 +355,7 @@ var _ = Describe("Actuator", func() {
 		It("should not update the VirtualMachine object status if the VM is not found", func() {
 			vm := newVM(true, false, false, "", nil)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, nil)
+			vmStatesGaugeVec.EXPECT().DeleteLabelValues(azureVirtualMachineName)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, vm).Return(nil)
 
 			Expect(actuator.Delete(ctx, vm)).To(Succeed())
@@ -331,6 +365,8 @@ var _ = Describe("Actuator", func() {
 			vmWithStatus := newVM(true, false, true, compute.ProvisioningStateSucceeded, nil)
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
+			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
+			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vmWithStatus.Name}, vmWithStatus).Return(nil)
 
 			Expect(actuator.Delete(ctx, vmWithStatus)).To(Succeed())
@@ -340,6 +376,7 @@ var _ = Describe("Actuator", func() {
 			vm := newVM(true, false, false, "", nil)
 			vmWithStatus := newVM(true, false, true, compute.ProvisioningStateSucceeded, nil)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, nil)
+			vmStatesGaugeVec.EXPECT().DeleteLabelValues(azureVirtualMachineName)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vmWithStatus.Name}, vmWithStatus).Return(nil)
 			sw.EXPECT().Update(ctx, vm).Return(nil)
 
@@ -372,6 +409,8 @@ var _ = Describe("Actuator", func() {
 			vmWithStatus := newVM(true, false, true, compute.ProvisioningStateSucceeded, nil)
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
+			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
+			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, vm).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithStatus).Return(errors.New("test"))
 

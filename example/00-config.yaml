@@ -12,6 +12,10 @@ azure:
     deletionGracePeriod: 5m
     maxGetAttempts: 5
     maxCleanAttempts: 5
+#   blacklistedServiceLabels:
+#   - foo: bar
+#     bla: bla
+#   - one: more
   failedVMRemedy:
     requeueInterval: 1m
     maxGetAttempts: 5

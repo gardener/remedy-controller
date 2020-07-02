@@ -19,6 +19,7 @@ import (
 	"time"
 
 	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
+	"github.com/gardener/remedy-controller/pkg/apis/config"
 	"github.com/gardener/remedy-controller/pkg/controller"
 
 	"github.com/go-logr/logr"
@@ -38,15 +39,17 @@ const (
 
 type actuator struct {
 	client    client.Client
+	config    config.AzureOrphanedPublicIPRemedyConfiguration
 	namespace string
 	logger    logr.Logger
 }
 
 // NewActuator creates a new Actuator.
-func NewActuator(client client.Client, namespace string, logger logr.Logger) controller.Actuator {
+func NewActuator(client client.Client, config config.AzureOrphanedPublicIPRemedyConfiguration, namespace string, logger logr.Logger) controller.Actuator {
 	logger.Info("Creating actuator", "namespace", namespace)
 	return &actuator{
 		client:    client,
+		config:    config,
 		namespace: namespace,
 		logger:    logger,
 	}
@@ -59,6 +62,12 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 	var ok bool
 	if svc, ok = obj.(*corev1.Service); !ok {
 		return 0, false, errors.New("reconciled object is not a service")
+	}
+
+	// Check if the service is blacklisted
+	if blacklistMatches(a.config.BlacklistedServiceLabels, svc.ObjectMeta.Labels) {
+		a.logger.Info("Ignoring blacklisted service", "name", svc.ObjectMeta.Name, "namespace", svc.ObjectMeta.Namespace)
+		return 0, true, nil
 	}
 
 	// Initialize labels
@@ -150,4 +159,20 @@ func getServiceLoadBalancerIPs(svc *corev1.Service) map[string]bool {
 
 func generatePublicIPAddressName(serviceNamespace, serviceName, ip string) string {
 	return serviceNamespace + "-" + serviceName + "-" + ip
+}
+
+func blacklistMatches(blacklist []map[string]string, labels map[string]string) bool {
+	for _, bl := range blacklist {
+		allMatch := true
+		for key, val := range bl {
+			if v, ok := labels[key]; !ok || v != val {
+				allMatch = false
+				break
+			}
+		}
+		if allMatch {
+			return true
+		}
+	}
+	return false
 }

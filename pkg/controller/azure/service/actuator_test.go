@@ -20,6 +20,7 @@ import (
 	"time"
 
 	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
+	"github.com/gardener/remedy-controller/pkg/apis/config"
 	"github.com/gardener/remedy-controller/pkg/controller"
 	azureservice "github.com/gardener/remedy-controller/pkg/controller/azure/service"
 	mockclient "github.com/gardener/remedy-controller/pkg/mock/controller-runtime/client"
@@ -42,6 +43,9 @@ var _ = Describe("Actuator", func() {
 		serviceNamespace = "test"
 		namespace        = "default"
 		ip               = "1.2.3.4"
+
+		requeueInterval     = 1 * time.Second
+		deletionGracePeriod = 1 * time.Second
 	)
 
 	var (
@@ -50,14 +54,16 @@ var _ = Describe("Actuator", func() {
 
 		c *mockclient.MockClient
 
+		cfg      config.AzureOrphanedPublicIPRemedyConfiguration
 		logger   logr.Logger
 		actuator controller.Actuator
 
-		svc          *corev1.Service
-		clusterIPSvc *corev1.Service
-		pubipLabels  map[string]string
-		emptyPubip   *azurev1alpha1.PublicIPAddress
-		pubip        *azurev1alpha1.PublicIPAddress
+		svc            *corev1.Service
+		clusterIPSvc   *corev1.Service
+		blacklistedSvc *corev1.Service
+		pubipLabels    map[string]string
+		emptyPubip     *azurev1alpha1.PublicIPAddress
+		pubip          *azurev1alpha1.PublicIPAddress
 	)
 
 	BeforeEach(func() {
@@ -66,8 +72,18 @@ var _ = Describe("Actuator", func() {
 
 		c = mockclient.NewMockClient(ctrl)
 
+		cfg = config.AzureOrphanedPublicIPRemedyConfiguration{
+			RequeueInterval:     metav1.Duration{Duration: requeueInterval},
+			DeletionGracePeriod: metav1.Duration{Duration: deletionGracePeriod},
+			MaxGetAttempts:      2,
+			MaxCleanAttempts:    2,
+			BlacklistedServiceLabels: []map[string]string{
+				{"foo": "bar", "black": "list"},
+				{"something": "else"},
+			},
+		}
 		logger = log.Log.WithName("test")
-		actuator = azureservice.NewActuator(c, namespace, logger)
+		actuator = azureservice.NewActuator(c, cfg, namespace, logger)
 
 		svc = &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
@@ -92,6 +108,17 @@ var _ = Describe("Actuator", func() {
 			},
 			Spec: corev1.ServiceSpec{
 				Type: corev1.ServiceTypeClusterIP,
+			},
+		}
+		blacklistedSvc = &corev1.Service{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      serviceName,
+				Namespace: serviceNamespace,
+				Labels: map[string]string{
+					"foo":     "bar",
+					"nothing": "important",
+					"black":   "list",
+				},
 			},
 		}
 		pubipLabels = map[string]string{
@@ -268,6 +295,13 @@ var _ = Describe("Actuator", func() {
 
 			_, _, err := actuator.CreateOrUpdate(ctx, clusterIPSvc)
 			Expect(err).To(MatchError("could not delete publicipaddress: Internal error occurred: test"))
+		})
+
+		It("should ignore and remove the finalizer from a service that is blacklisted", func() {
+			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, blacklistedSvc)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(removeFinalizer).To(Equal(true))
 		})
 	})
 

@@ -131,6 +131,7 @@ func autoConvert_v1alpha1_AzureOrphanedPublicIPRemedyConfiguration_To_config_Azu
 	out.DeletionGracePeriod = in.DeletionGracePeriod
 	out.MaxGetAttempts = in.MaxGetAttempts
 	out.MaxCleanAttempts = in.MaxCleanAttempts
+	out.BlacklistedServiceLabels = *(*[]map[string]string)(unsafe.Pointer(&in.BlacklistedServiceLabels))
 	return nil
 }
 
@@ -144,6 +145,7 @@ func autoConvert_config_AzureOrphanedPublicIPRemedyConfiguration_To_v1alpha1_Azu
 	out.DeletionGracePeriod = in.DeletionGracePeriod
 	out.MaxGetAttempts = in.MaxGetAttempts
 	out.MaxCleanAttempts = in.MaxCleanAttempts
+	out.BlacklistedServiceLabels = *(*[]map[string]string)(unsafe.Pointer(&in.BlacklistedServiceLabels))
 	return nil
 }
 

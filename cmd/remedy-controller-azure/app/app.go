@@ -143,6 +143,7 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			virtualMachineCtrlOpts.Completed().Apply(&azurevirtualmachine.DefaultAddOptions.Controller)
 			configFileOpts.Completed().ApplyAzureFailedVMRemedy(&azurevirtualmachine.DefaultAddOptions.Config)
 			serviceCtrlOpts.Completed().Apply(&azureservice.DefaultAddOptions.Controller)
+			configFileOpts.Completed().ApplyAzureOrphanedPublicIPRemedy(&azureservice.DefaultAddOptions.Config)
 			nodeCtrlOpts.Completed().Apply(&azurenode.DefaultAddOptions.Controller)
 			reconcilerOpts.Completed().Apply(&azurepublicipaddress.DefaultAddOptions.InfraConfigPath)
 			reconcilerOpts.Completed().Apply(&azurevirtualmachine.DefaultAddOptions.InfraConfigPath)

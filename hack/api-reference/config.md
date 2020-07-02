@@ -247,6 +247,18 @@ int
 <p>MaxCleanAttempts specifies the max attempts to clean an Azure public ip address.</p>
 </td>
 </tr>
+<tr>
+<td>
+<code>blacklistedServiceLabels</code></br>
+<em>
+[]map[string]string
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>BlacklistedServiceLabels spcifies the labels of services that will be ignored.</p>
+</td>
+</tr>
 </tbody>
 </table>
 <hr/>

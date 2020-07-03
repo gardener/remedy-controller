@@ -46,6 +46,13 @@ def main():
         kubeconfig_path = os.path.abspath(kubeconfig_file.name)
         os.environ['KUBECONFIG'] = kubeconfig_path
 
+    # vm failer expects the credentials at one special location. TODO: Remove this once its adjusted
+    expected_dir = os.join(repo_dir, 'dev')
+    expected_file_path = os.join(expected_dir, 'credentials.yaml')
+    os.mkdir(expected_dir)
+    with open(expected_file_path, mode='w') as f:
+        yaml.safe_dump(test_credentials.raw, f)
+
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as credentials_file:
         yaml.safe_dump(test_credentials.raw, credentials_file)
         credentials_path = os.path.abspath(credentials_file.name)

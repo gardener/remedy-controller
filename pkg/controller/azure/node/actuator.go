@@ -73,8 +73,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 	// Get node properties
 	hostname := node.Labels[HostnameLabel]
 	providerID := node.Spec.ProviderID
-	ready := isNodeReady(node)
-	unreachable := isNodeUnreachable(node)
+	notReadyOrUnreachable := !isNodeReady(node) || isNodeUnreachable(node)
 
 	// Create or update the VirtualMachine object for the node
 	vm := &azurev1alpha1.VirtualMachine{
@@ -89,8 +88,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 			vm.Labels = vmLabels
 			vm.Spec.Hostname = hostname
 			vm.Spec.ProviderID = providerID
-			vm.Spec.Ready = ready
-			vm.Spec.Unreachable = unreachable
+			vm.Spec.NotReadyOrUnreachable = notReadyOrUnreachable
 			return nil
 		})
 		return err

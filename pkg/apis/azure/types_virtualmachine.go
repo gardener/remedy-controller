@@ -35,10 +35,8 @@ type VirtualMachineSpec struct {
 	Hostname string
 	// ProviderID is the provider ID of the Kubernetes node for this virtual machine.
 	ProviderID string
-	// Ready is whether the Kubernetes node for this virtual machine is ready.
-	Ready bool
-	// Unreachable is whether the Kubernetes node for this virtual machine is unreachable.
-	Unreachable bool
+	// NotReadyOrUnreachable is whether the Kubernetes node for this virtual machine is either not ready or unreachable.
+	NotReadyOrUnreachable bool
 }
 
 // VirtualMachineStatus represents the status of an Azure virtual machine.

@@ -70,7 +70,7 @@ var _ = Describe("Actuator", func() {
 		logger      logr.Logger
 		actuator    controller.Actuator
 
-		newVM                  func(bool, bool, bool, compute.ProvisioningState, []azurev1alpha1.FailedOperation) *azurev1alpha1.VirtualMachine
+		newVM                  func(bool, bool, compute.ProvisioningState, []azurev1alpha1.FailedOperation) *azurev1alpha1.VirtualMachine
 		newAzureVirtualMachine func(compute.ProvisioningState) *compute.VirtualMachine
 	)
 
@@ -97,7 +97,7 @@ var _ = Describe("Actuator", func() {
 		actuator = virtualmachine.NewActuator(vmUtils, cfg, timestamper, logger, reappliedVMsCounter, vmStatesGaugeVec)
 		Expect(actuator.(inject.Client).InjectClient(c)).To(Succeed())
 
-		newVM = func(ready, unreachable, withStatus bool, provisioningState compute.ProvisioningState, failedOperations []azurev1alpha1.FailedOperation) *azurev1alpha1.VirtualMachine {
+		newVM = func(notReadyOrUnreachable, withStatus bool, provisioningState compute.ProvisioningState, failedOperations []azurev1alpha1.FailedOperation) *azurev1alpha1.VirtualMachine {
 			var status azurev1alpha1.VirtualMachineStatus
 			if withStatus {
 				status = azurev1alpha1.VirtualMachineStatus{
@@ -113,10 +113,9 @@ var _ = Describe("Actuator", func() {
 					Name: nodeName,
 				},
 				Spec: azurev1alpha1.VirtualMachineSpec{
-					Hostname:    hostname,
-					ProviderID:  providerID,
-					Ready:       ready,
-					Unreachable: unreachable,
+					Hostname:              hostname,
+					ProviderID:            providerID,
+					NotReadyOrUnreachable: notReadyOrUnreachable,
 				},
 				Status: status,
 			}
@@ -138,8 +137,8 @@ var _ = Describe("Actuator", func() {
 
 	Describe("#CreateOrUpdate", func() {
 		It("should update the VirtualMachine object status if the VM is found", func() {
-			vm := newVM(true, false, false, "", nil)
-			vmWithStatus := newVM(true, false, true, compute.ProvisioningStateSucceeded, nil)
+			vm := newVM(false, false, "", nil)
+			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
 			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
@@ -154,7 +153,7 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should not update the VirtualMachine object status if the VM is not found", func() {
-			vm := newVM(true, false, false, "", nil)
+			vm := newVM(false, false, "", nil)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, nil)
 			vmStatesGaugeVec.EXPECT().DeleteLabelValues(azureVirtualMachineName)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, vm).Return(nil)
@@ -166,7 +165,7 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should not update the VirtualMachine object status if the VM is found and the status is already initialized", func() {
-			vmWithStatus := newVM(true, false, true, compute.ProvisioningStateSucceeded, nil)
+			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vmWithStatus.Name}, vmWithStatus).Return(nil)
@@ -180,8 +179,8 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should update the VirtualMachine object status if the VM is not found and the status is already initialized", func() {
-			vm := newVM(true, false, false, "", nil)
-			vmWithStatus := newVM(true, false, true, compute.ProvisioningStateSucceeded, nil)
+			vm := newVM(false, false, "", nil)
+			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, nil)
 			vmStatesGaugeVec.EXPECT().DeleteLabelValues(azureVirtualMachineName)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vmWithStatus.Name}, vmWithStatus).Return(nil)
@@ -194,8 +193,8 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should reapply the Azure VM if it's in a failed state", func() {
-			vm := newVM(false, true, false, "", nil)
-			vmWithStatus := newVM(false, true, true, compute.ProvisioningStateFailed, nil)
+			vm := newVM(true, false, "", nil)
+			vmWithStatus := newVM(true, true, compute.ProvisioningStateFailed, nil)
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateFailed)
 			azureVirtualMachine2 := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
@@ -216,8 +215,8 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should fail if getting the Azure VM fails", func() {
-			vm := newVM(true, false, false, "", nil)
-			vmWithFailedOps := newVM(true, false, false, "", []azurev1alpha1.FailedOperation{
+			vm := newVM(false, false, "", nil)
+			vmWithFailedOps := newVM(false, false, "", []azurev1alpha1.FailedOperation{
 				{
 					Type:         azurev1alpha1.OperationTypeGetVirtualMachine,
 					Attempts:     1,
@@ -237,8 +236,8 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should fail if updating the VirtualMachine object status fails", func() {
-			vm := newVM(true, false, false, "", nil)
-			vmWithStatus := newVM(true, false, true, compute.ProvisioningStateSucceeded, nil)
+			vm := newVM(false, false, "", nil)
+			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
 			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
@@ -251,8 +250,8 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should fail if reapplying the Azure VM fails", func() {
-			vm := newVM(false, true, false, "", nil)
-			vmWithFailedOps := newVM(false, true, true, compute.ProvisioningStateFailed, []azurev1alpha1.FailedOperation{
+			vm := newVM(true, false, "", nil)
+			vmWithFailedOps := newVM(true, true, compute.ProvisioningStateFailed, []azurev1alpha1.FailedOperation{
 				{
 					Type:         azurev1alpha1.OperationTypeReapplyVirtualMachine,
 					Attempts:     1,
@@ -276,7 +275,7 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should not fail if reapplying the Azure VM fails and max attempts have been reached", func() {
-			vmWithFailedOps := newVM(false, true, true, compute.ProvisioningStateFailed, []azurev1alpha1.FailedOperation{
+			vmWithFailedOps := newVM(true, true, compute.ProvisioningStateFailed, []azurev1alpha1.FailedOperation{
 				{
 					Type:         azurev1alpha1.OperationTypeReapplyVirtualMachine,
 					Attempts:     1,
@@ -284,7 +283,7 @@ var _ = Describe("Actuator", func() {
 					Timestamp:    now,
 				},
 			})
-			vmWithFailedOps2 := newVM(false, true, true, compute.ProvisioningStateFailed, []azurev1alpha1.FailedOperation{
+			vmWithFailedOps2 := newVM(true, true, compute.ProvisioningStateFailed, []azurev1alpha1.FailedOperation{
 				{
 					Type:         azurev1alpha1.OperationTypeReapplyVirtualMachine,
 					Attempts:     2,
@@ -309,7 +308,7 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should clear failed operations if reapplying the Azure VM eventually succeeds", func() {
-			vmWithFailedOps := newVM(false, true, true, compute.ProvisioningStateFailed, []azurev1alpha1.FailedOperation{
+			vmWithFailedOps := newVM(true, true, compute.ProvisioningStateFailed, []azurev1alpha1.FailedOperation{
 				{
 					Type:         azurev1alpha1.OperationTypeReapplyVirtualMachine,
 					Attempts:     1,
@@ -317,7 +316,7 @@ var _ = Describe("Actuator", func() {
 					Timestamp:    now,
 				},
 			})
-			vm := newVM(false, true, true, compute.ProvisioningStateFailed, []azurev1alpha1.FailedOperation{})
+			vm := newVM(true, true, compute.ProvisioningStateFailed, []azurev1alpha1.FailedOperation{})
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateFailed)
 			azureVirtualMachine2 := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
@@ -340,8 +339,8 @@ var _ = Describe("Actuator", func() {
 
 	Describe("#Delete", func() {
 		It("should update the VirtualMachine object status if the VM is found", func() {
-			vm := newVM(true, false, false, "", nil)
-			vmWithStatus := newVM(true, false, true, compute.ProvisioningStateSucceeded, nil)
+			vm := newVM(false, false, "", nil)
+			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
 			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
@@ -353,7 +352,7 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should not update the VirtualMachine object status if the VM is not found", func() {
-			vm := newVM(true, false, false, "", nil)
+			vm := newVM(false, false, "", nil)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, nil)
 			vmStatesGaugeVec.EXPECT().DeleteLabelValues(azureVirtualMachineName)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, vm).Return(nil)
@@ -362,7 +361,7 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should not update the VirtualMachine object status if the VM is found and the status is already initialized", func() {
-			vmWithStatus := newVM(true, false, true, compute.ProvisioningStateSucceeded, nil)
+			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
 			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
@@ -373,8 +372,8 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should update the VirtualMachine object status if the VM is not found and the status is already initialized", func() {
-			vm := newVM(true, false, false, "", nil)
-			vmWithStatus := newVM(true, false, true, compute.ProvisioningStateSucceeded, nil)
+			vm := newVM(false, false, "", nil)
+			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, nil)
 			vmStatesGaugeVec.EXPECT().DeleteLabelValues(azureVirtualMachineName)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vmWithStatus.Name}, vmWithStatus).Return(nil)
@@ -384,8 +383,8 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should fail if getting the Azure VM fails", func() {
-			vm := newVM(true, false, false, "", nil)
-			vmWithFailedOps := newVM(true, false, false, "", []azurev1alpha1.FailedOperation{
+			vm := newVM(false, false, "", nil)
+			vmWithFailedOps := newVM(false, false, "", []azurev1alpha1.FailedOperation{
 				{
 					Type:         azurev1alpha1.OperationTypeGetVirtualMachine,
 					Attempts:     1,
@@ -405,8 +404,8 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should fail if updating the VirtualMachine object status fails", func() {
-			vm := newVM(true, false, false, "", nil)
-			vmWithStatus := newVM(true, false, true, compute.ProvisioningStateSucceeded, nil)
+			vm := newVM(false, false, "", nil)
+			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
 			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
 			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
 			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)

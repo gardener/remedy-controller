@@ -180,24 +180,13 @@ string
 </tr>
 <tr>
 <td>
-<code>ready</code></br>
+<code>notReadyOrUnreachable</code></br>
 <em>
 bool
 </em>
 </td>
 <td>
-<p>Ready is whether the Kubernetes node for this virtual machine is ready.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>unreachable</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Unreachable is whether the Kubernetes node for this virtual machine is unreachable.</p>
+<p>NotReadyOrUnreachable is whether the Kubernetes node for this virtual machine is either not ready or unreachable.</p>
 </td>
 </tr>
 </table>
@@ -441,24 +430,13 @@ string
 </tr>
 <tr>
 <td>
-<code>ready</code></br>
+<code>notReadyOrUnreachable</code></br>
 <em>
 bool
 </em>
 </td>
 <td>
-<p>Ready is whether the Kubernetes node for this virtual machine is ready.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>unreachable</code></br>
-<em>
-bool
-</em>
-</td>
-<td>
-<p>Unreachable is whether the Kubernetes node for this virtual machine is unreachable.</p>
+<p>NotReadyOrUnreachable is whether the Kubernetes node for this virtual machine is either not ready or unreachable.</p>
 </td>
 </tr>
 </tbody>

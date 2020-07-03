@@ -47,6 +47,7 @@ remedy-controller:
         trigger: false
       steps:
         test:
+          image: 'eu.gcr.io/gardener-project/cc/job-image-golang:0.11.0'
           execute:
             - integration_test.sh
           depends:

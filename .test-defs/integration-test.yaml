@@ -1,0 +1,50 @@
+kind: TestDefinition
+metadata:
+  name: integration-test
+spec:
+  owner: andreas.burger@sap.com # test owner and contact person in case of a test failure
+  recipientsOnFailure:
+  - s.rachev@sap.com
+  - georgi.chulkov@sap.com # optional, list of emails to be notified if a step fails
+  description: "Integration test" # optional; description of the test.
+
+  activeDeadlineSeconds: 2700 # optional; maximum seconds to wait for the test to finish.
+
+  # optional, specify specific behavior of a test.
+  # By default steps are executed in parallel.
+  # By specifying "serial behavior", tests can be forced to be executed in serial.
+  behavior: ["serial"]
+
+  # required; Entrypoint array. Not executed within a shell.
+  # The docker image's ENTRYPOINT is used if this is not provided.
+  command: [bash, -c]
+  # Arguments to the entrypoint. The docker image's CMD is used if this is not provided.
+  args: [".ci/integration_test.sh"]
+
+  # image: eu.gcr.io/gardener-project/cc/job-image-golang:0.12.0
+
+  # optional; Configuration of a TestDefinition.
+  # Environment Variables can be configured per TestDefinition
+  # by specifying the varibale's name and a value, secret or configmap.
+  # Files can be mounted into the test by specifying a base64 encoded value, secret or configmap.
+  # config:
+  # - type: env
+  #   name: TESTENV1
+  #   value: "Env content"
+  # - type: env
+  #   name: TESTENV2
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: secretName
+  #       key: secretKey
+  # - type: file
+  #   name: file1 # name for description
+  #   path: /tmp/tm/file1.txt
+  #   value: "aGVsbG8gd29ybGQK" # base64 encoded file content: "hello world"
+  # - type: file
+  #   name: file2
+  #   path: /tmp/tm/file2.txt
+  #   valueFrom:
+  #     configMapKeyRef:
+  #       name: configmapName
+  #       key: configmapKey

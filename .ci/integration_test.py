@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import argparse
 import json
 import os
 import sys
@@ -10,7 +9,7 @@ import concurrent.futures
 
 import yaml
 
-import ci.util
+import model.kubernetes
 import landscape_setup.utils
 
 own_dir = os.path.abspath(os.path.dirname(__file__))
@@ -27,34 +26,30 @@ HELM_CHART_DEPLOYMENT_NAMESPACE = 'default'
 
 VM_TEST_REQUIRED_ATTEMPTS = 4
 
+KUBECONFIG_DIR = os.environ['TM_KUBECONFIG_PATH']
+
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--kubeconfig-name', default='remedy-test-cluster')
-    parser.add_argument('--credentials-config-name', default='integration_test')
-    parsed = parser.parse_args()
+    kubeconfig_path = os.path.join(KUBECONFIG_DIR, 'shoot.config')
+    os.environ['KUBECONFIG'] = kubeconfig_path
+    test_credentials = credentials_from_environ()
 
-    cfg_factory = ci.util.ctx().cfg_factory()
-    kubernetes_config = cfg_factory.kubernetes(parsed.kubeconfig_name)
-    test_credentials = cfg_factory._cfg_element(
-        cfg_type_name='remedy_test',
-        cfg_name=parsed.credentials_config_name,
-    )
-
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as kubeconfig_file:
-        yaml.safe_dump(kubernetes_config.kubeconfig(), kubeconfig_file)
-        kubeconfig_path = os.path.abspath(kubeconfig_file.name)
-        os.environ['KUBECONFIG'] = kubeconfig_path
+    with open(kubeconfig_path, 'r') as f:
+        kubeconfig = yaml.safe_load(f.read())
+        kubernetes_config = model.kubernetes.KubernetesConfig(
+            '',
+            {'kubeconfig': kubeconfig}, # MUST be positional
+        )
 
     # vm failer expects the credentials at one special location. TODO: Remove this once its adjusted
     expected_dir = os.path.join(repo_dir, 'dev')
     expected_file_path = os.path.join(expected_dir, 'credentials.yaml')
     os.mkdir(expected_dir)
     with open(expected_file_path, mode='w') as f:
-        yaml.safe_dump(test_credentials.raw, f)
+        yaml.safe_dump(test_credentials, f)
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as credentials_file:
-        yaml.safe_dump(test_credentials.raw, credentials_file)
+        yaml.safe_dump(test_credentials, credentials_file)
         credentials_path = os.path.abspath(credentials_file.name)
 
     with open(os.path.join(repo_dir, 'VERSION')) as version_file:
@@ -63,8 +58,6 @@ def main():
     chart_dir = os.path.join(repo_dir, 'charts', HELM_CHART_NAME)
     values = create_helm_values(chart_dir, version, credentials_path)
 
-    # TODO: Uncomment as soon as the python client for 1.16 is released & included
-    # apply_crd(path_to_kubeconfig=kubeconfig_path)
 
     landscape_setup.utils.execute_helm_deployment(
         kubernetes_config,
@@ -107,11 +100,15 @@ def main():
         exit(1)
 
 
-def apply_crd(path_to_kubeconfig):
-    k8s_client = test_util.KubernetesHelper(path_to_kubeconfig)
-    with open(os.path.join('..', 'example', '20-crd-publicipaddress.yaml')) as crd_file:
-        crd = yaml.safe_load(crd_file.read())
-    k8s_client.create_custom_resource_definition(crd)
+def credentials_from_environ():
+    return {
+        'aadClientId': os.environ['CLIENT_ID'],
+        'aadClientSecret': os.environ['CLIENT_SECRET'],
+        'tenantId': os.environ['TENANT_ID'],
+        'subscriptionId': os.environ['SUBSCRIPTION_ID'],
+        'resourceGroup': f'shoot--it--{os.environ["SHOOT_NAME"]}',
+        'location': os.environ['REGION'],
+    }
 
 
 def create_helm_values(chart_dir, version, path_to_credentials_file):

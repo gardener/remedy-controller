@@ -1,0 +1,46 @@
+flavors:
+- provider: azure
+  kubernetes:
+    pattern: "latest"
+  cloudprofile: az
+  projectName: it
+  secretBinding: shoot-operator-az
+  region: westeurope
+  infrastructureConfig:
+    apiVersion: azure.provider.extensions.gardener.cloud/v1alpha1
+    kind: InfrastructureConfig
+    networks:
+      vnet:
+        cidr: 10.250.0.0/16
+      workers: 10.250.0.0/19
+    zoned: true
+  workers:
+  - workerPools:
+    - name: fail-me
+      machine:
+        type: Standard_D2_v3
+        image:
+          name: gardenlinux
+          version: latest
+      minimum: 2
+      maximum: 2
+      volume:
+        size: 35Gi
+        type: Standard_LRS
+      zones:
+      - "1"
+      - "2"
+    - name: test-nodes
+      machine:
+        type: Standard_D2_v3
+        image:
+          name: gardenlinux
+          version: latest
+      minimum: 1
+      maximum: 1
+      volume:
+        size: 35Gi
+        type: Standard_LRS
+      zones:
+      - "1"
+

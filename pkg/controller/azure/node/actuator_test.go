@@ -103,10 +103,9 @@ var _ = Describe("Actuator", func() {
 				Labels:    vmLabels,
 			},
 			Spec: azurev1alpha1.VirtualMachineSpec{
-				Hostname:    hostname,
-				ProviderID:  providerID,
-				Ready:       true,
-				Unreachable: false,
+				Hostname:              hostname,
+				ProviderID:            providerID,
+				NotReadyOrUnreachable: false,
 			},
 		}
 	})

@@ -313,8 +313,7 @@ func Convert_azure_VirtualMachineList_To_v1alpha1_VirtualMachineList(in *azure.V
 func autoConvert_v1alpha1_VirtualMachineSpec_To_azure_VirtualMachineSpec(in *VirtualMachineSpec, out *azure.VirtualMachineSpec, s conversion.Scope) error {
 	out.Hostname = in.Hostname
 	out.ProviderID = in.ProviderID
-	out.Ready = in.Ready
-	out.Unreachable = in.Unreachable
+	out.NotReadyOrUnreachable = in.NotReadyOrUnreachable
 	return nil
 }
 
@@ -326,8 +325,7 @@ func Convert_v1alpha1_VirtualMachineSpec_To_azure_VirtualMachineSpec(in *Virtual
 func autoConvert_azure_VirtualMachineSpec_To_v1alpha1_VirtualMachineSpec(in *azure.VirtualMachineSpec, out *VirtualMachineSpec, s conversion.Scope) error {
 	out.Hostname = in.Hostname
 	out.ProviderID = in.ProviderID
-	out.Ready = in.Ready
-	out.Unreachable = in.Unreachable
+	out.NotReadyOrUnreachable = in.NotReadyOrUnreachable
 	return nil
 }
 

@@ -13,6 +13,6 @@ azure:
     maxGetAttempts: 5
     maxCleanAttempts: 5
   failedVMRemedy:
-    requeueInterval: 1m
+    requeueInterval: 30s
     maxGetAttempts: 5
-    maxReapplyAttempts: 5
+    maxReapplyAttempts: 3

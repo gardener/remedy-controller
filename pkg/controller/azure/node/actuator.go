@@ -57,12 +57,12 @@ func NewActuator(client client.Client, namespace string, logger logr.Logger) con
 }
 
 // CreateOrUpdate reconciles object creation or update.
-func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requeueAfter time.Duration, removeFinalizer bool, err error) {
+func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requeueAfter time.Duration, err error) {
 	// Cast object to Node
 	var node *corev1.Node
 	var ok bool
 	if node, ok = obj.(*corev1.Node); !ok {
-		return 0, false, errors.New("reconciled object is not a node")
+		return 0, errors.New("reconciled object is not a node")
 	}
 
 	// Initialize labels
@@ -93,10 +93,10 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 		})
 		return err
 	}); err != nil {
-		return 0, false, errors.Wrap(err, "could not create or update virtualmachine")
+		return 0, errors.Wrap(err, "could not create or update virtualmachine")
 	}
 
-	return 0, false, nil
+	return 0, nil
 }
 
 // Delete reconciles object deletion.
@@ -121,6 +121,11 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 	}
 
 	return nil
+}
+
+// ShouldFinalize returns true if the object should be finalized.
+func (a *actuator) ShouldFinalize(_ context.Context, _ runtime.Object) (bool, error) {
+	return true, nil
 }
 
 func isNodeReady(node *corev1.Node) bool {

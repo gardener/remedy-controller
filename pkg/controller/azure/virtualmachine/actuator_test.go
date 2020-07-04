@@ -146,10 +146,9 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, vm).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithStatus).Return(nil)
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, vm)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, vm)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should not update the VirtualMachine object status if the VM is not found", func() {
@@ -158,10 +157,9 @@ var _ = Describe("Actuator", func() {
 			vmStatesGaugeVec.EXPECT().DeleteLabelValues(azureVirtualMachineName)
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, vm).Return(nil)
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, vm)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, vm)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(requeueInterval))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should not update the VirtualMachine object status if the VM is found and the status is already initialized", func() {
@@ -172,10 +170,9 @@ var _ = Describe("Actuator", func() {
 			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
 			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, vmWithStatus)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithStatus)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should update the VirtualMachine object status if the VM is not found and the status is already initialized", func() {
@@ -186,10 +183,9 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vmWithStatus.Name}, vmWithStatus).Return(nil)
 			sw.EXPECT().Update(ctx, vm).Return(nil)
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, vmWithStatus)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithStatus)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(requeueInterval))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should reapply the Azure VM if it's in a failed state", func() {
@@ -208,10 +204,9 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, vm).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithStatus).Return(nil)
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, vm)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, vm)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should fail if getting the Azure VM fails", func() {
@@ -228,7 +223,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, vm).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithFailedOps).Return(nil)
 
-			_, _, err := actuator.CreateOrUpdate(ctx, vm)
+			_, err := actuator.CreateOrUpdate(ctx, vm)
 			Expect(err).To(BeAssignableToTypeOf(&controllererror.RequeueAfterError{}))
 			re := err.(*controllererror.RequeueAfterError)
 			Expect(re.Cause).To(MatchError("could not get Azure virtual machine: test"))
@@ -245,7 +240,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, vm).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithStatus).Return(errors.New("test"))
 
-			_, _, err := actuator.CreateOrUpdate(ctx, vm)
+			_, err := actuator.CreateOrUpdate(ctx, vm)
 			Expect(err).To(MatchError("could not update virtualmachine status: test"))
 		})
 
@@ -267,7 +262,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vm.Name}, vm).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithFailedOps).Return(nil)
 
-			_, _, err := actuator.CreateOrUpdate(ctx, vm)
+			_, err := actuator.CreateOrUpdate(ctx, vm)
 			Expect(err).To(BeAssignableToTypeOf(&controllererror.RequeueAfterError{}))
 			re := err.(*controllererror.RequeueAfterError)
 			Expect(re.Cause).To(MatchError("could not reapply Azure virtual machine: test"))
@@ -301,10 +296,9 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vmWithFailedOps.Name}, vmWithFailedOps).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithFailedOps2).Return(nil)
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, vmWithFailedOps)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithFailedOps)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should clear failed operations if reapplying the Azure VM eventually succeeds", func() {
@@ -330,10 +324,9 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Name: vmWithFailedOps.Name}, vmWithFailedOps).Return(nil)
 			sw.EXPECT().Update(ctx, vm).Return(nil)
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, vmWithFailedOps)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithFailedOps)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 	})
 

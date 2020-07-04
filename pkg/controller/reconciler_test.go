@@ -113,20 +113,33 @@ var _ = Describe("Controller", func() {
 	})
 
 	Describe("#Reconcile", func() {
-		It("should create or update an object", func() {
+		It("should create or update an object if it should be finalized", func() {
 			c.EXPECT().Get(gomock.Any(), request.NamespacedName, obj).Return(nil)
+			a.EXPECT().ShouldFinalize(gomock.Any(), obj).Return(true, nil)
 			c.EXPECT().Update(gomock.Any(), objWithFinalizer).Return(nil)
-			a.EXPECT().CreateOrUpdate(gomock.Any(), objWithFinalizer).Return(time.Duration(0), false, nil)
+			a.EXPECT().CreateOrUpdate(gomock.Any(), objWithFinalizer).Return(time.Duration(0), nil)
 
 			result, err := reconciler.Reconcile(request)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(reconcile.Result{}))
 		})
 
-		It("should create or update an object and remove the finalizer", func() {
+		It("should not create or update an object if it should not be finalized and doesn't have a finalizer", func() {
 			c.EXPECT().Get(gomock.Any(), request.NamespacedName, obj).Return(nil)
-			c.EXPECT().Update(gomock.Any(), objWithFinalizer).Return(nil)
-			a.EXPECT().CreateOrUpdate(gomock.Any(), objWithFinalizer).Return(time.Duration(0), true, nil)
+			a.EXPECT().ShouldFinalize(gomock.Any(), obj).Return(false, nil)
+
+			result, err := reconciler.Reconcile(request)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(reconcile.Result{}))
+		})
+
+		It("should create or update an object and remove the finalizer if it should not be finalized but already has a finalizer", func() {
+			c.EXPECT().Get(gomock.Any(), request.NamespacedName, obj).DoAndReturn(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod) error {
+				pod.ObjectMeta.Finalizers = []string{"test-finalizer"}
+				return nil
+			})
+			a.EXPECT().ShouldFinalize(gomock.Any(), objWithFinalizer).Return(false, nil)
+			a.EXPECT().CreateOrUpdate(gomock.Any(), objWithFinalizer).Return(time.Duration(0), nil)
 			c.EXPECT().Update(gomock.Any(), objWithNoFinalizer).Return(nil)
 
 			result, err := reconciler.Reconcile(request)
@@ -134,7 +147,7 @@ var _ = Describe("Controller", func() {
 			Expect(result).To(Equal(reconcile.Result{}))
 		})
 
-		It("should delete an object", func() {
+		It("should delete an object that has a finalizer", func() {
 			c.EXPECT().Get(gomock.Any(), request.NamespacedName, obj).DoAndReturn(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod) error {
 				pod.ObjectMeta.DeletionTimestamp = &ts
 				pod.ObjectMeta.Finalizers = []string{"test-finalizer"}
@@ -148,7 +161,7 @@ var _ = Describe("Controller", func() {
 			Expect(result).To(Equal(reconcile.Result{}))
 		})
 
-		It("should delete an object without a finalizer", func() {
+		It("should not delete an object that doesn't have a finalizer", func() {
 			c.EXPECT().Get(gomock.Any(), request.NamespacedName, obj).DoAndReturn(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod) error {
 				pod.ObjectMeta.DeletionTimestamp = &ts
 				return nil
@@ -167,10 +180,19 @@ var _ = Describe("Controller", func() {
 			Expect(result).To(Equal(reconcile.Result{}))
 		})
 
+		It("should fail if the actuator fails to check if the object should be finalized", func() {
+			c.EXPECT().Get(gomock.Any(), request.NamespacedName, obj).Return(nil)
+			a.EXPECT().ShouldFinalize(gomock.Any(), obj).Return(false, errors.New("test"))
+
+			_, err := reconciler.Reconcile(request)
+			Expect(err).To(MatchError("could not check if the object should be finalized: test"))
+		})
+
 		It("should fail if the actuator fails to create or update", func() {
 			c.EXPECT().Get(gomock.Any(), request.NamespacedName, obj).Return(nil)
+			a.EXPECT().ShouldFinalize(gomock.Any(), obj).Return(true, nil)
 			c.EXPECT().Update(gomock.Any(), objWithFinalizer).Return(nil)
-			a.EXPECT().CreateOrUpdate(gomock.Any(), objWithFinalizer).Return(time.Duration(0), false, errors.New("test"))
+			a.EXPECT().CreateOrUpdate(gomock.Any(), objWithFinalizer).Return(time.Duration(0), errors.New("test"))
 
 			_, err := reconciler.Reconcile(request)
 			Expect(err).To(MatchError("could not reconcile object creation or update: test"))

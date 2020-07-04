@@ -120,10 +120,9 @@ var _ = Describe("Actuator", func() {
 				Return(apierrors.NewNotFound(schema.GroupResource{}, vm.Name))
 			c.EXPECT().Create(ctx, vm).Return(nil)
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, node)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, node)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should fail when creating the VirtualMachine object for a node and an error occurs", func() {
@@ -131,7 +130,7 @@ var _ = Describe("Actuator", func() {
 				Return(apierrors.NewNotFound(schema.GroupResource{}, vm.Name))
 			c.EXPECT().Create(ctx, vm).Return(apierrors.NewInternalError(errors.New("test")))
 
-			_, _, err := actuator.CreateOrUpdate(ctx, node)
+			_, err := actuator.CreateOrUpdate(ctx, node)
 			Expect(err).To(MatchError("could not create or update virtualmachine: Internal error occurred: test"))
 		})
 
@@ -143,10 +142,9 @@ var _ = Describe("Actuator", func() {
 				})
 			c.EXPECT().Update(ctx, vm).Return(nil)
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, node)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, node)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should not update the VirtualMachine object for a node if it already exists and is properly initialized", func() {
@@ -156,10 +154,9 @@ var _ = Describe("Actuator", func() {
 					return nil
 				})
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, node)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, node)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should retry when updating the VirtualMachine object for a node and a Conflict error occurs", func() {
@@ -176,10 +173,9 @@ var _ = Describe("Actuator", func() {
 				})
 			c.EXPECT().Update(ctx, vm).Return(nil)
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, node)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, node)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should fail when updating the VirtualMachine object for a node and an error different from Conflict occurs", func() {
@@ -190,7 +186,7 @@ var _ = Describe("Actuator", func() {
 				})
 			c.EXPECT().Update(ctx, vm).Return(apierrors.NewInternalError(errors.New("test")))
 
-			_, _, err := actuator.CreateOrUpdate(ctx, node)
+			_, err := actuator.CreateOrUpdate(ctx, node)
 			Expect(err).To(MatchError("could not create or update virtualmachine: Internal error occurred: test"))
 		})
 	})

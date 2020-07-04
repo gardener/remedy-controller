@@ -61,6 +61,10 @@ func NewLoadBalancerIPsChangedPredicate(logger logr.Logger) predicate.Predicate 
 				logger.Info("Updating the deletion timestamp of a service with LoadBalancer IPs")
 				return true
 			}
+			if len(newIPs) > 0 && shouldIgnoreService(oldService) != shouldIgnoreService(newService) {
+				logger.Info("Updating the ignore annotation of a service with LoadBalancer IPs")
+				return true
+			}
 			if !reflect.DeepEqual(oldIPs, newIPs) {
 				logger.Info("Updating service LoadBalancer IPs")
 				return true

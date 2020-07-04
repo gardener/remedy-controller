@@ -16,11 +16,13 @@ package service
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
-	"github.com/gardener/remedy-controller/pkg/apis/config"
 	"github.com/gardener/remedy-controller/pkg/controller"
+	azurepublicipaddress "github.com/gardener/remedy-controller/pkg/controller/azure/publicipaddress"
+	"github.com/gardener/remedy-controller/pkg/utils"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -35,21 +37,21 @@ import (
 const (
 	// Label is the label to put on a PublicIPAddress object that identifies its service.
 	Label = "azure.remedy.gardener.cloud/service"
+	// IgnoreAnnotation is an annotation that can be used to specify that a particular service should be ignored.
+	IgnoreAnnotation = "azure.remedy.gardener.cloud/ignore"
 )
 
 type actuator struct {
 	client    client.Client
-	config    config.AzureOrphanedPublicIPRemedyConfiguration
 	namespace string
 	logger    logr.Logger
 }
 
 // NewActuator creates a new Actuator.
-func NewActuator(client client.Client, config config.AzureOrphanedPublicIPRemedyConfiguration, namespace string, logger logr.Logger) controller.Actuator {
+func NewActuator(client client.Client, namespace string, logger logr.Logger) controller.Actuator {
 	logger.Info("Creating actuator", "namespace", namespace)
 	return &actuator{
 		client:    client,
-		config:    config,
 		namespace: namespace,
 		logger:    logger,
 	}
@@ -64,12 +66,6 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 		return 0, false, errors.New("reconciled object is not a service")
 	}
 
-	// Check if the service is blacklisted
-	if blacklistMatches(a.config.BlacklistedServiceLabels, svc.ObjectMeta.Labels) {
-		a.logger.Info("Ignoring blacklisted service", "name", svc.ObjectMeta.Name, "namespace", svc.ObjectMeta.Namespace)
-		return 0, true, nil
-	}
-
 	// Initialize labels
 	pubipLabels := map[string]string{
 		Label: svc.Namespace + "." + svc.Name,
@@ -77,25 +73,29 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 
 	// Get LoadBalancer IPs
 	ips := getServiceLoadBalancerIPs(svc)
+	shouldIgnore := shouldIgnoreService(svc)
 
 	// Create or update PublicIPAddress objects for existing LoadBalancer IPs
-	for ip := range ips {
-		pubip := &azurev1alpha1.PublicIPAddress{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      generatePublicIPAddressName(svc.Namespace, svc.Name, ip),
-				Namespace: a.namespace,
-			},
-		}
-		a.logger.Info("Creating or updating publicipaddress", "name", pubip.Name, "namespace", pubip.Namespace)
-		if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			_, err := controllerutil.CreateOrUpdate(ctx, a.client, pubip, func() error {
-				pubip.Labels = pubipLabels
-				pubip.Spec.IPAddress = ip
-				return nil
-			})
-			return err
-		}); err != nil {
-			return 0, false, errors.Wrap(err, "could not create or update publicipaddress")
+	if !shouldIgnore {
+		for ip := range ips {
+			pubip := &azurev1alpha1.PublicIPAddress{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      generatePublicIPAddressName(svc.Namespace, svc.Name, ip),
+					Namespace: a.namespace,
+				},
+			}
+			a.logger.Info("Creating or updating publicipaddress", "name", pubip.Name, "namespace", pubip.Namespace)
+			if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+				_, err := controllerutil.CreateOrUpdate(ctx, a.client, pubip, func() error {
+					pubip.Labels = pubipLabels
+					delete(pubip.Annotations, azurepublicipaddress.DoNotCleanAnnotation)
+					pubip.Spec.IPAddress = ip
+					return nil
+				})
+				return err
+			}); err != nil {
+				return 0, false, errors.Wrap(err, "could not create or update publicipaddress")
+			}
 		}
 	}
 
@@ -105,7 +105,16 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 		return 0, false, errors.Wrap(err, "could not list publicipaddresses")
 	}
 	for _, pubip := range pubipList.Items {
-		if _, ok := ips[pubip.Spec.IPAddress]; !ok {
+		if _, ok := ips[pubip.Spec.IPAddress]; !ok || shouldIgnore {
+			if shouldIgnore {
+				a.logger.Info("Adding do-not-clean annotation on publicipaddress", "name", pubip.Name, "namespace", pubip.Namespace)
+				if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+					pubip.Annotations = utils.Add(pubip.Annotations, azurepublicipaddress.DoNotCleanAnnotation, strconv.FormatBool(true))
+					return a.client.Update(ctx, &pubip)
+				}); err != nil {
+					return 0, false, errors.Wrap(err, "could not add do-not-clean annotation on publicipaddress")
+				}
+			}
 			a.logger.Info("Deleting publicipaddress", "name", pubip.Name, "namespace", pubip.Namespace)
 			if err := client.IgnoreNotFound(a.client.Delete(ctx, &pubip)); err != nil {
 				return 0, false, errors.Wrap(err, "could not delete publicipaddress")
@@ -113,7 +122,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 		}
 	}
 
-	return 0, len(ips) == 0, nil
+	return 0, len(ips) == 0 || shouldIgnore, nil
 }
 
 // Delete reconciles object deletion.
@@ -147,32 +156,18 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 
 func getServiceLoadBalancerIPs(svc *corev1.Service) map[string]bool {
 	ips := make(map[string]bool)
-	if svc.Spec.Type == corev1.ServiceTypeLoadBalancer {
-		for _, ingress := range svc.Status.LoadBalancer.Ingress {
-			if ingress.IP != "" {
-				ips[ingress.IP] = true
-			}
+	for _, ingress := range svc.Status.LoadBalancer.Ingress {
+		if ingress.IP != "" {
+			ips[ingress.IP] = true
 		}
 	}
 	return ips
 }
 
-func generatePublicIPAddressName(serviceNamespace, serviceName, ip string) string {
-	return serviceNamespace + "-" + serviceName + "-" + ip
+func shouldIgnoreService(svc *corev1.Service) bool {
+	return svc.Annotations[IgnoreAnnotation] == strconv.FormatBool(true)
 }
 
-func blacklistMatches(blacklist []map[string]string, labels map[string]string) bool {
-	for _, bl := range blacklist {
-		allMatch := true
-		for key, val := range bl {
-			if v, ok := labels[key]; !ok || v != val {
-				allMatch = false
-				break
-			}
-		}
-		if allMatch {
-			return true
-		}
-	}
-	return false
+func generatePublicIPAddressName(serviceNamespace, serviceName, ip string) string {
+	return serviceNamespace + "-" + serviceName + "-" + ip
 }

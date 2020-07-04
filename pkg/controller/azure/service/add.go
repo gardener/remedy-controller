@@ -15,7 +15,6 @@
 package service
 
 import (
-	"github.com/gardener/remedy-controller/pkg/apis/config"
 	remedycontroller "github.com/gardener/remedy-controller/pkg/controller"
 
 	corev1 "k8s.io/api/core/v1"
@@ -46,14 +45,12 @@ type AddOptions struct {
 	Client client.Client
 	// Namespace is the namespace for custom resources in the control cluster.
 	Namespace string
-	// Config is the configuration for the Azure orphaned public IP remedy.
-	Config config.AzureOrphanedPublicIPRemedyConfiguration
 }
 
 // AddToManagerWithOptions adds a controller with the given AddOptions to the given manager.
 func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 	return remedycontroller.Add(mgr, remedycontroller.AddArgs{
-		Actuator:          NewActuator(options.Client, options.Config, options.Namespace, log.Log.WithName(ActuatorName)),
+		Actuator:          NewActuator(options.Client, options.Namespace, log.Log.WithName(ActuatorName)),
 		ControllerName:    ControllerName,
 		FinalizerName:     FinalizerName,
 		ControllerOptions: options.Controller,

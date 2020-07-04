@@ -51,8 +51,6 @@ type AzureOrphanedPublicIPRemedyConfiguration struct {
 	MaxGetAttempts int
 	// MaxCleanAttempts specifies the max attempts to clean an Azure public ip address.
 	MaxCleanAttempts int
-	// BlacklistedServiceLabels spcifies the labels of services that will be ignored.
-	BlacklistedServiceLabels []map[string]string
 }
 
 // AzureFailedVMRemedyConfiguration defines the configuration for the Azure failed VM remedy.

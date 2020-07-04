@@ -16,6 +16,7 @@ package publicipaddress
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
@@ -33,6 +34,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	// DoNotCleanAnnotation is an annotation that can be used to specify that a particular PublicIPAddress
+	// should be not be cleaned when deleted.
+	DoNotCleanAnnotation = "azure.remedy.gardener.cloud/do-not-clean"
 )
 
 type actuator struct {
@@ -154,7 +161,7 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 	azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeGetPublicIPAddress)
 
 	// Clean the Azure public IP address if it still exists and the deletion grace period has elapsed
-	if azurePublicIP != nil {
+	if azurePublicIP != nil && !shouldNotClean(pubip) {
 		// If within the deletion grace period, requeue so we could check again
 		if pubip.DeletionTimestamp != nil &&
 			!a.timestamper.Now().After(pubip.DeletionTimestamp.Add(a.config.DeletionGracePeriod.Duration)) {
@@ -256,6 +263,10 @@ func getFailedOperations(pubip *azurev1alpha1.PublicIPAddress) []azurev1alpha1.F
 		copy(failedOperations, pubip.Status.FailedOperations)
 	}
 	return failedOperations
+}
+
+func shouldNotClean(pubip *azurev1alpha1.PublicIPAddress) bool {
+	return pubip.Annotations[DoNotCleanAnnotation] == strconv.FormatBool(true)
 }
 
 func getProvisioningState(azurePublicIP *network.PublicIPAddress) network.ProvisioningState {

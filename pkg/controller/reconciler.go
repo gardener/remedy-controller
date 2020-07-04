@@ -93,18 +93,32 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *reconciler) createOrUpdate(ctx context.Context, obj runtime.Object, logger logr.Logger) (reconcile.Result, error) {
-	if err := extensionscontroller.EnsureFinalizer(ctx, r.client, r.finalizerName, obj); err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "could not ensure finalizer")
+	shouldFinalize, err := r.actuator.ShouldFinalize(ctx, obj)
+	if err != nil {
+		return reconcile.Result{}, errors.Wrap(err, "could not check if the object should be finalized")
+	}
+	if shouldFinalize {
+		if err := extensionscontroller.EnsureFinalizer(ctx, r.client, r.finalizerName, obj); err != nil {
+			return reconcile.Result{}, errors.Wrap(err, "could not ensure finalizer")
+		}
+	} else {
+		hasFinalizer, err := extensionscontroller.HasFinalizer(obj, r.finalizerName)
+		if err != nil {
+			return reconcile.Result{}, errors.Wrap(err, "could not check for finalizer")
+		}
+		if !hasFinalizer {
+			return reconcile.Result{}, nil
+		}
 	}
 
 	logger.Info("Reconciling object creation or update")
-	requeueAfter, removeFinalizer, err := r.actuator.CreateOrUpdate(ctx, obj)
+	requeueAfter, err := r.actuator.CreateOrUpdate(ctx, obj)
 	if err != nil {
 		return reconcileErr(errors.Wrap(err, "could not reconcile object creation or update"))
 	}
 	logger.Info("Successfully reconciled object creation or update")
 
-	if removeFinalizer {
+	if !shouldFinalize {
 		logger.Info("Removing finalizer")
 		if err := extensionscontroller.DeleteFinalizer(ctx, r.client, r.finalizerName, obj); err != nil {
 			return reconcile.Result{}, errors.Wrap(err, "could not remove finalizer")
@@ -123,7 +137,6 @@ func (r *reconciler) delete(ctx context.Context, obj runtime.Object, logger logr
 		return reconcile.Result{}, errors.Wrap(err, "could not check for finalizer")
 	}
 	if !hasFinalizer {
-		logger.Info("Deleting an object without a finalizer (no-op)")
 		return reconcile.Result{}, nil
 	}
 

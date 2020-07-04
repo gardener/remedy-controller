@@ -75,12 +75,12 @@ func (a *actuator) InjectClient(client client.Client) error {
 }
 
 // CreateOrUpdate reconciles object creation or update.
-func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requeueAfter time.Duration, removeFinalizer bool, err error) {
+func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requeueAfter time.Duration, err error) {
 	// Cast object to PublicIPAddress
 	var pubip *azurev1alpha1.PublicIPAddress
 	var ok bool
 	if pubip, ok = obj.(*azurev1alpha1.PublicIPAddress); !ok {
-		return 0, false, errors.New("reconciled object is not a publicipaddress")
+		return 0, errors.New("reconciled object is not a publicipaddress")
 	}
 
 	// Initialize failed operations from PublicIPAddress status
@@ -96,23 +96,23 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 
 		// Update resource status
 		if err := a.updatePublicIPAddressStatus(ctx, pubip, azurePublicIP, failedOperations); err != nil {
-			return 0, false, err
+			return 0, err
 		}
 
 		// If the failed operation has been attempted less than the configured max attempts, requeue with exponential backoff
 		if failedOperation.Attempts < a.config.MaxGetAttempts {
-			return 0, false, &controllererror.RequeueAfterError{
+			return 0, &controllererror.RequeueAfterError{
 				Cause:        err,
 				RequeueAfter: a.config.RequeueInterval.Duration * (1 << (failedOperation.Attempts - 1)),
 			}
 		}
-		return 0, false, nil
+		return 0, nil
 	}
 	azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeGetPublicIPAddress)
 
 	// Update resource status
 	if err := a.updatePublicIPAddressStatus(ctx, pubip, azurePublicIP, failedOperations); err != nil {
-		return 0, false, err
+		return 0, err
 	}
 
 	// Requeue if the Azure public IP address doesn't exist or is in a transient state
@@ -121,7 +121,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 		requeueAfter = a.config.RequeueInterval.Duration
 	}
 
-	return requeueAfter, false, nil
+	return requeueAfter, nil
 }
 
 // Delete reconciles object deletion.
@@ -204,6 +204,11 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 	}
 
 	return nil
+}
+
+// ShouldFinalize returns true if the object should be finalized.
+func (a *actuator) ShouldFinalize(_ context.Context, _ runtime.Object) (bool, error) {
+	return true, nil
 }
 
 func (a *actuator) getAzurePublicIPAddress(ctx context.Context, pubip *azurev1alpha1.PublicIPAddress) (*network.PublicIPAddress, error) {

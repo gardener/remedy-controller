@@ -30,17 +30,11 @@ func NewLoadBalancerIPsChangedPredicate(logger logr.Logger) predicate.Predicate 
 				logger.Error(nil, "CreateEvent has no object", "event", e)
 				return false
 			}
-			var service *corev1.Service
-			var ok bool
-			if service, ok = e.Object.(*corev1.Service); !ok {
+			if _, ok := e.Object.(*corev1.Service); !ok {
 				return false
 			}
-			ips := getServiceLoadBalancerIPs(service)
-			if len(ips) > 0 {
-				logger.Info("Creating a service with LoadBalancer IPs")
-				return true
-			}
-			return false
+			logger.Info("Creating a service")
+			return true
 		},
 
 		UpdateFunc: func(e event.UpdateEvent) bool {
@@ -77,17 +71,11 @@ func NewLoadBalancerIPsChangedPredicate(logger logr.Logger) predicate.Predicate 
 				logger.Error(nil, "DeleteEvent has no object", "event", e)
 				return false
 			}
-			var service *corev1.Service
-			var ok bool
-			if service, ok = e.Object.(*corev1.Service); !ok {
+			if _, ok := e.Object.(*corev1.Service); !ok {
 				return false
 			}
-			ips := getServiceLoadBalancerIPs(service)
-			if len(ips) > 0 {
-				logger.Info("Deleting a service with LoadBalancer IPs")
-				return true
-			}
-			return false
+			logger.Info("Deleting a service")
+			return true
 		},
 
 		GenericFunc: func(e event.GenericEvent) bool {

@@ -58,12 +58,12 @@ func NewActuator(client client.Client, namespace string, logger logr.Logger) con
 }
 
 // CreateOrUpdate reconciles object creation or update.
-func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requeueAfter time.Duration, removeFinalizer bool, err error) {
+func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requeueAfter time.Duration, err error) {
 	// Cast object to Service
 	var svc *corev1.Service
 	var ok bool
 	if svc, ok = obj.(*corev1.Service); !ok {
-		return 0, false, errors.New("reconciled object is not a service")
+		return 0, errors.New("reconciled object is not a service")
 	}
 
 	// Initialize labels
@@ -94,7 +94,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 				})
 				return err
 			}); err != nil {
-				return 0, false, errors.Wrap(err, "could not create or update publicipaddress")
+				return 0, errors.Wrap(err, "could not create or update publicipaddress")
 			}
 		}
 	}
@@ -102,7 +102,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 	// Delete PublicIPAddress objects for non-existing LoadBalancer IPs
 	pubipList := &azurev1alpha1.PublicIPAddressList{}
 	if err := a.client.List(ctx, pubipList, client.InNamespace(a.namespace), client.MatchingLabels(pubipLabels)); err != nil {
-		return 0, false, errors.Wrap(err, "could not list publicipaddresses")
+		return 0, errors.Wrap(err, "could not list publicipaddresses")
 	}
 	for _, pubip := range pubipList.Items {
 		if _, ok := ips[pubip.Spec.IPAddress]; !ok || shouldIgnore {
@@ -112,17 +112,17 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 					pubip.Annotations = utils.Add(pubip.Annotations, azurepublicipaddress.DoNotCleanAnnotation, strconv.FormatBool(true))
 					return a.client.Update(ctx, &pubip)
 				}); err != nil {
-					return 0, false, errors.Wrap(err, "could not add do-not-clean annotation on publicipaddress")
+					return 0, errors.Wrap(err, "could not add do-not-clean annotation on publicipaddress")
 				}
 			}
 			a.logger.Info("Deleting publicipaddress", "name", pubip.Name, "namespace", pubip.Namespace)
 			if err := client.IgnoreNotFound(a.client.Delete(ctx, &pubip)); err != nil {
-				return 0, false, errors.Wrap(err, "could not delete publicipaddress")
+				return 0, errors.Wrap(err, "could not delete publicipaddress")
 			}
 		}
 	}
 
-	return 0, len(ips) == 0 || shouldIgnore, nil
+	return 0, nil
 }
 
 // Delete reconciles object deletion.
@@ -152,6 +152,19 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 	}
 
 	return nil
+}
+
+// ShouldFinalize returns true if the object should be finalized.
+func (a *actuator) ShouldFinalize(_ context.Context, obj runtime.Object) (bool, error) {
+	// Cast object to Service
+	var svc *corev1.Service
+	var ok bool
+	if svc, ok = obj.(*corev1.Service); !ok {
+		return false, errors.New("reconciled object is not a service")
+	}
+
+	// Return true if there are LoadBalancer IPs and the service should not be ignored
+	return len(getServiceLoadBalancerIPs(svc)) > 0 && !shouldIgnoreService(svc), nil
 }
 
 func getServiceLoadBalancerIPs(svc *corev1.Service) map[string]bool {

@@ -167,10 +167,9 @@ var _ = Describe("Actuator", func() {
 					return nil
 				})
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, svc)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, svc)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should fail when creating the PublicIPAddress object for a service of type LoadBalancer and an error occurs", func() {
@@ -178,7 +177,7 @@ var _ = Describe("Actuator", func() {
 				Return(apierrors.NewNotFound(schema.GroupResource{}, pubip.Name))
 			c.EXPECT().Create(ctx, pubip).Return(apierrors.NewInternalError(errors.New("test")))
 
-			_, _, err := actuator.CreateOrUpdate(ctx, svc)
+			_, err := actuator.CreateOrUpdate(ctx, svc)
 			Expect(err).To(MatchError("could not create or update publicipaddress: Internal error occurred: test"))
 		})
 
@@ -189,7 +188,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(namespace), client.MatchingLabels(pubipLabels)).
 				Return(apierrors.NewInternalError(errors.New("test")))
 
-			_, _, err := actuator.CreateOrUpdate(ctx, svc)
+			_, err := actuator.CreateOrUpdate(ctx, svc)
 			Expect(err).To(MatchError("could not list publicipaddresses: Internal error occurred: test"))
 		})
 
@@ -206,10 +205,9 @@ var _ = Describe("Actuator", func() {
 					return nil
 				})
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, svc)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, svc)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should not update the PublicIPAddress object for a service of type LoadBalancer if it already exists and is properly initialized", func() {
@@ -224,10 +222,9 @@ var _ = Describe("Actuator", func() {
 					return nil
 				})
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, svc)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, svc)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should retry when updating the PublicIPAddress object for a service of type LoadBalancer and a Conflict error occurs", func() {
@@ -249,10 +246,9 @@ var _ = Describe("Actuator", func() {
 					return nil
 				})
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, svc)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, svc)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should fail when updating the PublicIPAddress object for a service of type LoadBalancer and an error different from Conflict occurs", func() {
@@ -263,7 +259,7 @@ var _ = Describe("Actuator", func() {
 				})
 			c.EXPECT().Update(ctx, pubip).Return(apierrors.NewInternalError(errors.New("test")))
 
-			_, _, err := actuator.CreateOrUpdate(ctx, svc)
+			_, err := actuator.CreateOrUpdate(ctx, svc)
 			Expect(err).To(MatchError("could not create or update publicipaddress: Internal error occurred: test"))
 		})
 
@@ -274,10 +270,9 @@ var _ = Describe("Actuator", func() {
 					return nil
 				})
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, clusterIPSvc)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, clusterIPSvc)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(true))
 		})
 
 		It("should delete the PublicIPAddress object for a service of type ClusterIP if it already exists", func() {
@@ -288,10 +283,9 @@ var _ = Describe("Actuator", func() {
 				})
 			c.EXPECT().Delete(ctx, pubip).Return(nil)
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, clusterIPSvc)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, clusterIPSvc)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(true))
 		})
 
 		It("should succeed when deleting the PublicIPAddress object for a service of type ClusterIP and a NotFound error occurs", func() {
@@ -302,10 +296,9 @@ var _ = Describe("Actuator", func() {
 				})
 			c.EXPECT().Delete(ctx, pubip).Return(apierrors.NewNotFound(schema.GroupResource{}, pubip.Name))
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, clusterIPSvc)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, clusterIPSvc)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(true))
 		})
 
 		It("should fail when deleting the PublicIPAddress object for a service of type ClusterIP and an error different from NotFound occurs", func() {
@@ -316,7 +309,7 @@ var _ = Describe("Actuator", func() {
 				})
 			c.EXPECT().Delete(ctx, pubip).Return(apierrors.NewInternalError(errors.New("test")))
 
-			_, _, err := actuator.CreateOrUpdate(ctx, clusterIPSvc)
+			_, err := actuator.CreateOrUpdate(ctx, clusterIPSvc)
 			Expect(err).To(MatchError("could not delete publicipaddress: Internal error occurred: test"))
 		})
 
@@ -327,10 +320,9 @@ var _ = Describe("Actuator", func() {
 					return nil
 				})
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, ignoredSvc)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, ignoredSvc)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(true))
 		})
 
 		It("should add the do-not-clean annotation and then delete the PublicIPAddress object for a service of type LoadBalancer that has the ignore annotation if it already exists", func() {
@@ -342,10 +334,9 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Update(ctx, annotatedPubip).Return(nil)
 			c.EXPECT().Delete(ctx, annotatedPubip).Return(nil)
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, ignoredSvc)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, ignoredSvc)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(true))
 		})
 	})
 
@@ -371,6 +362,26 @@ var _ = Describe("Actuator", func() {
 
 		It("should do nothing for a service of type ClusterIP", func() {
 			Expect(actuator.Delete(ctx, clusterIPSvc)).To(Succeed())
+		})
+	})
+
+	Describe("#ShouldFinalize", func() {
+		It("should return true for a service of type LoadBalancer", func() {
+			shouldFinalize, err := actuator.ShouldFinalize(ctx, svc)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldFinalize).To(BeTrue())
+		})
+
+		It("should return false for a service of type ClusterIP", func() {
+			shouldFinalize, err := actuator.ShouldFinalize(ctx, clusterIPSvc)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldFinalize).To(BeFalse())
+		})
+
+		It("should return false for a service of type LoadBalancer that has the ignore annotation", func() {
+			shouldFinalize, err := actuator.ShouldFinalize(ctx, ignoredSvc)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldFinalize).To(BeFalse())
 		})
 	})
 })

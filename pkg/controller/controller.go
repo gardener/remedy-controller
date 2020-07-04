@@ -32,9 +32,11 @@ import (
 // Actuator acts upon objects being reconciled by a Reconciler.
 type Actuator interface {
 	// CreateOrUpdate reconciles object creation or update.
-	CreateOrUpdate(context.Context, runtime.Object) (time.Duration, bool, error)
+	CreateOrUpdate(context.Context, runtime.Object) (time.Duration, error)
 	// Delete reconciles object deletion.
 	Delete(context.Context, runtime.Object) error
+	// ShouldFinalize returns true if the object should be finalized.
+	ShouldFinalize(context.Context, runtime.Object) (bool, error)
 }
 
 // AddArgs are arguments for adding a controller to a manager.

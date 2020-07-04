@@ -36,13 +36,12 @@ func (m *MockActuator) EXPECT() *MockActuatorMockRecorder {
 }
 
 // CreateOrUpdate mocks base method
-func (m *MockActuator) CreateOrUpdate(arg0 context.Context, arg1 runtime.Object) (time.Duration, bool, error) {
+func (m *MockActuator) CreateOrUpdate(arg0 context.Context, arg1 runtime.Object) (time.Duration, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateOrUpdate", arg0, arg1)
 	ret0, _ := ret[0].(time.Duration)
-	ret1, _ := ret[1].(bool)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreateOrUpdate indicates an expected call of CreateOrUpdate
@@ -63,4 +62,19 @@ func (m *MockActuator) Delete(arg0 context.Context, arg1 runtime.Object) error {
 func (mr *MockActuatorMockRecorder) Delete(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockActuator)(nil).Delete), arg0, arg1)
+}
+
+// ShouldFinalize mocks base method
+func (m *MockActuator) ShouldFinalize(arg0 context.Context, arg1 runtime.Object) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ShouldFinalize", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ShouldFinalize indicates an expected call of ShouldFinalize
+func (mr *MockActuatorMockRecorder) ShouldFinalize(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ShouldFinalize", reflect.TypeOf((*MockActuator)(nil).ShouldFinalize), arg0, arg1)
 }

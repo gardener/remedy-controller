@@ -155,10 +155,9 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubipWithStatus).Return(nil)
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, pubip)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, pubip)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should not update the PublicIPAddress object status if the IP is not found", func() {
@@ -166,10 +165,9 @@ var _ = Describe("Actuator", func() {
 			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(nil, nil)
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, pubip)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, pubip)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(requeueInterval))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should not update the PublicIPAddress object status if the IP is found and the status is already initialized", func() {
@@ -177,10 +175,9 @@ var _ = Describe("Actuator", func() {
 			pubipUtils.EXPECT().GetByName(ctx, azurePublicIPAddressName).Return(azurePublicIPAddress, nil)
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubipWithStatus.Namespace, Name: pubipWithStatus.Name}, pubipWithStatus).Return(nil)
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, pubipWithStatus)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, pubipWithStatus)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should update the PublicIPAddress object status if the IP is not found and the status is already initialized", func() {
@@ -189,10 +186,9 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubipWithStatus.Namespace, Name: pubipWithStatus.Name}, pubipWithStatus).Return(nil)
 			sw.EXPECT().Update(ctx, pubip).Return(nil)
 
-			requeueAfter, removeFinalizer, err := actuator.CreateOrUpdate(ctx, pubipWithStatus)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, pubipWithStatus)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(requeueInterval))
-			Expect(removeFinalizer).To(Equal(false))
 		})
 
 		It("should fail and requeue if getting the Azure IP address by IP fails", func() {
@@ -203,7 +199,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubipWithFailedOps).Return(nil)
 
-			_, _, err := actuator.CreateOrUpdate(ctx, pubip)
+			_, err := actuator.CreateOrUpdate(ctx, pubip)
 			Expect(err).To(BeAssignableToTypeOf(&controllererror.RequeueAfterError{}))
 			re := err.(*controllererror.RequeueAfterError)
 			Expect(re.Cause).To(MatchError("could not get Azure public IP address by IP: test"))
@@ -228,7 +224,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubipWithStatus).Return(errors.New("test"))
 
-			_, _, err := actuator.CreateOrUpdate(ctx, pubip)
+			_, err := actuator.CreateOrUpdate(ctx, pubip)
 			Expect(err).To(MatchError("could not update publicipaddress status: test"))
 		})
 	})

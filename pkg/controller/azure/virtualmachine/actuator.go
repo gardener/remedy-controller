@@ -79,12 +79,12 @@ func (a *actuator) InjectClient(client client.Client) error {
 }
 
 // CreateOrUpdate reconciles object creation or update.
-func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requeueAfter time.Duration, removeFinalizer bool, err error) {
+func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requeueAfter time.Duration, err error) {
 	// Cast object to VirtualMachine
 	var vm *azurev1alpha1.VirtualMachine
 	var ok bool
 	if vm, ok = obj.(*azurev1alpha1.VirtualMachine); !ok {
-		return 0, false, errors.New("reconciled object is not a virtualmachine")
+		return 0, errors.New("reconciled object is not a virtualmachine")
 	}
 
 	// Determine VM name
@@ -103,17 +103,17 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 
 		// Update resource status
 		if err := a.updateVirtualMachineStatus(ctx, vm, azureVM, failedOperations); err != nil {
-			return 0, false, err
+			return 0, err
 		}
 
 		// If the failed operation has been attempted less than the configured max attempts, requeue with exponential backoff
 		if failedOperation.Attempts < a.config.MaxGetAttempts {
-			return 0, false, &controllererror.RequeueAfterError{
+			return 0, &controllererror.RequeueAfterError{
 				Cause:        err,
 				RequeueAfter: a.config.RequeueInterval.Duration * (1 << (failedOperation.Attempts - 1)),
 			}
 		}
-		return 0, false, nil
+		return 0, nil
 	}
 	azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeGetVirtualMachine)
 
@@ -132,12 +132,12 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 
 			// Update resource status
 			if err := a.updateVirtualMachineStatus(ctx, vm, azureVM, failedOperations); err != nil {
-				return 0, false, err
+				return 0, err
 			}
 
 			// If the failed operation has been attempted less than the configured max attempts, requeue with exponential backoff
 			if failedOperation.Attempts < a.config.MaxReapplyAttempts {
-				return 0, false, &controllererror.RequeueAfterError{
+				return 0, &controllererror.RequeueAfterError{
 					Cause:        err,
 					RequeueAfter: a.config.RequeueInterval.Duration * (1 << (failedOperation.Attempts - 1)),
 				}
@@ -145,7 +145,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 
 			// If the configured max attempts has been reached, set VM states gauge to "failed" and return success
 			a.vmStatesGaugeVec.WithLabelValues(vmName).Set(VMStateFailed)
-			return 0, false, nil
+			return 0, nil
 		}
 		azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeReapplyVirtualMachine)
 
@@ -164,7 +164,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 
 	// Update resource status
 	if err := a.updateVirtualMachineStatus(ctx, vm, azureVM, failedOperations); err != nil {
-		return 0, false, err
+		return 0, err
 	}
 
 	// Requeue if the Azure virtual machine doesn't exist or is in a transient state
@@ -173,7 +173,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 		requeueAfter = a.config.RequeueInterval.Duration
 	}
 
-	return requeueAfter, false, nil
+	return requeueAfter, nil
 }
 
 // Delete reconciles object deletion.
@@ -224,6 +224,11 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 	}
 
 	return nil
+}
+
+// ShouldFinalize returns true if the object should be finalized.
+func (a *actuator) ShouldFinalize(_ context.Context, _ runtime.Object) (bool, error) {
+	return true, nil
 }
 
 func (a *actuator) getAzureVirtualMachine(ctx context.Context, name string) (*compute.VirtualMachine, error) {

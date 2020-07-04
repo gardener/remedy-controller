@@ -117,6 +117,11 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 	}
 	azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeGetVirtualMachine)
 
+	// Update resource status
+	if err := a.updateVirtualMachineStatus(ctx, vm, azureVM, failedOperations); err != nil {
+		return 0, err
+	}
+
 	// Reapply the Azure virtual machine if it's in a Failed state
 	if azureVM != nil && getProvisioningState(azureVM) == compute.ProvisioningStateFailed {
 		// Set VM states gauge to "failed will reapply"
@@ -154,17 +159,17 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 
 		// Set VM states gauge to "failed" or "ok" depending on the new Azure virtual machine state
 		a.setVMStatesGauge(reappliedAzureVM, vmName)
+
+		// Update resource status
+		if err := a.updateVirtualMachineStatus(ctx, vm, reappliedAzureVM, failedOperations); err != nil {
+			return 0, err
+		}
 	} else if azureVM != nil && getProvisioningState(azureVM) != compute.ProvisioningStateFailed {
 		// Set VM states gauge to "ok"
 		a.vmStatesGaugeVec.WithLabelValues(vmName).Set(VMStateOK)
 	} else if azureVM == nil {
 		// Delete VM states gauge
 		a.vmStatesGaugeVec.DeleteLabelValues(vmName)
-	}
-
-	// Update resource status
-	if err := a.updateVirtualMachineStatus(ctx, vm, azureVM, failedOperations); err != nil {
-		return 0, err
 	}
 
 	// Requeue if the Azure virtual machine doesn't exist or is in a transient state
@@ -264,10 +269,13 @@ func (a *actuator) updateVirtualMachineStatus(
 			ProvisioningState: azureVM.ProvisioningState,
 		}
 	}
-	status.FailedOperations = failedOperations
+	if len(failedOperations) > 0 {
+		status.FailedOperations = make([]azurev1alpha1.FailedOperation, len(failedOperations))
+		copy(status.FailedOperations, failedOperations)
+	}
 
 	// Update resource status
-	a.logger.Info("Updating virtualmachine status", "name", vm.Name, "status", status)
+	a.logger.Info("Updating virtualmachine status", "name", vm.Name, "namespace", vm.Namespace, "status", status)
 	if err := extensionscontroller.TryUpdateStatus(ctx, retry.DefaultBackoff, a.client, vm, func() error {
 		vm.Status = status
 		return nil

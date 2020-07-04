@@ -47,6 +47,7 @@ var _ = Describe("Actuator", func() {
 		serviceName              = "test-service"
 		namespace                = "test"
 		ip                       = "1.2.3.4"
+		pubipName                = serviceName + "-" + ip
 		azurePublicIPAddressID   = "/subscriptions/xxx/resourceGroups/shoot--dev--test/providers/Microsoft.Network/publicIPAddresses/shoot--dev--test-ip1"
 		azurePublicIPAddressName = "shoot--dev--test-ip1"
 
@@ -113,7 +114,7 @@ var _ = Describe("Actuator", func() {
 			status.FailedOperations = failedOperations
 			return &azurev1alpha1.PublicIPAddress{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:              serviceName + "-" + ip,
+					Name:              pubipName,
 					Namespace:         namespace,
 					DeletionTimestamp: deletionTimestamp,
 					Annotations:       annotations,
@@ -152,10 +153,10 @@ var _ = Describe("Actuator", func() {
 		It("should update the PublicIPAddress object status if the IP is found", func() {
 			pubip, pubipWithStatus := newPubip(false, nil, nil, nil), newPubip(true, nil, nil, nil)
 			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(azurePublicIPAddress, nil)
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubipWithStatus).Return(nil)
 
-			requeueAfter, err := actuator.CreateOrUpdate(ctx, pubip)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, pubip.DeepCopyObject())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
@@ -163,9 +164,9 @@ var _ = Describe("Actuator", func() {
 		It("should not update the PublicIPAddress object status if the IP is not found", func() {
 			pubip := newPubip(false, nil, nil, nil)
 			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(nil, nil)
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 
-			requeueAfter, err := actuator.CreateOrUpdate(ctx, pubip)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, pubip.DeepCopyObject())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(requeueInterval))
 		})
@@ -173,9 +174,9 @@ var _ = Describe("Actuator", func() {
 		It("should not update the PublicIPAddress object status if the IP is found and the status is already initialized", func() {
 			pubipWithStatus := newPubip(true, nil, nil, nil)
 			pubipUtils.EXPECT().GetByName(ctx, azurePublicIPAddressName).Return(azurePublicIPAddress, nil)
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubipWithStatus.Namespace, Name: pubipWithStatus.Name}, pubipWithStatus).Return(nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubipWithStatus).Return(nil)
 
-			requeueAfter, err := actuator.CreateOrUpdate(ctx, pubipWithStatus)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, pubipWithStatus.DeepCopyObject())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
@@ -183,10 +184,10 @@ var _ = Describe("Actuator", func() {
 		It("should update the PublicIPAddress object status if the IP is not found and the status is already initialized", func() {
 			pubip, pubipWithStatus := newPubip(false, nil, nil, nil), newPubip(true, nil, nil, nil)
 			pubipUtils.EXPECT().GetByName(ctx, azurePublicIPAddressName).Return(nil, nil)
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubipWithStatus.Namespace, Name: pubipWithStatus.Name}, pubipWithStatus).Return(nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubipWithStatus).Return(nil)
 			sw.EXPECT().Update(ctx, pubip).Return(nil)
 
-			requeueAfter, err := actuator.CreateOrUpdate(ctx, pubipWithStatus)
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, pubipWithStatus.DeepCopyObject())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(requeueInterval))
 		})
@@ -196,10 +197,10 @@ var _ = Describe("Actuator", func() {
 			failedOps := newFailedOps(azurev1alpha1.OperationTypeGetPublicIPAddress, 1, "could not get Azure public IP address by IP: test")
 			pubipWithFailedOps := newPubip(false, failedOps, nil, nil)
 			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(nil, errors.New("test"))
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubipWithFailedOps).Return(nil)
 
-			_, err := actuator.CreateOrUpdate(ctx, pubip)
+			_, err := actuator.CreateOrUpdate(ctx, pubip.DeepCopyObject())
 			Expect(err).To(BeAssignableToTypeOf(&controllererror.RequeueAfterError{}))
 			re := err.(*controllererror.RequeueAfterError)
 			Expect(re.Cause).To(MatchError("could not get Azure public IP address by IP: test"))
@@ -212,51 +213,69 @@ var _ = Describe("Actuator", func() {
 			failedOps2 := newFailedOps(azurev1alpha1.OperationTypeGetPublicIPAddress, cfg.MaxGetAttempts, "could not get Azure public IP address by IP: test")
 			pubip2 := newPubip(false, failedOps2, nil, nil)
 			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(nil, errors.New("test"))
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubip2).Return(nil)
 
-			Expect(actuator.Delete(ctx, pubip)).To(Succeed())
+			Expect(actuator.Delete(ctx, pubip.DeepCopyObject())).To(Succeed())
 		})
 
 		It("should fail if updating the PublicIPAddress object status fails", func() {
 			pubip, pubipWithStatus := newPubip(false, nil, nil, nil), newPubip(true, nil, nil, nil)
 			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(azurePublicIPAddress, nil)
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubipWithStatus).Return(errors.New("test"))
 
-			_, err := actuator.CreateOrUpdate(ctx, pubip)
+			_, err := actuator.CreateOrUpdate(ctx, pubip.DeepCopyObject())
 			Expect(err).To(MatchError("could not update publicipaddress status: test"))
 		})
 	})
 
 	Describe("#Delete", func() {
-		It("should not update the PublicIPAddress object status if the IP is not found", func() {
+		It("should clean the IP and update the PublicIPAddress object status if the IP is found", func() {
 			pubip := newPubip(false, nil, &earlyDeletionTimestamp, nil)
-			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(nil, nil)
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
-
-			Expect(actuator.Delete(ctx, pubip)).To(Succeed())
-		})
-
-		It("should clean the IP and not update the PublicIPAddress object status if the IP is found and the status is already initialized", func() {
 			pubipWithStatus := newPubip(true, nil, &earlyDeletionTimestamp, nil)
-			pubipUtils.EXPECT().GetByName(ctx, azurePublicIPAddressName).Return(azurePublicIPAddress, nil)
+			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(azurePublicIPAddress, nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
+			sw.EXPECT().Update(ctx, pubipWithStatus).Return(nil)
 			pubipUtils.EXPECT().RemoveFromLoadBalancer(ctx, []string{string(azurePublicIPAddressID)}).Return(nil)
 			pubipUtils.EXPECT().Delete(ctx, azurePublicIPAddressName).Return(nil)
 			cleanedIPsCounter.EXPECT().Inc()
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubipWithStatus.Namespace, Name: pubipWithStatus.Name}, pubipWithStatus).Return(nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubipWithStatus).Return(nil)
+			sw.EXPECT().Update(ctx, pubip).Return(nil)
 
-			Expect(actuator.Delete(ctx, pubipWithStatus)).To(Succeed())
+			Expect(actuator.Delete(ctx, pubip.DeepCopyObject())).To(Succeed())
+		})
+
+		It("should not update the PublicIPAddress object status if the IP is not found", func() {
+			pubip := newPubip(false, nil, &earlyDeletionTimestamp, nil)
+			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(nil, nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
+
+			Expect(actuator.Delete(ctx, pubip.DeepCopyObject())).To(Succeed())
+		})
+
+		It("should clean the IP and not update the PublicIPAddress object status if the IP is found and the status is already initialized", func() {
+			pubip := newPubip(false, nil, &earlyDeletionTimestamp, nil)
+			pubipWithStatus := newPubip(true, nil, &earlyDeletionTimestamp, nil)
+			pubipUtils.EXPECT().GetByName(ctx, azurePublicIPAddressName).Return(azurePublicIPAddress, nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubipWithStatus).Return(nil)
+			pubipUtils.EXPECT().RemoveFromLoadBalancer(ctx, []string{string(azurePublicIPAddressID)}).Return(nil)
+			pubipUtils.EXPECT().Delete(ctx, azurePublicIPAddressName).Return(nil)
+			cleanedIPsCounter.EXPECT().Inc()
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubipWithStatus).Return(nil)
+			sw.EXPECT().Update(ctx, pubip).Return(nil)
+
+			Expect(actuator.Delete(ctx, pubipWithStatus.DeepCopyObject())).To(Succeed())
 		})
 
 		It("should update the PublicIPAddress object status if the IP is not found and the status is already initialized", func() {
 			pubip := newPubip(false, nil, &earlyDeletionTimestamp, nil)
 			pubipWithStatus := newPubip(true, nil, &earlyDeletionTimestamp, nil)
 			pubipUtils.EXPECT().GetByName(ctx, azurePublicIPAddressName).Return(nil, nil)
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubipWithStatus.Namespace, Name: pubipWithStatus.Name}, pubipWithStatus).Return(nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubipWithStatus).Return(nil)
 			sw.EXPECT().Update(ctx, pubip).Return(nil)
 
-			Expect(actuator.Delete(ctx, pubipWithStatus)).To(Succeed())
+			Expect(actuator.Delete(ctx, pubipWithStatus.DeepCopyObject())).To(Succeed())
 		})
 
 		It("should not clean the IP if it has the do-not-clean annotation", func() {
@@ -264,29 +283,29 @@ var _ = Describe("Actuator", func() {
 			pubip := newPubip(false, nil, &earlyDeletionTimestamp, annotations)
 			pubipWithStatus := newPubip(true, nil, &earlyDeletionTimestamp, annotations)
 			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(azurePublicIPAddress, nil)
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubipWithStatus).Return(nil)
 
-			Expect(actuator.Delete(ctx, pubip)).To(Succeed())
+			Expect(actuator.Delete(ctx, pubip.DeepCopyObject())).To(Succeed())
 		})
 
 		It("should fail if updating the PublicIPAddress object status fails", func() {
-			annotations := map[string]string{publicipaddress.DoNotCleanAnnotation: strconv.FormatBool(true)}
-			pubip := newPubip(false, nil, &earlyDeletionTimestamp, annotations)
-			pubipWithStatus := newPubip(true, nil, &earlyDeletionTimestamp, annotations)
+			pubip := newPubip(false, nil, &earlyDeletionTimestamp, nil)
+			pubipWithStatus := newPubip(true, nil, &earlyDeletionTimestamp, nil)
 			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(azurePublicIPAddress, nil)
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubipWithStatus).Return(errors.New("test"))
 
-			err := actuator.Delete(ctx, pubip)
+			err := actuator.Delete(ctx, pubip.DeepCopyObject())
 			Expect(err).To(MatchError("could not update publicipaddress status: test"))
 		})
 
 		It("should honour the grace period before cleaning the IP", func() {
 			pubip := newPubip(true, nil, &now, nil)
 			pubipUtils.EXPECT().GetByName(ctx, azurePublicIPAddressName).Return(azurePublicIPAddress, nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 
-			err := actuator.Delete(ctx, pubip)
+			err := actuator.Delete(ctx, pubip.DeepCopyObject())
 			Expect(err).To(HaveOccurred())
 			requeueAfterError, ok := err.(*controllererror.RequeueAfterError)
 			Expect(ok).To(BeTrue())
@@ -299,10 +318,10 @@ var _ = Describe("Actuator", func() {
 			failedOps := newFailedOps(azurev1alpha1.OperationTypeGetPublicIPAddress, 1, "could not get Azure public IP address by name: test")
 			pubipWithFailedOps := newPubip(false, failedOps, &earlyDeletionTimestamp, nil)
 			pubipUtils.EXPECT().GetByName(ctx, azurePublicIPAddressName).Return(nil, errors.New("test"))
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubipWithFailedOps).Return(nil)
 
-			err := actuator.Delete(ctx, pubip)
+			err := actuator.Delete(ctx, pubip.DeepCopyObject())
 			Expect(err).To(HaveOccurred())
 			requeueAfterError, ok := err.(*controllererror.RequeueAfterError)
 			Expect(ok).To(BeTrue())
@@ -316,10 +335,10 @@ var _ = Describe("Actuator", func() {
 			failedOps2 := newFailedOps(azurev1alpha1.OperationTypeGetPublicIPAddress, cfg.MaxGetAttempts, "could not get Azure public IP address by name: test")
 			pubip2 := newPubip(false, failedOps2, &earlyDeletionTimestamp, nil)
 			pubipUtils.EXPECT().GetByName(ctx, azurePublicIPAddressName).Return(nil, errors.New("test"))
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubip2).Return(nil)
 
-			Expect(actuator.Delete(ctx, pubip)).To(Succeed())
+			Expect(actuator.Delete(ctx, pubip.DeepCopyObject())).To(Succeed())
 		})
 
 		It("should fail and requeue if removing the Azure IP from the load balancer fails", func() {
@@ -327,11 +346,12 @@ var _ = Describe("Actuator", func() {
 			failedOps := newFailedOps(azurev1alpha1.OperationTypeCleanPublicIPAddress, 1, "could not remove Azure public IP address from the load balancer: test")
 			pubipWithFailedOps := newPubip(true, failedOps, &earlyDeletionTimestamp, nil)
 			pubipUtils.EXPECT().GetByName(ctx, azurePublicIPAddressName).Return(azurePublicIPAddress, nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			pubipUtils.EXPECT().RemoveFromLoadBalancer(ctx, []string{string(azurePublicIPAddressID)}).Return(errors.New("test"))
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubipWithFailedOps).Return(nil)
 
-			err := actuator.Delete(ctx, pubip)
+			err := actuator.Delete(ctx, pubip.DeepCopyObject())
 			Expect(err).To(HaveOccurred())
 			requeueAfterError, ok := err.(*controllererror.RequeueAfterError)
 			Expect(ok).To(BeTrue())
@@ -344,12 +364,13 @@ var _ = Describe("Actuator", func() {
 			failedOps := newFailedOps(azurev1alpha1.OperationTypeCleanPublicIPAddress, 1, "could not delete Azure public IP address: test")
 			pubipWithFailedOps := newPubip(true, failedOps, &earlyDeletionTimestamp, nil)
 			pubipUtils.EXPECT().GetByName(ctx, azurePublicIPAddressName).Return(azurePublicIPAddress, nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			pubipUtils.EXPECT().RemoveFromLoadBalancer(ctx, []string{string(azurePublicIPAddressID)}).Return(nil)
 			pubipUtils.EXPECT().Delete(ctx, azurePublicIPAddressName).Return(errors.New("test"))
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubipWithFailedOps).Return(nil)
 
-			err := actuator.Delete(ctx, pubip)
+			err := actuator.Delete(ctx, pubip.DeepCopyObject())
 			Expect(err).To(HaveOccurred())
 			requeueAfterError, ok := err.(*controllererror.RequeueAfterError)
 			Expect(ok).To(BeTrue())
@@ -358,17 +379,18 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should not fail if deleting the Azure IP address fails and max attempts have been reached", func() {
-			failedOps := newFailedOps(azurev1alpha1.OperationTypeCleanPublicIPAddress, cfg.MaxCleanAttempts, "could not delete Azure public IP address: test")
+			failedOps := newFailedOps(azurev1alpha1.OperationTypeCleanPublicIPAddress, cfg.MaxCleanAttempts-1, "could not delete Azure public IP address: test")
 			pubip := newPubip(true, failedOps, &earlyDeletionTimestamp, nil)
-			failedOps2 := newFailedOps(azurev1alpha1.OperationTypeCleanPublicIPAddress, cfg.MaxCleanAttempts+1, "could not delete Azure public IP address: test")
+			failedOps2 := newFailedOps(azurev1alpha1.OperationTypeCleanPublicIPAddress, cfg.MaxCleanAttempts, "could not delete Azure public IP address: test")
 			pubip2 := newPubip(true, failedOps2, &earlyDeletionTimestamp, nil)
 			pubipUtils.EXPECT().GetByName(ctx, azurePublicIPAddressName).Return(azurePublicIPAddress, nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			pubipUtils.EXPECT().RemoveFromLoadBalancer(ctx, []string{string(azurePublicIPAddressID)}).Return(nil)
 			pubipUtils.EXPECT().Delete(ctx, azurePublicIPAddressName).Return(errors.New("test"))
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).Return(nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubip2).Return(nil)
 
-			Expect(actuator.Delete(ctx, pubip)).To(Succeed())
+			Expect(actuator.Delete(ctx, pubip.DeepCopyObject())).To(Succeed())
 		})
 	})
 })

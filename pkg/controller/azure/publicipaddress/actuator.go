@@ -160,6 +160,11 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 	}
 	azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeGetPublicIPAddress)
 
+	// Update resource status
+	if err := a.updatePublicIPAddressStatus(ctx, pubip, azurePublicIP, failedOperations); err != nil {
+		return err
+	}
+
 	// Clean the Azure public IP address if it still exists and the deletion grace period has elapsed
 	if azurePublicIP != nil && !shouldNotClean(pubip) {
 		// If within the deletion grace period, requeue so we could check again
@@ -196,11 +201,11 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 
 		// Increase the cleaned IPs counter
 		a.cleanedIPsCounter.Inc()
-	}
 
-	// Update resource status
-	if err := a.updatePublicIPAddressStatus(ctx, pubip, azurePublicIP, failedOperations); err != nil {
-		return err
+		// Update resource status
+		if err := a.updatePublicIPAddressStatus(ctx, pubip, nil, failedOperations); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -248,7 +253,10 @@ func (a *actuator) updatePublicIPAddressStatus(
 			ProvisioningState: azurePublicIP.ProvisioningState,
 		}
 	}
-	status.FailedOperations = failedOperations
+	if len(failedOperations) > 0 {
+		status.FailedOperations = make([]azurev1alpha1.FailedOperation, len(failedOperations))
+		copy(status.FailedOperations, failedOperations)
+	}
 
 	// Update resource status
 	a.logger.Info("Updating publicipaddress status", "name", pubip.Name, "namespace", pubip.Namespace, "status", status)

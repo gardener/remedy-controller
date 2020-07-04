@@ -31,7 +31,7 @@ func (in *AzureConfiguration) DeepCopyInto(out *AzureConfiguration) {
 	if in.OrphanedPublicIPRemedy != nil {
 		in, out := &in.OrphanedPublicIPRemedy, &out.OrphanedPublicIPRemedy
 		*out = new(AzureOrphanedPublicIPRemedyConfiguration)
-		(*in).DeepCopyInto(*out)
+		**out = **in
 	}
 	if in.FailedVMRemedy != nil {
 		in, out := &in.FailedVMRemedy, &out.FailedVMRemedy
@@ -73,19 +73,6 @@ func (in *AzureOrphanedPublicIPRemedyConfiguration) DeepCopyInto(out *AzureOrpha
 	*out = *in
 	out.RequeueInterval = in.RequeueInterval
 	out.DeletionGracePeriod = in.DeletionGracePeriod
-	if in.BlacklistedServiceLabels != nil {
-		in, out := &in.BlacklistedServiceLabels, &out.BlacklistedServiceLabels
-		*out = make([]map[string]string, len(*in))
-		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = make(map[string]string, len(*in))
-				for key, val := range *in {
-					(*out)[key] = val
-				}
-			}
-		}
-	}
 	return
 }
 

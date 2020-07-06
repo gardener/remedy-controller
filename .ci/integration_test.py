@@ -86,6 +86,7 @@ def main():
             path_to_credentials_file=credentials_path,
             path_to_kubeconfig=kubeconfig_path,
             required_attempts=VM_TEST_REQUIRED_ATTEMPTS,
+            test_namespace=HELM_CHART_DEPLOYMENT_NAMESPACE,
             check_interval=10,
             run_duration=360,
         )

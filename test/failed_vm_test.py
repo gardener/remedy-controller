@@ -25,8 +25,7 @@ def run_test(
     run_duration: int = RUN_DURATION,
     fail_worker_group_name: str = FAIL_WORKER_GROUP_NAME,
     test_namespace: str = TEST_NAMESPACE,
-
-):
+) -> bool:
     k8s_helper, _, _ = test_util._initialize_test_helpers(
         path_to_credentials_file=path_to_credentials_file,
         path_to_kubeconfig=path_to_kubeconfig,
@@ -36,7 +35,7 @@ def run_test(
 
     if not vm_name:
         print(f'Could not find VM belonging to worker group "{fail_worker_group_name}"')
-        exit(1)
+        return False
 
     _run_disturber(vm_name)
 
@@ -63,7 +62,8 @@ def run_test(
             'VM remediation test failed - did not find the expected amount of reapply attempts. '
             f'Found: {attempts}, expected: {required_attempts}'
         )
-        exit(1)
+        return False
+    return True
 
 
 def _run_disturber(vm_name):
@@ -149,7 +149,7 @@ if __name__ == '__main__':
     else:
         path_to_kubeconfig = args.kubeconfig_path
 
-    run_test(
+    ok = run_test(
         path_to_kubeconfig=path_to_kubeconfig,
         path_to_credentials_file=args.credentials_path,
         test_namespace=args.test_namespace,
@@ -158,3 +158,5 @@ if __name__ == '__main__':
         run_duration=args.run_duration,
         fail_worker_group_name=args.fail_worker_group_name,
     )
+    if not ok:
+        exit(1)

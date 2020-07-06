@@ -30,7 +30,7 @@ def run_test(
     orphaned_ip_min_sleep: int = OIP_MIN_SLEEP,
     orphaned_ip_max_sleep: int = OIP_MAX_SLEEP,
     shutdown_grace_period: int = SHUTDOWN_GRACE_PERIOD,
-):
+) -> bool:
     k8s_helper, ip_helper, lb_helper = test_util._initialize_test_helpers(
         path_to_credentials_file=path_to_credentials_file,
         path_to_kubeconfig=path_to_kubeconfig,
@@ -46,7 +46,11 @@ def run_test(
         lb_helper.remove_orphaned_rules()
         ip_helper.clean_up_public_ips()
 
-        lb_helper.check_for_orphaned_resources(raise_on_leak=True)
+        try:
+            lb_helper.check_for_orphaned_resources(raise_on_leak=True)
+        except RuntimeError:
+            print('Could not clean up leaked resources - failing')
+            return False
 
     # prepare functions that will run the actual tests
     def svc_creation_test_func(
@@ -133,7 +137,9 @@ def run_test(
         k8s_helper.cleanup_publicip_custom_objects()
         lb_helper.remove_orphaned_rules()
         ip_helper.clean_up_public_ips()
-        exit(1)
+        return False
+
+    return True
 
 
 def _parse_args():
@@ -233,7 +239,7 @@ if __name__ == '__main__':
     else:
         path_to_kubeconfig = args.kubeconfig_path
 
-    run_test(
+    ok = run_test(
         path_to_kubeconfig=path_to_kubeconfig,
         path_to_credentials_file=args.credentials_path,
         test_namespace=args.test_namespace,
@@ -244,4 +250,6 @@ if __name__ == '__main__':
         orphaned_ip_min_sleep=args.orphaned_ip_min_sleep,
         orphaned_ip_max_sleep=args.orphaned_ip_max_sleep,
         shutdown_grace_period=args.shutdown_grace_period,
-        )
+    )
+    if not ok:
+        exit(1)

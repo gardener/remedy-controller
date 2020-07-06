@@ -6,7 +6,7 @@ import os
 import sys
 import subprocess
 import tempfile
-import threading
+import concurrent.futures
 
 import yaml
 
@@ -74,38 +74,36 @@ def main():
         values,
     )
 
-    pubip_runner = threading.Thread(
-        target=pubip_test.run_test,
-        kwargs={
-            'path_to_credentials_file': credentials_path,
-            'path_to_kubeconfig': kubeconfig_path,
-            'test_namespace': HELM_CHART_DEPLOYMENT_NAMESPACE,
-        },
-    )
-    failed_vm_runner = threading.Thread(
-        target=vm_test.run_test,
-        kwargs={
-            'path_to_credentials_file': credentials_path,
-            'path_to_kubeconfig': kubeconfig_path,
-            'required_attempts': VM_TEST_REQUIRED_ATTEMPTS,
-            'check_interval': 10,
-            'run_duration': 360,
-        },
-    )
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        pubip_future = executor.submit(
+            fn=pubip_test.run_test,
+            path_to_credentials_file=credentials_path,
+            path_to_kubeconfig=kubeconfig_path,
+            test_namespace=HELM_CHART_DEPLOYMENT_NAMESPACE,
+        )
+        failed_vm_future = executor.submit(
+            fn=vm_test.run_test,
+            path_to_credentials_file=credentials_path,
+            path_to_kubeconfig=kubeconfig_path,
+            required_attempts=VM_TEST_REQUIRED_ATTEMPTS,
+            check_interval=10,
+            run_duration=360,
+        )
+
+    pubip_test_ok = False
+    vm_test_ok = False
 
     try:
-        pubip_runner.start()
-        failed_vm_runner.start()
-
-        pubip_runner.join()
-        failed_vm_runner.join()
-
+        pubip_test_ok = pubip_future.result()
+        vm_test_ok = failed_vm_future.result()
     finally:
         uninstall_helm_deployment(
             kubernetes_config,
             HELM_CHART_DEPLOYMENT_NAMESPACE,
             HELM_CHART_NAME,
         )
+    if not pubip_test_ok or not vm_test_ok:
+        exit(1)
 
 
 def apply_crd(path_to_kubeconfig):

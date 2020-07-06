@@ -18,11 +18,11 @@ Although remedy controllers may apply different remedies for different platforms
 
 ### Handling Platform Rate Limits
 
-Remedy controllers performs platform read and write operations only when needed, and retries such operations if they fail with backoff and for a limited number of times, to prevent it from exhausting platform rate limits due to infinite frequent retries. All time intervals and maximum number of attempts are configurable via the [controller configuration](#configuration).
+Remedy controllers perform platform read and write operations only when needed, and retry such operations if they fail with backoff and for a limited number of times, to prevent it from exhausting platform rate limits due to infinite frequent retries. All time intervals and the maximum number of attempts are configurable via the [controller configuration](#configuration).
 
 ### Metrics and Alerts
 
-Remedy controllers expose metrics for successfully applied remedies, as well as number of platform read and write operations. For some remedies, they also expose metrics that allow raising an alert in case the remedy has not been applied successfully after the configured number of retries.
+Remedy controllers expose metrics for successfully applied remedies, and the number of platform read and write operations. For some remedies, they also expose metrics that allow raising an alert in case the remedy has not been applied successfully after the configured number of retries.
 
 ### Deployment Options
 
@@ -145,13 +145,13 @@ To run the remedy controller for a certain platform locally on your machine:
 
 To run static code checks and unit tests:
 
-1. Execute `make install-requirements` once to ensure that all requirements for are properly installed.
+1. Execute `make install-requirements` once to ensure that all requirements are properly installed.
 
 2. Execute `make verify` or `make verify-extended`.
 
 We are using Go modules for dependency management and [Ginkgo](https://github.com/onsi/ginkgo) / [Gomega](https://github.com/onsi/gomega) for unit tests.
 
-To run integration tests against the locally running Azure running controller:
+To run integration tests against the locally running Azure controller:
 
 * Execute `make pubip-remedy-test` to run integration tests for the [Cleanup orphaned public IP addresses](#cleanup-orphaned-public-ip-addresses) Azure remedy described above.
 

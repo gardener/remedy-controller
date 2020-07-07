@@ -212,105 +212,105 @@ This project includes the following subcomponents that are subject to separate l
 Your use of these subcomponents is subject to the separate license terms applicable to
 each subcomponent.
 
-API.
-https://git.k8s.io/api.
-Copyright 2017 The Kubernetes Authors.
+API  
+https://git.k8s.io/api  
+Copyright 2017 The Kubernetes Authors.  
 Apache 2 license (https://git.k8s.io/api/LICENSE).
 
-APIMachinery.
-https://git.k8s.io/apimachinery.
-Copyright 2017 The Kubernetes Authors.
+APIMachinery  
+https://git.k8s.io/apimachinery  
+Copyright 2017 The Kubernetes Authors.  
 Apache 2 license (https://git.k8s.io/apimachinery/LICENSE).
 
-APIServer.
-https://git.k8s.io/apiserver.
-Copyright 2017 The Kubernetes Authors.
+APIServer  
+https://git.k8s.io/apiserver  
+Copyright 2017 The Kubernetes Authors.  
 Apache 2 license (https://git.k8s.io/apiserver/LICENSE).
 
-Azure SDK for Go.
-Copyright 2014-2017 Microsoft.
-https://github.com/Azure/azure-sdk-for-go
+Azure SDK for Go  
+https://github.com/Azure/azure-sdk-for-go  
+Copyright 2014-2017 Microsoft.  
 Apache 2 license (https://github.com/Azure/azure-sdk-for-go/blob/master/LICENSE)
 
-Azure go-autorest.
-Copyright 2014-2017 Microsoft.
-https://github.com/Azure/go-autorest
+Azure go-autorest  
+https://github.com/Azure/go-autorest  
+Copyright 2014-2017 Microsoft.  
 Apache 2 license (https://github.com/Azure/go-autorest/blob/master/LICENSE)
 
-Client-Go.
-https://git.k8s.io/client-go.
-Copyright 2017 The Kubernetes Authors.
+Client-Go  
+https://git.k8s.io/client-go  
+Copyright 2017 The Kubernetes Authors.  
 Apache 2 license (https://git.k8s.io/client-go/LICENSE).
 
-Code-Generator.
-https://git.k8s.io/code-generator.
-Copyright 2017 The Kubernetes Authors.
+Code-Generator  
+https://git.k8s.io/code-generator  
+Copyright 2017 The Kubernetes Authors.  
 Apache 2 license (https://git.k8s.io/code-generator/LICENSE)
 
-Gengo.
-https://git.k8s.io/gengo.
-Copyright 2017 The Kubernetes Authors.
+Gengo  
+https://git.k8s.io/gengo  
+Copyright 2017 The Kubernetes Authors.  
 Apache 2 license (https://git.k8s.io/gengo/LICENSE)
 
-Kubernetes Custom Resource API Reference Docs generator.
-https://github.com/ahmetb/gen-crd-api-reference-docs
-Copyright 2018 Ahmet Alp Balkan
+Kubernetes Custom Resource API Reference Docs generator  
+https://github.com/ahmetb/gen-crd-api-reference-docs  
+Copyright 2018 Ahmet Alp Balkan  
 Apache 2 license (https://github.com/ahmetb/gen-crd-api-reference-docs/blob/master/LICENSE)
 
-Gardener
-https://github.com/gardener/gardener
-Copyright 2017-2019 SAP SE
+Gardener  
+https://github.com/gardener/gardener  
+Copyright 2017-2019 SAP SE  
 Apache 2 license (https://github.com/gardener/gardener/blob/master/LICENSE.md)
 
-Helm.
-https://git.k8s.io/helm.
-Copyright 2017 The Kubernetes Authors.
+Helm  
+https://git.k8s.io/helm  
+Copyright 2017 The Kubernetes Authors.  
 Apache 2 license (https://git.k8s.io/helm/LICENSE)
 
-controller-runtime
-https://github.com/kubernetes-sigs/controller-runtime
-Copyright 2018 The Kubernetes Authors.
+controller-runtime  
+https://github.com/kubernetes-sigs/controller-runtime  
+Copyright 2018 The Kubernetes Authors.  
 Apache 2 license (https://github.com/kubernetes-sigs/controller-runtime/blob/master/LICENSE).
 
-Cobra
-https://github.com/spf13/cobra.
-Copyright 2015 Steve Francia.
+Cobra  
+https://github.com/spf13/cobra  
+Copyright 2015 Steve Francia.  
 Apache 2 license (https://github.com/spf13/cobra/blob/master/LICENSE.txt)
 
-YAML marshaling and unmarshaling support for Go
-https://github.com/ghodss/yaml.
-Copyright (c) 2014 Sam Ghods
+YAML marshaling and unmarshaling support for Go  
+https://github.com/ghodss/yaml  
+Copyright (c) 2014 Sam Ghods  
 MIT license (https://github.com/ghodss/yaml/blob/master/LICENSE)
 
-Logrus
-https://github.com/sirupsen/logrus.
-Copyright (c) 2014 Simon Eskildsen
+Logrus  
+https://github.com/sirupsen/logrus  
+Copyright (c) 2014 Simon Eskildsen  
 MIT license (https://github.com/sirupsen/logrus/blob/master/LICENSE)
 
-logr
-https://github.com/go-logr/logr
-Copyright 2016 Tim Hockin
+logr  
+https://github.com/go-logr/logr  
+Copyright 2016 Tim Hockin  
 Apache 2 license (https://github.com/go-logr/logr/blob/master/LICENSE)
 
-packr
-https://github.com/gobuffalo/packr
-Copyright 2016 Mark Bates
+packr  
+https://github.com/gobuffalo/packr  
+Copyright 2016 Mark Bates  
 MIT license (https://github.com/gobuffalo/packr/blob/master/LICENSE.txt)
 
-pflag
-https://github.com/spf13/pflag
-Copyright (c) 2012 Alex Ogier. All rights reserved.
-Copyright (c) 2012 The Go Authors. All rights reserved.
+pflag  
+https://github.com/spf13/pflag  
+Copyright (c) 2012 Alex Ogier. All rights reserved.  
+Copyright (c) 2012 The Go Authors. All rights reserved.  
 BSD 3-Clause "New" or "Revised" license (https://github.com/spf13/pflag/blob/master/LICENSE)
 
-Prometheus Go Client Library.
-https://github.com/prometheus/client_golang.
-Copyright 2015 The Prometheus Authors.
+Prometheus Go Client Library.  
+https://github.com/prometheus/client_golang  
+Copyright 2015 The Prometheus Authors.  
 Apache 2 license (https://github.com/prometheus/client_golang/blob/master/LICENSE)
 
-errors
-https://github.com/pkg/errors
-Copyright (c) 2015, Dave Cheney.
+errors  
+https://github.com/pkg/errors  
+Copyright (c) 2015, Dave Cheney.  
 BSD 2-Clause "Simplified" License (https://github.com/pkg/errors/blob/master/LICENSE)
 
 ------

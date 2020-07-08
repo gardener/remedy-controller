@@ -57,7 +57,9 @@ def run_test(
             attempts = op.attempts
         time.sleep(check_interval)
 
-    if not attempts == required_attempts:
+    # The controller might perform additional reapply attempts (e.g. due to resync), so check for
+    # greater than or equal
+    if not attempts >= required_attempts:
         print(
             'VM remediation test failed - did not find the expected amount of reapply attempts. '
             f'Found: {attempts}, expected: {required_attempts}'

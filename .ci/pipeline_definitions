@@ -70,3 +70,25 @@ remedy-controller:
               image: 'eu.gcr.io/gardener-project/gardener/remedy-controller/remedy-controller-azure'
               dockerfile: 'Dockerfile'
               target: remedy-controller-azure
+
+    test-only:
+      repo:
+        trigger: false
+      steps:
+        test:
+          image: 'eu.gcr.io/gardener-project/cc/job-image-golang:0.12.0'
+            execute:
+              - integration_test.sh
+            depends:
+              - publish
+      traits:
+        version:
+          inject_effective_version: True
+        component_descriptor: ~
+        publish:
+          dockerimages:
+            remedy-controller-image:
+              registry: 'gcr-readwrite'
+              image: 'eu.gcr.io/gardener-project/gardener/remedy-controller/remedy-controller-azure'
+              dockerfile: 'Dockerfile'
+              target: remedy-controller-azure

@@ -77,10 +77,10 @@ remedy-controller:
       steps:
         test:
           image: 'eu.gcr.io/gardener-project/cc/job-image-golang:0.12.0'
-            execute:
-              - integration_test.sh
-            depends:
-              - publish
+          execute:
+            - integration_test.sh
+          depends:
+            - publish
       traits:
         version:
           inject_effective_version: True

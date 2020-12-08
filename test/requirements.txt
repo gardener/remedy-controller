@@ -1,5 +1,6 @@
 azure.mgmt.network
 flake8
 kubernetes
+msrestazure
 pyyaml
 wheel

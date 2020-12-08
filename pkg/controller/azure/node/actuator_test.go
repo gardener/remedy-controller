@@ -21,6 +21,7 @@ import (
 
 	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
 	"github.com/gardener/remedy-controller/pkg/controller"
+	"github.com/gardener/remedy-controller/pkg/controller/azure"
 	azurenode "github.com/gardener/remedy-controller/pkg/controller/azure/node"
 	mockclient "github.com/gardener/remedy-controller/pkg/mock/controller-runtime/client"
 
@@ -88,7 +89,7 @@ var _ = Describe("Actuator", func() {
 			},
 		}
 		vmLabels = map[string]string{
-			azurenode.Label: nodeName,
+			azure.NodeLabel: nodeName,
 		}
 		emptyVM = &azurev1alpha1.VirtualMachine{
 			ObjectMeta: metav1.ObjectMeta{

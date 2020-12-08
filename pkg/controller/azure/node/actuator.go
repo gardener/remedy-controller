@@ -20,6 +20,7 @@ import (
 
 	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
 	"github.com/gardener/remedy-controller/pkg/controller"
+	"github.com/gardener/remedy-controller/pkg/controller/azure"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -32,8 +33,6 @@ import (
 )
 
 const (
-	// Label is the label to put on a VirtualMachine object that identifies its node.
-	Label = "azure.remedy.gardener.cloud/node"
 	// TaintKeyUnreachable is the taint key to determine whether a node is unreachable.
 	TaintKeyUnreachable = "node.kubernetes.io/unreachable"
 	// HostnameLabel is a label to determine the hostname of a node.
@@ -67,7 +66,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 
 	// Initialize labels
 	vmLabels := map[string]string{
-		Label: node.Name,
+		azure.NodeLabel: node.Name,
 	}
 
 	// Get node properties

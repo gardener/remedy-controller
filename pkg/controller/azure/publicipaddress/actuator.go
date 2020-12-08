@@ -17,11 +17,13 @@ package publicipaddress
 import (
 	"context"
 	"strconv"
+	"strings"
 	"time"
 
 	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
 	"github.com/gardener/remedy-controller/pkg/apis/config"
 	"github.com/gardener/remedy-controller/pkg/controller"
+	controllerazure "github.com/gardener/remedy-controller/pkg/controller/azure"
 	"github.com/gardener/remedy-controller/pkg/utils"
 	"github.com/gardener/remedy-controller/pkg/utils/azure"
 
@@ -37,9 +39,8 @@ import (
 )
 
 const (
-	// DoNotCleanAnnotation is an annotation that can be used to specify that a particular PublicIPAddress
-	// should be not be cleaned when deleted.
-	DoNotCleanAnnotation = "azure.remedy.gardener.cloud/do-not-clean"
+	// ServiceTag is a tag on an Azure public IP address that identifies the Kubernetes service it belongs to.
+	ServiceTag = "service"
 )
 
 type actuator struct {
@@ -217,12 +218,32 @@ func (a *actuator) ShouldFinalize(_ context.Context, _ runtime.Object) (bool, er
 }
 
 func (a *actuator) getAzurePublicIPAddress(ctx context.Context, pubip *azurev1alpha1.PublicIPAddress) (*network.PublicIPAddress, error) {
+	// If status.name is initialized, search by name
 	if pubip.Status.Name != nil {
 		azurePublicIP, err := a.pubipUtils.GetByName(ctx, *pubip.Status.Name)
-		return azurePublicIP, errors.Wrap(err, "could not get Azure public IP address by name")
+		if err != nil {
+			return nil, errors.Wrap(err, "could not get Azure public IP address by name")
+		}
+
+		// If an Azure public IP address is found, compare its IP to the PublicIPAddress IP and return it only if there is a match
+		if azurePublicIP != nil && *azurePublicIP.IPAddress == pubip.Spec.IPAddress {
+			return azurePublicIP, nil
+		}
 	}
+
+	// Search by IP
 	azurePublicIP, err := a.pubipUtils.GetByIP(ctx, pubip.Spec.IPAddress)
-	return azurePublicIP, errors.Wrap(err, "could not get Azure public IP address by IP")
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get Azure public IP address by IP")
+	}
+
+	// If an Azure public IP address is found, compare its service tag to the PublicIPAddress service name and return it only if there is a match
+	serviceName := getServiceName(pubip)
+	if azurePublicIP != nil && (serviceName == "" || azurePublicIP.Tags[ServiceTag] != nil && *azurePublicIP.Tags[ServiceTag] == serviceName) {
+		return azurePublicIP, nil
+	}
+
+	return nil, nil
 }
 
 func (a *actuator) cleanAzurePublicIPAddress(ctx context.Context, pubip *azurev1alpha1.PublicIPAddress) error {
@@ -279,7 +300,14 @@ func getFailedOperations(pubip *azurev1alpha1.PublicIPAddress) []azurev1alpha1.F
 }
 
 func shouldNotClean(pubip *azurev1alpha1.PublicIPAddress) bool {
-	return pubip.Annotations[DoNotCleanAnnotation] == strconv.FormatBool(true)
+	return pubip.Annotations[controllerazure.DoNotCleanAnnotation] == strconv.FormatBool(true)
+}
+
+func getServiceName(pubip *azurev1alpha1.PublicIPAddress) string {
+	if parts := strings.Split(pubip.Labels[controllerazure.ServiceLabel], "."); len(parts) == 2 {
+		return parts[0] + "/" + parts[1]
+	}
+	return ""
 }
 
 func getProvisioningState(azurePublicIP *network.PublicIPAddress) network.ProvisioningState {

@@ -21,7 +21,7 @@ import (
 
 	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
 	"github.com/gardener/remedy-controller/pkg/controller"
-	azurepublicipaddress "github.com/gardener/remedy-controller/pkg/controller/azure/publicipaddress"
+	"github.com/gardener/remedy-controller/pkg/controller/azure"
 	"github.com/gardener/remedy-controller/pkg/utils"
 
 	"github.com/go-logr/logr"
@@ -32,13 +32,6 @@ import (
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-)
-
-const (
-	// Label is the label to put on a PublicIPAddress object that identifies its service.
-	Label = "azure.remedy.gardener.cloud/service"
-	// IgnoreAnnotation is an annotation that can be used to specify that a particular service should be ignored.
-	IgnoreAnnotation = "azure.remedy.gardener.cloud/ignore"
 )
 
 type actuator struct {
@@ -68,7 +61,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 
 	// Initialize labels
 	pubipLabels := map[string]string{
-		Label: svc.Namespace + "." + svc.Name,
+		azure.ServiceLabel: svc.Namespace + "." + svc.Name,
 	}
 
 	// Get LoadBalancer IPs
@@ -88,7 +81,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 			if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 				_, err := controllerutil.CreateOrUpdate(ctx, a.client, pubip, func() error {
 					pubip.Labels = pubipLabels
-					delete(pubip.Annotations, azurepublicipaddress.DoNotCleanAnnotation)
+					delete(pubip.Annotations, azure.DoNotCleanAnnotation)
 					pubip.Spec.IPAddress = ip
 					return nil
 				})
@@ -109,7 +102,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 			if shouldIgnore {
 				a.logger.Info("Adding do-not-clean annotation on publicipaddress", "name", pubip.Name, "namespace", pubip.Namespace)
 				if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-					pubip.Annotations = utils.Add(pubip.Annotations, azurepublicipaddress.DoNotCleanAnnotation, strconv.FormatBool(true))
+					pubip.Annotations = utils.Add(pubip.Annotations, azure.DoNotCleanAnnotation, strconv.FormatBool(true))
 					return a.client.Update(ctx, &pubip)
 				}); err != nil {
 					return 0, errors.Wrap(err, "could not add do-not-clean annotation on publicipaddress")
@@ -178,7 +171,7 @@ func getServiceLoadBalancerIPs(svc *corev1.Service) map[string]bool {
 }
 
 func shouldIgnoreService(svc *corev1.Service) bool {
-	return svc.Annotations[IgnoreAnnotation] == strconv.FormatBool(true)
+	return svc.Annotations[azure.IgnoreAnnotation] == strconv.FormatBool(true)
 }
 
 func generatePublicIPAddressName(serviceNamespace, serviceName, ip string) string {

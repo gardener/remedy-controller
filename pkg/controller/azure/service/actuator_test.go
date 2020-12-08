@@ -22,7 +22,7 @@ import (
 
 	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
 	"github.com/gardener/remedy-controller/pkg/controller"
-	azurepublicipaddress "github.com/gardener/remedy-controller/pkg/controller/azure/publicipaddress"
+	"github.com/gardener/remedy-controller/pkg/controller/azure"
 	azureservice "github.com/gardener/remedy-controller/pkg/controller/azure/service"
 	mockclient "github.com/gardener/remedy-controller/pkg/mock/controller-runtime/client"
 
@@ -103,7 +103,7 @@ var _ = Describe("Actuator", func() {
 				Name:      serviceName,
 				Namespace: serviceNamespace,
 				Annotations: map[string]string{
-					azureservice.IgnoreAnnotation: strconv.FormatBool(true),
+					azure.IgnoreAnnotation: strconv.FormatBool(true),
 				},
 			},
 			Spec: corev1.ServiceSpec{
@@ -118,7 +118,7 @@ var _ = Describe("Actuator", func() {
 			},
 		}
 		pubipLabels = map[string]string{
-			azureservice.Label: serviceNamespace + "." + serviceName,
+			azure.ServiceLabel: serviceNamespace + "." + serviceName,
 		}
 		emptyPubip = &azurev1alpha1.PublicIPAddress{
 			ObjectMeta: metav1.ObjectMeta{
@@ -142,7 +142,7 @@ var _ = Describe("Actuator", func() {
 				Namespace: namespace,
 				Labels:    pubipLabels,
 				Annotations: map[string]string{
-					azurepublicipaddress.DoNotCleanAnnotation: strconv.FormatBool(true),
+					azure.DoNotCleanAnnotation: strconv.FormatBool(true),
 				},
 			},
 			Spec: azurev1alpha1.PublicIPAddressSpec{

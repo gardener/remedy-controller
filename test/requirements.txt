@@ -1,6 +1,5 @@
-azure.mgmt.network
+azure.mgmt.network==11.0.0
 flake8
 kubernetes
-msrestazure
 pyyaml
 wheel

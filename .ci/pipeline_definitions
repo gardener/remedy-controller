@@ -46,19 +46,17 @@ remedy-controller:
       repo:
         trigger: false
       steps:
-        remedy-controller:
-          steps:
-            testrun:
-              image: eu.gcr.io/gardener-project/gardener/testmachinery/testmachinery-run:stable
-              execute:
-              - tm-test
-              - --flavor-tm-chart=default
-              - --flavor-config=min-shoot-flavor-az.yaml
-              - --landscape=opensource
-              - --tm-landscape=external
-              - --
-              - --testrun-prefix=remedy-controller
-              - --set=projectNamespace=garden-it
+        test:
+          image: eu.gcr.io/gardener-project/gardener/testmachinery/testmachinery-run:stable
+          execute:
+          - tm-test
+          - --flavor-tm-chart=default
+          - --flavor-config=min-shoot-flavor-az.yaml
+          - --landscape=opensource
+          - --tm-landscape=external
+          - --
+          - --testrun-prefix=remedy-controller
+          - --set=projectNamespace=garden-it
         trigger_release:
           execute:
             - trigger_release.py
@@ -83,9 +81,16 @@ remedy-controller:
         trigger: false
       steps:
         test:
-          image: 'eu.gcr.io/gardener-project/cc/job-image-golang:0.12.0'
+          image: eu.gcr.io/gardener-project/gardener/testmachinery/testmachinery-run:stable
           execute:
-            - integration_test.sh
+          - tm-test
+          - --flavor-tm-chart=default
+          - --flavor-config=min-shoot-flavor-az.yaml
+          - --landscape=opensource
+          - --tm-landscape=external
+          - --
+          - --testrun-prefix=remedy-controller
+          - --set=projectNamespace=garden-it
           depends:
             - publish
       traits:

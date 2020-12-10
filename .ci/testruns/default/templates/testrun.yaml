@@ -33,7 +33,7 @@ spec:
       revision: master
     - type: git
       repo: https://github.com/gardener/remedy-controller.git
-      revision: {{ .Values.revision }}
+      revision: master
 
   kubeconfigs:
     gardener: {{ b64enc .Values.kubeconfigs.gardener }}

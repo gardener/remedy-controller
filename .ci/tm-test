@@ -86,5 +86,5 @@ export KUBECONFIG=$TM_CLUSTER
     --s3-ssl=true \
     --shoot-name="tm-" \
     --flavored-testruns-chart-path=$FLAVOR_TESTRUN_CHART_PATH \
-    --flavor-config=$SOURCE_PATH/.ci/flavors/$FLAVOR_CONFIG \
+    --flavor-config=$SOURCE_PATH/.ci/flavours/$FLAVOR_CONFIG \
     $ARGUMENTS

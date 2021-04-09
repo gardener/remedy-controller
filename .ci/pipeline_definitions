@@ -91,7 +91,7 @@ remedy-controller:
           - --
           - --testrun-prefix=remedy-controller
           - --set=projectNamespace=garden-it
-          depends:
+          trait_depends:
             - publish
       traits:
         version:

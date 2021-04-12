@@ -86,7 +86,7 @@ install-requirements:
 
 	@$(REPO_ROOT)/hack/install-requirements.sh
 	@python3 -m venv $(REPO_ROOT)/.env
-	@. $(REPO_ROOT)/.env/bin/activate && pip3 install -r $(REPO_ROOT)/test/requirements.txt
+	@. $(REPO_ROOT)/.env/bin/activate && pip3 install --upgrade pip && pip3 install -r $(REPO_ROOT)/test/requirements.txt
 
 
 .PHONY: revendor

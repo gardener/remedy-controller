@@ -106,7 +106,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj client.Object) (reque
 				RequeueAfter: a.config.RequeueInterval.Duration * (1 << (failedOperation.Attempts - 1)),
 			}
 		}
-		return 0, nil
+		return a.config.SyncPeriod.Duration, nil
 	}
 	azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeGetPublicIPAddress)
 
@@ -116,7 +116,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj client.Object) (reque
 	}
 
 	// Requeue if the Azure public IP address doesn't exist or is in a transient state
-	requeueAfter = 0
+	requeueAfter = a.config.SyncPeriod.Duration
 	if azurePublicIP == nil || (getProvisioningState(azurePublicIP) != network.Succeeded && getProvisioningState(azurePublicIP) != network.Failed) {
 		requeueAfter = a.config.RequeueInterval.Duration
 	}

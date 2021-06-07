@@ -147,7 +147,22 @@ Kubernetes meta/v1.Duration
 <td>
 <em>(Optional)</em>
 <p>RequeueInterval specifies the time after which reconciliation requests will be
-requeued. Applies to both creation/update and deletion.</p>
+requeued in case of an error or a transient state. Applies to both creation/update and deletion.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>syncPeriod</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#duration-v1-meta">
+Kubernetes meta/v1.Duration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SyncPeriod determines the minimum frequency at which VirtualMachine resources will be reconciled.
+Only applies to creation/update.</p>
 </td>
 </tr>
 <tr>
@@ -205,7 +220,22 @@ Kubernetes meta/v1.Duration
 <td>
 <em>(Optional)</em>
 <p>RequeueInterval specifies the time after which reconciliation requests will be
-requeued. Applies to both creation/update and deletion.</p>
+requeued in case of an error or a transient state. Applies to both creation/update and deletion.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>syncPeriod</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#duration-v1-meta">
+Kubernetes meta/v1.Duration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>SyncPeriod determines the minimum frequency at which PublicIPAddress resources will be reconciled.
+Only applies to creation/update.</p>
 </td>
 </tr>
 <tr>

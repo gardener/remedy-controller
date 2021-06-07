@@ -45,6 +45,7 @@ var (
 	DefaultAddOptions = AddOptions{
 		Config: config.AzureOrphanedPublicIPRemedyConfiguration{
 			RequeueInterval:     metav1.Duration{Duration: 1 * time.Minute},
+			SyncPeriod:          metav1.Duration{Duration: 10 * time.Hour},
 			DeletionGracePeriod: metav1.Duration{Duration: 5 * time.Minute},
 			MaxGetAttempts:      5,
 			MaxCleanAttempts:    5,

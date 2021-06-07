@@ -9,10 +9,12 @@ clientConnection:
 azure:
   orphanedPublicIPRemedy:
     requeueInterval: 1m
+    syncPeriod: 10h
     deletionGracePeriod: 5m
     maxGetAttempts: 5
     maxCleanAttempts: 5
   failedVMRemedy:
     requeueInterval: 30s
+    syncPeriod: 2h
     maxGetAttempts: 5
     maxReapplyAttempts: 3

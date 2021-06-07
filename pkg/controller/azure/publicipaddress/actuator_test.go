@@ -54,6 +54,7 @@ var _ = Describe("Actuator", func() {
 		azurePublicIPAddressName = "shoot--dev--test-ip1"
 
 		requeueInterval     = 1 * time.Second
+		syncPeriod          = 1 * time.Minute
 		deletionGracePeriod = 1 * time.Second
 	)
 
@@ -91,6 +92,7 @@ var _ = Describe("Actuator", func() {
 
 		cfg = config.AzureOrphanedPublicIPRemedyConfiguration{
 			RequeueInterval:     metav1.Duration{Duration: requeueInterval},
+			SyncPeriod:          metav1.Duration{Duration: syncPeriod},
 			DeletionGracePeriod: metav1.Duration{Duration: deletionGracePeriod},
 			MaxGetAttempts:      2,
 			MaxCleanAttempts:    2,
@@ -173,7 +175,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, pubip.DeepCopyObject().(client.Object))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should not update the PublicIPAddress object status if the IP is not found", func() {
@@ -205,7 +207,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, pubipWithStatus.DeepCopyObject().(client.Object))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should update the PublicIPAddress object status if the IP is not found and the status is already initialized", func() {

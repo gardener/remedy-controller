@@ -118,6 +118,7 @@ func (r *reconciler) createOrUpdate(ctx context.Context, obj client.Object, logg
 		if err := controllerutils.RemoveFinalizer(ctx, r.reader, r.client, obj, r.finalizerName); err != nil {
 			return reconcile.Result{}, errors.Wrap(err, "could not remove finalizer")
 		}
+		return reconcile.Result{}, nil
 	}
 
 	if requeueAfter != time.Duration(0) {

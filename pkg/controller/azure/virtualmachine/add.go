@@ -45,6 +45,7 @@ var (
 	DefaultAddOptions = AddOptions{
 		Config: config.AzureFailedVMRemedyConfiguration{
 			RequeueInterval:    metav1.Duration{Duration: 1 * time.Minute},
+			SyncPeriod:         metav1.Duration{Duration: 2 * time.Hour},
 			MaxGetAttempts:     5,
 			MaxReapplyAttempts: 5,
 		},

@@ -39,6 +39,10 @@ import (
 	mockcontroller "github.com/gardener/remedy-controller/pkg/mock/remedy-controller/controller"
 )
 
+const (
+	requeueAfter = 1 * time.Minute
+)
+
 var _ = Describe("Controller", func() {
 	var (
 		ctrl *gomock.Controller
@@ -114,11 +118,11 @@ var _ = Describe("Controller", func() {
 			a.EXPECT().ShouldFinalize(ctx, obj).Return(true, nil)
 			c.EXPECT().Get(ctx, client.ObjectKey{}, obj).Return(nil)
 			c.EXPECT().Patch(ctx, objWithFinalizer, gomock.Any()).Return(nil)
-			a.EXPECT().CreateOrUpdate(ctx, objWithFinalizer).Return(time.Duration(0), nil)
+			a.EXPECT().CreateOrUpdate(ctx, objWithFinalizer).Return(requeueAfter, nil)
 
 			result, err := reconciler.Reconcile(ctx, request)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(Equal(reconcile.Result{}))
+			Expect(result).To(Equal(reconcile.Result{RequeueAfter: requeueAfter}))
 		})
 
 		It("should not create or update an object if it should not be finalized and doesn't have a finalizer", func() {
@@ -136,7 +140,7 @@ var _ = Describe("Controller", func() {
 				return nil
 			})
 			a.EXPECT().ShouldFinalize(ctx, objWithFinalizer).Return(false, nil)
-			a.EXPECT().CreateOrUpdate(ctx, objWithFinalizer).Return(time.Duration(0), nil)
+			a.EXPECT().CreateOrUpdate(ctx, objWithFinalizer).Return(requeueAfter, nil)
 			c.EXPECT().Get(ctx, client.ObjectKey{}, obj).Return(nil)
 			c.EXPECT().Patch(ctx, obj, gomock.Any()).Return(nil)
 

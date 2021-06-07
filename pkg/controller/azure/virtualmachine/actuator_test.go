@@ -52,6 +52,7 @@ var _ = Describe("Actuator", func() {
 		azureVirtualMachineName = "shoot--dev--test-vm1"
 
 		requeueInterval = 1 * time.Second
+		syncPeriod      = 1 * time.Minute
 	)
 
 	var (
@@ -89,6 +90,7 @@ var _ = Describe("Actuator", func() {
 
 		cfg = config.AzureFailedVMRemedyConfiguration{
 			RequeueInterval:    metav1.Duration{Duration: requeueInterval},
+			SyncPeriod:         metav1.Duration{Duration: syncPeriod},
 			MaxGetAttempts:     2,
 			MaxReapplyAttempts: 2,
 		}
@@ -150,7 +152,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject().(client.Object))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should not update the VirtualMachine object status if the VM is not found", func() {
@@ -174,7 +176,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithStatus.DeepCopyObject().(client.Object))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should update the VirtualMachine object status if the VM is not found and the status is already initialized", func() {
@@ -211,7 +213,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject().(client.Object))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should fail if getting the Azure VM fails", func() {
@@ -305,7 +307,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithFailedOps.DeepCopyObject().(client.Object))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should clear failed operations if reapplying the Azure VM eventually succeeds", func() {
@@ -334,7 +336,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithFailedOps.DeepCopyObject().(client.Object))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 	})
 

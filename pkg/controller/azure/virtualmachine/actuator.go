@@ -112,7 +112,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj client.Object) (reque
 				RequeueAfter: a.config.RequeueInterval.Duration * (1 << (failedOperation.Attempts - 1)),
 			}
 		}
-		return 0, nil
+		return a.config.SyncPeriod.Duration, nil
 	}
 	azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeGetVirtualMachine)
 
@@ -149,7 +149,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj client.Object) (reque
 
 			// If the configured max attempts has been reached, set VM states gauge to "failed" and return success
 			a.vmStatesGaugeVec.WithLabelValues(vmName).Set(VMStateFailed)
-			return 0, nil
+			return a.config.SyncPeriod.Duration, nil
 		}
 		azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeReapplyVirtualMachine)
 
@@ -172,7 +172,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj client.Object) (reque
 	}
 
 	// Requeue if the Azure virtual machine doesn't exist or is in a transient state
-	requeueAfter = 0
+	requeueAfter = a.config.SyncPeriod.Duration
 	if azureVM == nil || (getProvisioningState(azureVM) != compute.ProvisioningStateSucceeded && getProvisioningState(azureVM) != compute.ProvisioningStateFailed) {
 		requeueAfter = a.config.RequeueInterval.Duration
 	}

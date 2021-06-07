@@ -74,6 +74,7 @@ func (client LoadBalancerLoadBalancingRulesClient) Get(ctx context.Context, reso
 	result, err = client.GetResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.LoadBalancerLoadBalancingRulesClient", "Get", resp, "Failure responding to request")
+		return
 	}
 
 	return
@@ -104,8 +105,7 @@ func (client LoadBalancerLoadBalancingRulesClient) GetPreparer(ctx context.Conte
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client LoadBalancerLoadBalancingRulesClient) GetSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -113,7 +113,6 @@ func (client LoadBalancerLoadBalancingRulesClient) GetSender(req *http.Request) 
 func (client LoadBalancerLoadBalancingRulesClient) GetResponder(resp *http.Response) (result LoadBalancingRule, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -153,6 +152,10 @@ func (client LoadBalancerLoadBalancingRulesClient) List(ctx context.Context, res
 	result.lblbrlr, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.LoadBalancerLoadBalancingRulesClient", "List", resp, "Failure responding to request")
+		return
+	}
+	if result.lblbrlr.hasNextLink() && result.lblbrlr.IsEmpty() {
+		err = result.NextWithContext(ctx)
 	}
 
 	return
@@ -182,8 +185,7 @@ func (client LoadBalancerLoadBalancingRulesClient) ListPreparer(ctx context.Cont
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client LoadBalancerLoadBalancingRulesClient) ListSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -191,7 +193,6 @@ func (client LoadBalancerLoadBalancingRulesClient) ListSender(req *http.Request)
 func (client LoadBalancerLoadBalancingRulesClient) ListResponder(resp *http.Response) (result LoadBalancerLoadBalancingRuleListResult, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -216,6 +217,7 @@ func (client LoadBalancerLoadBalancingRulesClient) listNextResults(ctx context.C
 	result, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.LoadBalancerLoadBalancingRulesClient", "listNextResults", resp, "Failure responding to next results request")
+		return
 	}
 	return
 }

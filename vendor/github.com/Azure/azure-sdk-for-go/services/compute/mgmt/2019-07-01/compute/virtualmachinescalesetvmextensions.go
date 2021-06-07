@@ -104,9 +104,8 @@ func (client VirtualMachineScaleSetVMExtensionsClient) CreateOrUpdatePreparer(ct
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualMachineScaleSetVMExtensionsClient) CreateOrUpdateSender(req *http.Request) (future VirtualMachineScaleSetVMExtensionsCreateOrUpdateFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -119,7 +118,6 @@ func (client VirtualMachineScaleSetVMExtensionsClient) CreateOrUpdateSender(req 
 func (client VirtualMachineScaleSetVMExtensionsClient) CreateOrUpdateResponder(resp *http.Response) (result VirtualMachineExtension, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusCreated),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -185,9 +183,8 @@ func (client VirtualMachineScaleSetVMExtensionsClient) DeletePreparer(ctx contex
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualMachineScaleSetVMExtensionsClient) DeleteSender(req *http.Request) (future VirtualMachineScaleSetVMExtensionsDeleteFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -200,7 +197,6 @@ func (client VirtualMachineScaleSetVMExtensionsClient) DeleteSender(req *http.Re
 func (client VirtualMachineScaleSetVMExtensionsClient) DeleteResponder(resp *http.Response) (result autorest.Response, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent),
 		autorest.ByClosing())
 	result.Response = resp
@@ -241,6 +237,7 @@ func (client VirtualMachineScaleSetVMExtensionsClient) Get(ctx context.Context, 
 	result, err = client.GetResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "compute.VirtualMachineScaleSetVMExtensionsClient", "Get", resp, "Failure responding to request")
+		return
 	}
 
 	return
@@ -275,8 +272,7 @@ func (client VirtualMachineScaleSetVMExtensionsClient) GetPreparer(ctx context.C
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualMachineScaleSetVMExtensionsClient) GetSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -284,7 +280,6 @@ func (client VirtualMachineScaleSetVMExtensionsClient) GetSender(req *http.Reque
 func (client VirtualMachineScaleSetVMExtensionsClient) GetResponder(resp *http.Response) (result VirtualMachineExtension, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -325,6 +320,7 @@ func (client VirtualMachineScaleSetVMExtensionsClient) List(ctx context.Context,
 	result, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "compute.VirtualMachineScaleSetVMExtensionsClient", "List", resp, "Failure responding to request")
+		return
 	}
 
 	return
@@ -358,8 +354,7 @@ func (client VirtualMachineScaleSetVMExtensionsClient) ListPreparer(ctx context.
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualMachineScaleSetVMExtensionsClient) ListSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -367,7 +362,6 @@ func (client VirtualMachineScaleSetVMExtensionsClient) ListSender(req *http.Requ
 func (client VirtualMachineScaleSetVMExtensionsClient) ListResponder(resp *http.Response) (result VirtualMachineExtensionsListResult, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -436,9 +430,8 @@ func (client VirtualMachineScaleSetVMExtensionsClient) UpdatePreparer(ctx contex
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualMachineScaleSetVMExtensionsClient) UpdateSender(req *http.Request) (future VirtualMachineScaleSetVMExtensionsUpdateFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -451,7 +444,6 @@ func (client VirtualMachineScaleSetVMExtensionsClient) UpdateSender(req *http.Re
 func (client VirtualMachineScaleSetVMExtensionsClient) UpdateResponder(resp *http.Response) (result VirtualMachineExtension, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())

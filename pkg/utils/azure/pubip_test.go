@@ -185,7 +185,7 @@ var _ = Describe("PublicIPAddressUtils", func() {
 		}
 
 		newPublicIPAddressListResultPage = func(publicIPAddresses []network.PublicIPAddress, fail bool) network.PublicIPAddressListResultPage {
-			page := network.NewPublicIPAddressListResultPage(func(_ context.Context, res network.PublicIPAddressListResult) (network.PublicIPAddressListResult, error) {
+			page := network.NewPublicIPAddressListResultPage(network.PublicIPAddressListResult{}, func(_ context.Context, res network.PublicIPAddressListResult) (network.PublicIPAddressListResult, error) {
 				if res.Value == nil {
 					return network.PublicIPAddressListResult{
 						Value: &publicIPAddresses,

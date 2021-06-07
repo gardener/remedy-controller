@@ -47,6 +47,7 @@ var _ = Describe("Controller", func() {
 		a *mockcontroller.MockActuator
 		c *mockclient.MockClient
 
+		ctx        context.Context
 		logger     logr.Logger
 		reconciler reconcile.Reconciler
 
@@ -54,7 +55,6 @@ var _ = Describe("Controller", func() {
 		request                              reconcile.Request
 		obj                                  runtime.Object
 		objWithDeletionTimestamp             runtime.Object
-		objWithNoFinalizer                   runtime.Object
 		objWithFinalizer                     runtime.Object
 		objWithDeletionTimestampAndFinalizer runtime.Object
 		notFoundError                        apierrors.APIStatus
@@ -67,9 +67,11 @@ var _ = Describe("Controller", func() {
 		a = mockcontroller.NewMockActuator(ctrl)
 		c = mockclient.NewMockClient(ctrl)
 
+		ctx = context.TODO()
 		logger = log.Log.WithName("test")
 		reconciler = controller.NewReconciler(m, a, "test-controller", "test-finalizer", &corev1.Pod{}, logger)
 		Expect(reconciler.(inject.Client).InjectClient(c)).To(Succeed())
+		Expect(reconciler.(inject.APIReader).InjectAPIReader(c)).To(Succeed())
 
 		ts = metav1.Now()
 		request = reconcile.Request{
@@ -82,12 +84,6 @@ var _ = Describe("Controller", func() {
 		objWithDeletionTimestamp = &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
 				DeletionTimestamp: &ts,
-				Finalizers:        []string{},
-			},
-		}
-		objWithNoFinalizer = &corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Finalizers: []string{},
 			},
 		}
 		objWithFinalizer = &corev1.Pod{
@@ -114,21 +110,22 @@ var _ = Describe("Controller", func() {
 
 	Describe("#Reconcile", func() {
 		It("should create or update an object if it should be finalized", func() {
-			c.EXPECT().Get(gomock.Any(), request.NamespacedName, obj).Return(nil)
-			a.EXPECT().ShouldFinalize(gomock.Any(), obj).Return(true, nil)
-			c.EXPECT().Update(gomock.Any(), objWithFinalizer).Return(nil)
-			a.EXPECT().CreateOrUpdate(gomock.Any(), objWithFinalizer).Return(time.Duration(0), nil)
+			c.EXPECT().Get(ctx, request.NamespacedName, obj).Return(nil)
+			a.EXPECT().ShouldFinalize(ctx, obj).Return(true, nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{}, obj).Return(nil)
+			c.EXPECT().Patch(ctx, objWithFinalizer, gomock.Any()).Return(nil)
+			a.EXPECT().CreateOrUpdate(ctx, objWithFinalizer).Return(time.Duration(0), nil)
 
-			result, err := reconciler.Reconcile(request)
+			result, err := reconciler.Reconcile(ctx, request)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(reconcile.Result{}))
 		})
 
 		It("should not create or update an object if it should not be finalized and doesn't have a finalizer", func() {
-			c.EXPECT().Get(gomock.Any(), request.NamespacedName, obj).Return(nil)
-			a.EXPECT().ShouldFinalize(gomock.Any(), obj).Return(false, nil)
+			c.EXPECT().Get(ctx, request.NamespacedName, obj).Return(nil)
+			a.EXPECT().ShouldFinalize(ctx, obj).Return(false, nil)
 
-			result, err := reconciler.Reconcile(request)
+			result, err := reconciler.Reconcile(ctx, request)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(reconcile.Result{}))
 		})
@@ -138,75 +135,78 @@ var _ = Describe("Controller", func() {
 				pod.ObjectMeta.Finalizers = []string{"test-finalizer"}
 				return nil
 			})
-			a.EXPECT().ShouldFinalize(gomock.Any(), objWithFinalizer).Return(false, nil)
-			a.EXPECT().CreateOrUpdate(gomock.Any(), objWithFinalizer).Return(time.Duration(0), nil)
-			c.EXPECT().Update(gomock.Any(), objWithNoFinalizer).Return(nil)
+			a.EXPECT().ShouldFinalize(ctx, objWithFinalizer).Return(false, nil)
+			a.EXPECT().CreateOrUpdate(ctx, objWithFinalizer).Return(time.Duration(0), nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{}, obj).Return(nil)
+			c.EXPECT().Patch(ctx, obj, gomock.Any()).Return(nil)
 
-			result, err := reconciler.Reconcile(request)
+			result, err := reconciler.Reconcile(ctx, request)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(reconcile.Result{}))
 		})
 
 		It("should delete an object that has a finalizer", func() {
-			c.EXPECT().Get(gomock.Any(), request.NamespacedName, obj).DoAndReturn(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod) error {
+			c.EXPECT().Get(ctx, request.NamespacedName, obj).DoAndReturn(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod) error {
 				pod.ObjectMeta.DeletionTimestamp = &ts
 				pod.ObjectMeta.Finalizers = []string{"test-finalizer"}
 				return nil
 			})
-			a.EXPECT().Delete(gomock.Any(), objWithDeletionTimestampAndFinalizer).Return(nil)
-			c.EXPECT().Update(gomock.Any(), objWithDeletionTimestamp).Return(nil)
+			a.EXPECT().Delete(ctx, objWithDeletionTimestampAndFinalizer).Return(nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{}, objWithDeletionTimestamp).Return(nil)
+			c.EXPECT().Patch(ctx, objWithDeletionTimestamp, gomock.Any()).Return(nil)
 
-			result, err := reconciler.Reconcile(request)
+			result, err := reconciler.Reconcile(ctx, request)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(reconcile.Result{}))
 		})
 
 		It("should not delete an object that doesn't have a finalizer", func() {
-			c.EXPECT().Get(gomock.Any(), request.NamespacedName, obj).DoAndReturn(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod) error {
+			c.EXPECT().Get(ctx, request.NamespacedName, obj).DoAndReturn(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod) error {
 				pod.ObjectMeta.DeletionTimestamp = &ts
 				return nil
 			})
 
-			result, err := reconciler.Reconcile(request)
+			result, err := reconciler.Reconcile(ctx, request)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(reconcile.Result{}))
 		})
 
 		It("should do nothing if the object does not exist", func() {
-			c.EXPECT().Get(gomock.Any(), request.NamespacedName, obj).Return(notFoundError)
+			c.EXPECT().Get(ctx, request.NamespacedName, obj).Return(notFoundError)
 
-			result, err := reconciler.Reconcile(request)
+			result, err := reconciler.Reconcile(ctx, request)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(reconcile.Result{}))
 		})
 
 		It("should fail if the actuator fails to check if the object should be finalized", func() {
-			c.EXPECT().Get(gomock.Any(), request.NamespacedName, obj).Return(nil)
-			a.EXPECT().ShouldFinalize(gomock.Any(), obj).Return(false, errors.New("test"))
+			c.EXPECT().Get(ctx, request.NamespacedName, obj).Return(nil)
+			a.EXPECT().ShouldFinalize(ctx, obj).Return(false, errors.New("test"))
 
-			_, err := reconciler.Reconcile(request)
+			_, err := reconciler.Reconcile(ctx, request)
 			Expect(err).To(MatchError("could not check if the object should be finalized: test"))
 		})
 
 		It("should fail if the actuator fails to create or update", func() {
-			c.EXPECT().Get(gomock.Any(), request.NamespacedName, obj).Return(nil)
-			a.EXPECT().ShouldFinalize(gomock.Any(), obj).Return(true, nil)
-			c.EXPECT().Update(gomock.Any(), objWithFinalizer).Return(nil)
-			a.EXPECT().CreateOrUpdate(gomock.Any(), objWithFinalizer).Return(time.Duration(0), errors.New("test"))
+			c.EXPECT().Get(ctx, request.NamespacedName, obj).Return(nil)
+			a.EXPECT().ShouldFinalize(ctx, obj).Return(true, nil)
+			c.EXPECT().Get(ctx, client.ObjectKey{}, obj).Return(nil)
+			c.EXPECT().Patch(ctx, objWithFinalizer, gomock.Any()).Return(nil)
+			a.EXPECT().CreateOrUpdate(ctx, objWithFinalizer).Return(time.Duration(0), errors.New("test"))
 
-			_, err := reconciler.Reconcile(request)
+			_, err := reconciler.Reconcile(ctx, request)
 			Expect(err).To(MatchError("could not reconcile object creation or update: test"))
 		})
 
 		It("should fail if the actuator fails to delete", func() {
-			c.EXPECT().Get(gomock.Any(), request.NamespacedName, obj).DoAndReturn(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod) error {
+			c.EXPECT().Get(ctx, request.NamespacedName, obj).DoAndReturn(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod) error {
 				pod.ObjectMeta.DeletionTimestamp = &ts
 				pod.ObjectMeta.Finalizers = []string{"test-finalizer"}
 				return nil
 			})
-			a.EXPECT().Delete(gomock.Any(), objWithDeletionTimestampAndFinalizer).Return(errors.New("test"))
+			a.EXPECT().Delete(ctx, objWithDeletionTimestampAndFinalizer).Return(errors.New("test"))
 
-			_, err := reconciler.Reconcile(request)
+			_, err := reconciler.Reconcile(ctx, request)
 			Expect(err).To(MatchError("could not reconcile object deletion: test"))
 		})
 	})

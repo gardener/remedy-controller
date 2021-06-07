@@ -113,9 +113,8 @@ func (client DedicatedHostsClient) CreateOrUpdatePreparer(ctx context.Context, r
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client DedicatedHostsClient) CreateOrUpdateSender(req *http.Request) (future DedicatedHostsCreateOrUpdateFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -128,7 +127,6 @@ func (client DedicatedHostsClient) CreateOrUpdateSender(req *http.Request) (futu
 func (client DedicatedHostsClient) CreateOrUpdateResponder(resp *http.Response) (result DedicatedHost, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusCreated),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -192,9 +190,8 @@ func (client DedicatedHostsClient) DeletePreparer(ctx context.Context, resourceG
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client DedicatedHostsClient) DeleteSender(req *http.Request) (future DedicatedHostsDeleteFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -207,7 +204,6 @@ func (client DedicatedHostsClient) DeleteSender(req *http.Request) (future Dedic
 func (client DedicatedHostsClient) DeleteResponder(resp *http.Response) (result autorest.Response, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent),
 		autorest.ByClosing())
 	result.Response = resp
@@ -247,6 +243,7 @@ func (client DedicatedHostsClient) Get(ctx context.Context, resourceGroupName st
 	result, err = client.GetResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "compute.DedicatedHostsClient", "Get", resp, "Failure responding to request")
+		return
 	}
 
 	return
@@ -280,8 +277,7 @@ func (client DedicatedHostsClient) GetPreparer(ctx context.Context, resourceGrou
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client DedicatedHostsClient) GetSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -289,7 +285,6 @@ func (client DedicatedHostsClient) GetSender(req *http.Request) (*http.Response,
 func (client DedicatedHostsClient) GetResponder(resp *http.Response) (result DedicatedHost, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -330,6 +325,10 @@ func (client DedicatedHostsClient) ListByHostGroup(ctx context.Context, resource
 	result.dhlr, err = client.ListByHostGroupResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "compute.DedicatedHostsClient", "ListByHostGroup", resp, "Failure responding to request")
+		return
+	}
+	if result.dhlr.hasNextLink() && result.dhlr.IsEmpty() {
+		err = result.NextWithContext(ctx)
 	}
 
 	return
@@ -359,8 +358,7 @@ func (client DedicatedHostsClient) ListByHostGroupPreparer(ctx context.Context, 
 // ListByHostGroupSender sends the ListByHostGroup request. The method will close the
 // http.Response Body if it receives an error.
 func (client DedicatedHostsClient) ListByHostGroupSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // ListByHostGroupResponder handles the response to the ListByHostGroup request. The method always
@@ -368,7 +366,6 @@ func (client DedicatedHostsClient) ListByHostGroupSender(req *http.Request) (*ht
 func (client DedicatedHostsClient) ListByHostGroupResponder(resp *http.Response) (result DedicatedHostListResult, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -393,6 +390,7 @@ func (client DedicatedHostsClient) listByHostGroupNextResults(ctx context.Contex
 	result, err = client.ListByHostGroupResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "compute.DedicatedHostsClient", "listByHostGroupNextResults", resp, "Failure responding to next results request")
+		return
 	}
 	return
 }
@@ -472,9 +470,8 @@ func (client DedicatedHostsClient) UpdatePreparer(ctx context.Context, resourceG
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client DedicatedHostsClient) UpdateSender(req *http.Request) (future DedicatedHostsUpdateFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -487,7 +484,6 @@ func (client DedicatedHostsClient) UpdateSender(req *http.Request) (future Dedic
 func (client DedicatedHostsClient) UpdateResponder(resp *http.Response) (result DedicatedHost, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())

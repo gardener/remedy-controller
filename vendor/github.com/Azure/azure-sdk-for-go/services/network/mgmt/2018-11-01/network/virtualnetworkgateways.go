@@ -106,9 +106,8 @@ func (client VirtualNetworkGatewaysClient) CreateOrUpdatePreparer(ctx context.Co
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) CreateOrUpdateSender(req *http.Request) (future VirtualNetworkGatewaysCreateOrUpdateFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -121,7 +120,6 @@ func (client VirtualNetworkGatewaysClient) CreateOrUpdateSender(req *http.Reques
 func (client VirtualNetworkGatewaysClient) CreateOrUpdateResponder(resp *http.Response) (result VirtualNetworkGateway, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusCreated),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -183,9 +181,8 @@ func (client VirtualNetworkGatewaysClient) DeletePreparer(ctx context.Context, r
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) DeleteSender(req *http.Request) (future VirtualNetworkGatewaysDeleteFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -198,7 +195,6 @@ func (client VirtualNetworkGatewaysClient) DeleteSender(req *http.Request) (futu
 func (client VirtualNetworkGatewaysClient) DeleteResponder(resp *http.Response) (result autorest.Response, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent),
 		autorest.ByClosing())
 	result.Response = resp
@@ -263,9 +259,8 @@ func (client VirtualNetworkGatewaysClient) GeneratevpnclientpackagePreparer(ctx 
 // GeneratevpnclientpackageSender sends the Generatevpnclientpackage request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) GeneratevpnclientpackageSender(req *http.Request) (future VirtualNetworkGatewaysGeneratevpnclientpackageFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -278,7 +273,6 @@ func (client VirtualNetworkGatewaysClient) GeneratevpnclientpackageSender(req *h
 func (client VirtualNetworkGatewaysClient) GeneratevpnclientpackageResponder(resp *http.Response) (result String, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -344,9 +338,8 @@ func (client VirtualNetworkGatewaysClient) GenerateVpnProfilePreparer(ctx contex
 // GenerateVpnProfileSender sends the GenerateVpnProfile request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) GenerateVpnProfileSender(req *http.Request) (future VirtualNetworkGatewaysGenerateVpnProfileFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -359,7 +352,6 @@ func (client VirtualNetworkGatewaysClient) GenerateVpnProfileSender(req *http.Re
 func (client VirtualNetworkGatewaysClient) GenerateVpnProfileResponder(resp *http.Response) (result String, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -398,6 +390,7 @@ func (client VirtualNetworkGatewaysClient) Get(ctx context.Context, resourceGrou
 	result, err = client.GetResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "Get", resp, "Failure responding to request")
+		return
 	}
 
 	return
@@ -427,8 +420,7 @@ func (client VirtualNetworkGatewaysClient) GetPreparer(ctx context.Context, reso
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) GetSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -436,7 +428,6 @@ func (client VirtualNetworkGatewaysClient) GetSender(req *http.Request) (*http.R
 func (client VirtualNetworkGatewaysClient) GetResponder(resp *http.Response) (result VirtualNetworkGateway, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -501,9 +492,8 @@ func (client VirtualNetworkGatewaysClient) GetAdvertisedRoutesPreparer(ctx conte
 // GetAdvertisedRoutesSender sends the GetAdvertisedRoutes request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) GetAdvertisedRoutesSender(req *http.Request) (future VirtualNetworkGatewaysGetAdvertisedRoutesFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -516,7 +506,6 @@ func (client VirtualNetworkGatewaysClient) GetAdvertisedRoutesSender(req *http.R
 func (client VirtualNetworkGatewaysClient) GetAdvertisedRoutesResponder(resp *http.Response) (result GatewayRouteListResult, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -582,9 +571,8 @@ func (client VirtualNetworkGatewaysClient) GetBgpPeerStatusPreparer(ctx context.
 // GetBgpPeerStatusSender sends the GetBgpPeerStatus request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) GetBgpPeerStatusSender(req *http.Request) (future VirtualNetworkGatewaysGetBgpPeerStatusFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -597,7 +585,6 @@ func (client VirtualNetworkGatewaysClient) GetBgpPeerStatusSender(req *http.Requ
 func (client VirtualNetworkGatewaysClient) GetBgpPeerStatusResponder(resp *http.Response) (result BgpPeerStatusListResult, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -660,9 +647,8 @@ func (client VirtualNetworkGatewaysClient) GetLearnedRoutesPreparer(ctx context.
 // GetLearnedRoutesSender sends the GetLearnedRoutes request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) GetLearnedRoutesSender(req *http.Request) (future VirtualNetworkGatewaysGetLearnedRoutesFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -675,7 +661,6 @@ func (client VirtualNetworkGatewaysClient) GetLearnedRoutesSender(req *http.Requ
 func (client VirtualNetworkGatewaysClient) GetLearnedRoutesResponder(resp *http.Response) (result GatewayRouteListResult, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -739,9 +724,8 @@ func (client VirtualNetworkGatewaysClient) GetVpnclientIpsecParametersPreparer(c
 // GetVpnclientIpsecParametersSender sends the GetVpnclientIpsecParameters request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) GetVpnclientIpsecParametersSender(req *http.Request) (future VirtualNetworkGatewaysGetVpnclientIpsecParametersFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -754,7 +738,6 @@ func (client VirtualNetworkGatewaysClient) GetVpnclientIpsecParametersSender(req
 func (client VirtualNetworkGatewaysClient) GetVpnclientIpsecParametersResponder(resp *http.Response) (result VpnClientIPsecParameters, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -817,9 +800,8 @@ func (client VirtualNetworkGatewaysClient) GetVpnProfilePackageURLPreparer(ctx c
 // GetVpnProfilePackageURLSender sends the GetVpnProfilePackageURL request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) GetVpnProfilePackageURLSender(req *http.Request) (future VirtualNetworkGatewaysGetVpnProfilePackageURLFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -832,7 +814,6 @@ func (client VirtualNetworkGatewaysClient) GetVpnProfilePackageURLSender(req *ht
 func (client VirtualNetworkGatewaysClient) GetVpnProfilePackageURLResponder(resp *http.Response) (result String, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -871,6 +852,10 @@ func (client VirtualNetworkGatewaysClient) List(ctx context.Context, resourceGro
 	result.vnglr, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "List", resp, "Failure responding to request")
+		return
+	}
+	if result.vnglr.hasNextLink() && result.vnglr.IsEmpty() {
+		err = result.NextWithContext(ctx)
 	}
 
 	return
@@ -899,8 +884,7 @@ func (client VirtualNetworkGatewaysClient) ListPreparer(ctx context.Context, res
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) ListSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -908,7 +892,6 @@ func (client VirtualNetworkGatewaysClient) ListSender(req *http.Request) (*http.
 func (client VirtualNetworkGatewaysClient) ListResponder(resp *http.Response) (result VirtualNetworkGatewayListResult, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -933,6 +916,7 @@ func (client VirtualNetworkGatewaysClient) listNextResults(ctx context.Context, 
 	result, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "listNextResults", resp, "Failure responding to next results request")
+		return
 	}
 	return
 }
@@ -985,6 +969,10 @@ func (client VirtualNetworkGatewaysClient) ListConnections(ctx context.Context, 
 	result.vnglcr, err = client.ListConnectionsResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "ListConnections", resp, "Failure responding to request")
+		return
+	}
+	if result.vnglcr.hasNextLink() && result.vnglcr.IsEmpty() {
+		err = result.NextWithContext(ctx)
 	}
 
 	return
@@ -1014,8 +1002,7 @@ func (client VirtualNetworkGatewaysClient) ListConnectionsPreparer(ctx context.C
 // ListConnectionsSender sends the ListConnections request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) ListConnectionsSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // ListConnectionsResponder handles the response to the ListConnections request. The method always
@@ -1023,7 +1010,6 @@ func (client VirtualNetworkGatewaysClient) ListConnectionsSender(req *http.Reque
 func (client VirtualNetworkGatewaysClient) ListConnectionsResponder(resp *http.Response) (result VirtualNetworkGatewayListConnectionsResult, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -1048,6 +1034,7 @@ func (client VirtualNetworkGatewaysClient) listConnectionsNextResults(ctx contex
 	result, err = client.ListConnectionsResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "listConnectionsNextResults", resp, "Failure responding to next results request")
+		return
 	}
 	return
 }
@@ -1127,9 +1114,8 @@ func (client VirtualNetworkGatewaysClient) ResetPreparer(ctx context.Context, re
 // ResetSender sends the Reset request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) ResetSender(req *http.Request) (future VirtualNetworkGatewaysResetFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -1142,7 +1128,6 @@ func (client VirtualNetworkGatewaysClient) ResetSender(req *http.Request) (futur
 func (client VirtualNetworkGatewaysClient) ResetResponder(resp *http.Response) (result VirtualNetworkGateway, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -1205,9 +1190,8 @@ func (client VirtualNetworkGatewaysClient) ResetVpnClientSharedKeyPreparer(ctx c
 // ResetVpnClientSharedKeySender sends the ResetVpnClientSharedKey request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) ResetVpnClientSharedKeySender(req *http.Request) (future VirtualNetworkGatewaysResetVpnClientSharedKeyFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -1220,7 +1204,6 @@ func (client VirtualNetworkGatewaysClient) ResetVpnClientSharedKeySender(req *ht
 func (client VirtualNetworkGatewaysClient) ResetVpnClientSharedKeyResponder(resp *http.Response) (result autorest.Response, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted),
 		autorest.ByClosing())
 	result.Response = resp
@@ -1293,9 +1276,8 @@ func (client VirtualNetworkGatewaysClient) SetVpnclientIpsecParametersPreparer(c
 // SetVpnclientIpsecParametersSender sends the SetVpnclientIpsecParameters request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) SetVpnclientIpsecParametersSender(req *http.Request) (future VirtualNetworkGatewaysSetVpnclientIpsecParametersFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -1308,7 +1290,6 @@ func (client VirtualNetworkGatewaysClient) SetVpnclientIpsecParametersSender(req
 func (client VirtualNetworkGatewaysClient) SetVpnclientIpsecParametersResponder(resp *http.Response) (result VpnClientIPsecParameters, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -1347,6 +1328,7 @@ func (client VirtualNetworkGatewaysClient) SupportedVpnDevices(ctx context.Conte
 	result, err = client.SupportedVpnDevicesResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "SupportedVpnDevices", resp, "Failure responding to request")
+		return
 	}
 
 	return
@@ -1376,8 +1358,7 @@ func (client VirtualNetworkGatewaysClient) SupportedVpnDevicesPreparer(ctx conte
 // SupportedVpnDevicesSender sends the SupportedVpnDevices request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) SupportedVpnDevicesSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // SupportedVpnDevicesResponder handles the response to the SupportedVpnDevices request. The method always
@@ -1385,7 +1366,6 @@ func (client VirtualNetworkGatewaysClient) SupportedVpnDevicesSender(req *http.R
 func (client VirtualNetworkGatewaysClient) SupportedVpnDevicesResponder(resp *http.Response) (result String, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result.Value),
 		autorest.ByClosing())
@@ -1450,9 +1430,8 @@ func (client VirtualNetworkGatewaysClient) UpdateTagsPreparer(ctx context.Contex
 // UpdateTagsSender sends the UpdateTags request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) UpdateTagsSender(req *http.Request) (future VirtualNetworkGatewaysUpdateTagsFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -1465,7 +1444,6 @@ func (client VirtualNetworkGatewaysClient) UpdateTagsSender(req *http.Request) (
 func (client VirtualNetworkGatewaysClient) UpdateTagsResponder(resp *http.Response) (result VirtualNetworkGateway, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -1506,6 +1484,7 @@ func (client VirtualNetworkGatewaysClient) VpnDeviceConfigurationScript(ctx cont
 	result, err = client.VpnDeviceConfigurationScriptResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkGatewaysClient", "VpnDeviceConfigurationScript", resp, "Failure responding to request")
+		return
 	}
 
 	return
@@ -1537,8 +1516,7 @@ func (client VirtualNetworkGatewaysClient) VpnDeviceConfigurationScriptPreparer(
 // VpnDeviceConfigurationScriptSender sends the VpnDeviceConfigurationScript request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkGatewaysClient) VpnDeviceConfigurationScriptSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // VpnDeviceConfigurationScriptResponder handles the response to the VpnDeviceConfigurationScript request. The method always
@@ -1546,7 +1524,6 @@ func (client VirtualNetworkGatewaysClient) VpnDeviceConfigurationScriptSender(re
 func (client VirtualNetworkGatewaysClient) VpnDeviceConfigurationScriptResponder(resp *http.Response) (result String, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result.Value),
 		autorest.ByClosing())

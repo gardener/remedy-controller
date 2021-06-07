@@ -114,9 +114,8 @@ func (client ExpressRouteCircuitPeeringsClient) CreateOrUpdatePreparer(ctx conte
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client ExpressRouteCircuitPeeringsClient) CreateOrUpdateSender(req *http.Request) (future ExpressRouteCircuitPeeringsCreateOrUpdateFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -129,7 +128,6 @@ func (client ExpressRouteCircuitPeeringsClient) CreateOrUpdateSender(req *http.R
 func (client ExpressRouteCircuitPeeringsClient) CreateOrUpdateResponder(resp *http.Response) (result ExpressRouteCircuitPeering, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusCreated),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -193,9 +191,8 @@ func (client ExpressRouteCircuitPeeringsClient) DeletePreparer(ctx context.Conte
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client ExpressRouteCircuitPeeringsClient) DeleteSender(req *http.Request) (future ExpressRouteCircuitPeeringsDeleteFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -208,7 +205,6 @@ func (client ExpressRouteCircuitPeeringsClient) DeleteSender(req *http.Request) 
 func (client ExpressRouteCircuitPeeringsClient) DeleteResponder(resp *http.Response) (result autorest.Response, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent),
 		autorest.ByClosing())
 	result.Response = resp
@@ -247,6 +243,7 @@ func (client ExpressRouteCircuitPeeringsClient) Get(ctx context.Context, resourc
 	result, err = client.GetResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitPeeringsClient", "Get", resp, "Failure responding to request")
+		return
 	}
 
 	return
@@ -277,8 +274,7 @@ func (client ExpressRouteCircuitPeeringsClient) GetPreparer(ctx context.Context,
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client ExpressRouteCircuitPeeringsClient) GetSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -286,7 +282,6 @@ func (client ExpressRouteCircuitPeeringsClient) GetSender(req *http.Request) (*h
 func (client ExpressRouteCircuitPeeringsClient) GetResponder(resp *http.Response) (result ExpressRouteCircuitPeering, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -326,6 +321,10 @@ func (client ExpressRouteCircuitPeeringsClient) List(ctx context.Context, resour
 	result.ercplr, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitPeeringsClient", "List", resp, "Failure responding to request")
+		return
+	}
+	if result.ercplr.hasNextLink() && result.ercplr.IsEmpty() {
+		err = result.NextWithContext(ctx)
 	}
 
 	return
@@ -355,8 +354,7 @@ func (client ExpressRouteCircuitPeeringsClient) ListPreparer(ctx context.Context
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client ExpressRouteCircuitPeeringsClient) ListSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -364,7 +362,6 @@ func (client ExpressRouteCircuitPeeringsClient) ListSender(req *http.Request) (*
 func (client ExpressRouteCircuitPeeringsClient) ListResponder(resp *http.Response) (result ExpressRouteCircuitPeeringListResult, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -389,6 +386,7 @@ func (client ExpressRouteCircuitPeeringsClient) listNextResults(ctx context.Cont
 	result, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteCircuitPeeringsClient", "listNextResults", resp, "Failure responding to next results request")
+		return
 	}
 	return
 }

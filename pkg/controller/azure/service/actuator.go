@@ -28,7 +28,6 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -51,7 +50,7 @@ func NewActuator(client client.Client, namespace string, logger logr.Logger) con
 }
 
 // CreateOrUpdate reconciles object creation or update.
-func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requeueAfter time.Duration, err error) {
+func (a *actuator) CreateOrUpdate(ctx context.Context, obj client.Object) (requeueAfter time.Duration, err error) {
 	// Cast object to Service
 	var svc *corev1.Service
 	var ok bool
@@ -119,7 +118,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj runtime.Object) (requ
 }
 
 // Delete reconciles object deletion.
-func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
+func (a *actuator) Delete(ctx context.Context, obj client.Object) error {
 	// Cast object to Service
 	var svc *corev1.Service
 	var ok bool
@@ -148,7 +147,7 @@ func (a *actuator) Delete(ctx context.Context, obj runtime.Object) error {
 }
 
 // ShouldFinalize returns true if the object should be finalized.
-func (a *actuator) ShouldFinalize(_ context.Context, obj runtime.Object) (bool, error) {
+func (a *actuator) ShouldFinalize(_ context.Context, obj client.Object) (bool, error) {
 	// Cast object to Service
 	var svc *corev1.Service
 	var ok bool

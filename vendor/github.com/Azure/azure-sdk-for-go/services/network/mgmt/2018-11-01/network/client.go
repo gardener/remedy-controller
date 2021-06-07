@@ -87,6 +87,7 @@ func (client BaseClient) CheckDNSNameAvailability(ctx context.Context, location 
 	result, err = client.CheckDNSNameAvailabilityResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.BaseClient", "CheckDNSNameAvailability", resp, "Failure responding to request")
+		return
 	}
 
 	return
@@ -116,8 +117,7 @@ func (client BaseClient) CheckDNSNameAvailabilityPreparer(ctx context.Context, l
 // CheckDNSNameAvailabilitySender sends the CheckDNSNameAvailability request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) CheckDNSNameAvailabilitySender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // CheckDNSNameAvailabilityResponder handles the response to the CheckDNSNameAvailability request. The method always
@@ -125,7 +125,6 @@ func (client BaseClient) CheckDNSNameAvailabilitySender(req *http.Request) (*htt
 func (client BaseClient) CheckDNSNameAvailabilityResponder(resp *http.Response) (result DNSNameAvailabilityResult, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -164,6 +163,7 @@ func (client BaseClient) SupportedSecurityProviders(ctx context.Context, resourc
 	result, err = client.SupportedSecurityProvidersResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.BaseClient", "SupportedSecurityProviders", resp, "Failure responding to request")
+		return
 	}
 
 	return
@@ -193,8 +193,7 @@ func (client BaseClient) SupportedSecurityProvidersPreparer(ctx context.Context,
 // SupportedSecurityProvidersSender sends the SupportedSecurityProviders request. The method will close the
 // http.Response Body if it receives an error.
 func (client BaseClient) SupportedSecurityProvidersSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // SupportedSecurityProvidersResponder handles the response to the SupportedSecurityProviders request. The method always
@@ -202,7 +201,6 @@ func (client BaseClient) SupportedSecurityProvidersSender(req *http.Request) (*h
 func (client BaseClient) SupportedSecurityProvidersResponder(resp *http.Response) (result VirtualWanSecurityProviders, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())

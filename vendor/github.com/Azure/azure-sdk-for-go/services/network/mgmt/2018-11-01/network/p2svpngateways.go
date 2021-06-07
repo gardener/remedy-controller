@@ -99,9 +99,8 @@ func (client P2sVpnGatewaysClient) CreateOrUpdatePreparer(ctx context.Context, r
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client P2sVpnGatewaysClient) CreateOrUpdateSender(req *http.Request) (future P2sVpnGatewaysCreateOrUpdateFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -114,7 +113,6 @@ func (client P2sVpnGatewaysClient) CreateOrUpdateSender(req *http.Request) (futu
 func (client P2sVpnGatewaysClient) CreateOrUpdateResponder(resp *http.Response) (result P2SVpnGateway, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusCreated),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -176,9 +174,8 @@ func (client P2sVpnGatewaysClient) DeletePreparer(ctx context.Context, resourceG
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client P2sVpnGatewaysClient) DeleteSender(req *http.Request) (future P2sVpnGatewaysDeleteFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -191,7 +188,6 @@ func (client P2sVpnGatewaysClient) DeleteSender(req *http.Request) (future P2sVp
 func (client P2sVpnGatewaysClient) DeleteResponder(resp *http.Response) (result autorest.Response, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent),
 		autorest.ByClosing())
 	result.Response = resp
@@ -255,9 +251,8 @@ func (client P2sVpnGatewaysClient) GenerateVpnProfilePreparer(ctx context.Contex
 // GenerateVpnProfileSender sends the GenerateVpnProfile request. The method will close the
 // http.Response Body if it receives an error.
 func (client P2sVpnGatewaysClient) GenerateVpnProfileSender(req *http.Request) (future P2sVpnGatewaysGenerateVpnProfileFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -270,7 +265,6 @@ func (client P2sVpnGatewaysClient) GenerateVpnProfileSender(req *http.Request) (
 func (client P2sVpnGatewaysClient) GenerateVpnProfileResponder(resp *http.Response) (result VpnProfileResponse, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -309,6 +303,7 @@ func (client P2sVpnGatewaysClient) Get(ctx context.Context, resourceGroupName st
 	result, err = client.GetResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.P2sVpnGatewaysClient", "Get", resp, "Failure responding to request")
+		return
 	}
 
 	return
@@ -338,8 +333,7 @@ func (client P2sVpnGatewaysClient) GetPreparer(ctx context.Context, resourceGrou
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client P2sVpnGatewaysClient) GetSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -347,7 +341,6 @@ func (client P2sVpnGatewaysClient) GetSender(req *http.Request) (*http.Response,
 func (client P2sVpnGatewaysClient) GetResponder(resp *http.Response) (result P2SVpnGateway, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -384,6 +377,10 @@ func (client P2sVpnGatewaysClient) List(ctx context.Context) (result ListP2SVpnG
 	result.lpvgr, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.P2sVpnGatewaysClient", "List", resp, "Failure responding to request")
+		return
+	}
+	if result.lpvgr.hasNextLink() && result.lpvgr.IsEmpty() {
+		err = result.NextWithContext(ctx)
 	}
 
 	return
@@ -411,8 +408,7 @@ func (client P2sVpnGatewaysClient) ListPreparer(ctx context.Context) (*http.Requ
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client P2sVpnGatewaysClient) ListSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -420,7 +416,6 @@ func (client P2sVpnGatewaysClient) ListSender(req *http.Request) (*http.Response
 func (client P2sVpnGatewaysClient) ListResponder(resp *http.Response) (result ListP2SVpnGatewaysResult, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -445,6 +440,7 @@ func (client P2sVpnGatewaysClient) listNextResults(ctx context.Context, lastResu
 	result, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.P2sVpnGatewaysClient", "listNextResults", resp, "Failure responding to next results request")
+		return
 	}
 	return
 }
@@ -496,6 +492,10 @@ func (client P2sVpnGatewaysClient) ListByResourceGroup(ctx context.Context, reso
 	result.lpvgr, err = client.ListByResourceGroupResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.P2sVpnGatewaysClient", "ListByResourceGroup", resp, "Failure responding to request")
+		return
+	}
+	if result.lpvgr.hasNextLink() && result.lpvgr.IsEmpty() {
+		err = result.NextWithContext(ctx)
 	}
 
 	return
@@ -524,8 +524,7 @@ func (client P2sVpnGatewaysClient) ListByResourceGroupPreparer(ctx context.Conte
 // ListByResourceGroupSender sends the ListByResourceGroup request. The method will close the
 // http.Response Body if it receives an error.
 func (client P2sVpnGatewaysClient) ListByResourceGroupSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // ListByResourceGroupResponder handles the response to the ListByResourceGroup request. The method always
@@ -533,7 +532,6 @@ func (client P2sVpnGatewaysClient) ListByResourceGroupSender(req *http.Request) 
 func (client P2sVpnGatewaysClient) ListByResourceGroupResponder(resp *http.Response) (result ListP2SVpnGatewaysResult, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -558,6 +556,7 @@ func (client P2sVpnGatewaysClient) listByResourceGroupNextResults(ctx context.Co
 	result, err = client.ListByResourceGroupResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.P2sVpnGatewaysClient", "listByResourceGroupNextResults", resp, "Failure responding to next results request")
+		return
 	}
 	return
 }
@@ -635,9 +634,8 @@ func (client P2sVpnGatewaysClient) UpdateTagsPreparer(ctx context.Context, resou
 // UpdateTagsSender sends the UpdateTags request. The method will close the
 // http.Response Body if it receives an error.
 func (client P2sVpnGatewaysClient) UpdateTagsSender(req *http.Request) (future P2sVpnGatewaysUpdateTagsFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -650,7 +648,6 @@ func (client P2sVpnGatewaysClient) UpdateTagsSender(req *http.Request) (future P
 func (client P2sVpnGatewaysClient) UpdateTagsResponder(resp *http.Response) (result P2SVpnGateway, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusCreated),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())

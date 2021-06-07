@@ -102,9 +102,8 @@ func (client VirtualNetworkPeeringsClient) CreateOrUpdatePreparer(ctx context.Co
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkPeeringsClient) CreateOrUpdateSender(req *http.Request) (future VirtualNetworkPeeringsCreateOrUpdateFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -117,7 +116,6 @@ func (client VirtualNetworkPeeringsClient) CreateOrUpdateSender(req *http.Reques
 func (client VirtualNetworkPeeringsClient) CreateOrUpdateResponder(resp *http.Response) (result VirtualNetworkPeering, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusCreated),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -181,9 +179,8 @@ func (client VirtualNetworkPeeringsClient) DeletePreparer(ctx context.Context, r
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkPeeringsClient) DeleteSender(req *http.Request) (future VirtualNetworkPeeringsDeleteFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -196,7 +193,6 @@ func (client VirtualNetworkPeeringsClient) DeleteSender(req *http.Request) (futu
 func (client VirtualNetworkPeeringsClient) DeleteResponder(resp *http.Response) (result autorest.Response, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent),
 		autorest.ByClosing())
 	result.Response = resp
@@ -235,6 +231,7 @@ func (client VirtualNetworkPeeringsClient) Get(ctx context.Context, resourceGrou
 	result, err = client.GetResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkPeeringsClient", "Get", resp, "Failure responding to request")
+		return
 	}
 
 	return
@@ -265,8 +262,7 @@ func (client VirtualNetworkPeeringsClient) GetPreparer(ctx context.Context, reso
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkPeeringsClient) GetSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -274,7 +270,6 @@ func (client VirtualNetworkPeeringsClient) GetSender(req *http.Request) (*http.R
 func (client VirtualNetworkPeeringsClient) GetResponder(resp *http.Response) (result VirtualNetworkPeering, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -314,6 +309,10 @@ func (client VirtualNetworkPeeringsClient) List(ctx context.Context, resourceGro
 	result.vnplr, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkPeeringsClient", "List", resp, "Failure responding to request")
+		return
+	}
+	if result.vnplr.hasNextLink() && result.vnplr.IsEmpty() {
+		err = result.NextWithContext(ctx)
 	}
 
 	return
@@ -343,8 +342,7 @@ func (client VirtualNetworkPeeringsClient) ListPreparer(ctx context.Context, res
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client VirtualNetworkPeeringsClient) ListSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -352,7 +350,6 @@ func (client VirtualNetworkPeeringsClient) ListSender(req *http.Request) (*http.
 func (client VirtualNetworkPeeringsClient) ListResponder(resp *http.Response) (result VirtualNetworkPeeringListResult, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -377,6 +374,7 @@ func (client VirtualNetworkPeeringsClient) listNextResults(ctx context.Context, 
 	result, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.VirtualNetworkPeeringsClient", "listNextResults", resp, "Failure responding to next results request")
+		return
 	}
 	return
 }

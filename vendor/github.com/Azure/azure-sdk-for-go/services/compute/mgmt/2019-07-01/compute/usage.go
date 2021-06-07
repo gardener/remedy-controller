@@ -80,6 +80,10 @@ func (client UsageClient) List(ctx context.Context, location string) (result Lis
 	result.lur, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "compute.UsageClient", "List", resp, "Failure responding to request")
+		return
+	}
+	if result.lur.hasNextLink() && result.lur.IsEmpty() {
+		err = result.NextWithContext(ctx)
 	}
 
 	return
@@ -108,8 +112,7 @@ func (client UsageClient) ListPreparer(ctx context.Context, location string) (*h
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client UsageClient) ListSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -117,7 +120,6 @@ func (client UsageClient) ListSender(req *http.Request) (*http.Response, error) 
 func (client UsageClient) ListResponder(resp *http.Response) (result ListUsagesResult, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -142,6 +144,7 @@ func (client UsageClient) listNextResults(ctx context.Context, lastResults ListU
 	result, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "compute.UsageClient", "listNextResults", resp, "Failure responding to next results request")
+		return
 	}
 	return
 }

@@ -52,7 +52,7 @@ func CleanPublicIps(ctx context.Context, k8sClientSet *kubernetes.Clientset, pub
 
 func clean(ctx context.Context, k8sClientSet *kubernetes.Clientset, pubipUtils azure.PublicIPAddressUtils, shootName string) error {
 	// Determine the ips known to Kubernetes
-	k8sIps, err := getKnownK8sIps(k8sClientSet)
+	k8sIps, err := getKnownK8sIps(ctx, k8sClientSet)
 	if err != nil {
 		return err
 	}
@@ -94,8 +94,8 @@ func clean(ctx context.Context, k8sClientSet *kubernetes.Clientset, pubipUtils a
 	return nil
 }
 
-func getKnownK8sIps(k8sClientSet *kubernetes.Clientset) ([]string, error) {
-	services, err := k8sClientSet.CoreV1().Services(metav1.NamespaceAll).List(metav1.ListOptions{})
+func getKnownK8sIps(ctx context.Context, k8sClientSet *kubernetes.Clientset) ([]string, error) {
+	services, err := k8sClientSet.CoreV1().Services(metav1.NamespaceAll).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "could not list Kubernetes services")
 	}

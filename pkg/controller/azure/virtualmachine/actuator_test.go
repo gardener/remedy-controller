@@ -148,7 +148,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vm).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithStatus).Return(nil)
 
-			requeueAfter, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject())
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject().(client.Object))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
@@ -159,7 +159,7 @@ var _ = Describe("Actuator", func() {
 			vmStatesGaugeVec.EXPECT().DeleteLabelValues(azureVirtualMachineName)
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vm).Return(nil)
 
-			requeueAfter, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject())
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject().(client.Object))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(requeueInterval))
 		})
@@ -172,7 +172,7 @@ var _ = Describe("Actuator", func() {
 			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
 			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
 
-			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithStatus.DeepCopyObject())
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithStatus.DeepCopyObject().(client.Object))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
@@ -185,7 +185,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vmWithStatus).Return(nil)
 			sw.EXPECT().Update(ctx, vm).Return(nil)
 
-			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithStatus.DeepCopyObject())
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithStatus.DeepCopyObject().(client.Object))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(requeueInterval))
 		})
@@ -209,7 +209,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vmWithStatus).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithStatus2).Return(nil)
 
-			requeueAfter, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject())
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject().(client.Object))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
@@ -228,7 +228,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vm).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithFailedOps).Return(nil)
 
-			_, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject())
+			_, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject().(client.Object))
 			Expect(err).To(BeAssignableToTypeOf(&controllererror.RequeueAfterError{}))
 			re := err.(*controllererror.RequeueAfterError)
 			Expect(re.Cause).To(MatchError("could not get Azure virtual machine: test"))
@@ -243,7 +243,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vm).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithStatus).Return(errors.New("test"))
 
-			_, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject())
+			_, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject().(client.Object))
 			Expect(err).To(MatchError("could not update virtualmachine status: test"))
 		})
 
@@ -268,7 +268,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vmWithStatus).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithFailedOps).Return(nil)
 
-			_, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject())
+			_, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject().(client.Object))
 			Expect(err).To(BeAssignableToTypeOf(&controllererror.RequeueAfterError{}))
 			re := err.(*controllererror.RequeueAfterError)
 			Expect(re.Cause).To(MatchError("could not reapply Azure virtual machine: test"))
@@ -303,7 +303,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vmWithFailedOps).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithFailedOps2).Return(nil)
 
-			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithFailedOps.DeepCopyObject())
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithFailedOps.DeepCopyObject().(client.Object))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
@@ -332,7 +332,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vmWithFailedOps).Return(nil)
 			sw.EXPECT().Update(ctx, vm).Return(nil)
 
-			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithFailedOps.DeepCopyObject())
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithFailedOps.DeepCopyObject().(client.Object))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
@@ -349,7 +349,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vm).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithStatus).Return(nil)
 
-			Expect(actuator.Delete(ctx, vm.DeepCopyObject())).To(Succeed())
+			Expect(actuator.Delete(ctx, vm.DeepCopyObject().(client.Object))).To(Succeed())
 		})
 
 		It("should not update the VirtualMachine object status if the VM is not found", func() {
@@ -358,7 +358,7 @@ var _ = Describe("Actuator", func() {
 			vmStatesGaugeVec.EXPECT().DeleteLabelValues(azureVirtualMachineName)
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vm).Return(nil)
 
-			Expect(actuator.Delete(ctx, vm.DeepCopyObject())).To(Succeed())
+			Expect(actuator.Delete(ctx, vm.DeepCopyObject().(client.Object))).To(Succeed())
 		})
 
 		It("should not update the VirtualMachine object status if the VM is found and the status is already initialized", func() {
@@ -369,7 +369,7 @@ var _ = Describe("Actuator", func() {
 			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vmWithStatus).Return(nil)
 
-			Expect(actuator.Delete(ctx, vmWithStatus.DeepCopyObject())).To(Succeed())
+			Expect(actuator.Delete(ctx, vmWithStatus.DeepCopyObject().(client.Object))).To(Succeed())
 		})
 
 		It("should update the VirtualMachine object status if the VM is not found and the status is already initialized", func() {
@@ -380,7 +380,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vmWithStatus).Return(nil)
 			sw.EXPECT().Update(ctx, vm).Return(nil)
 
-			Expect(actuator.Delete(ctx, vmWithStatus.DeepCopyObject())).To(Succeed())
+			Expect(actuator.Delete(ctx, vmWithStatus.DeepCopyObject().(client.Object))).To(Succeed())
 		})
 
 		It("should fail if getting the Azure VM fails", func() {
@@ -397,7 +397,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vm).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithFailedOps).Return(nil)
 
-			err := actuator.Delete(ctx, vm.DeepCopyObject())
+			err := actuator.Delete(ctx, vm.DeepCopyObject().(client.Object))
 			Expect(err).To(BeAssignableToTypeOf(&controllererror.RequeueAfterError{}))
 			re := err.(*controllererror.RequeueAfterError)
 			Expect(re.Cause).To(MatchError("could not get Azure virtual machine: test"))
@@ -414,7 +414,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vm).Return(nil)
 			sw.EXPECT().Update(ctx, vmWithStatus).Return(errors.New("test"))
 
-			Expect(actuator.Delete(ctx, vm.DeepCopyObject())).To(MatchError("could not update virtualmachine status: test"))
+			Expect(actuator.Delete(ctx, vm.DeepCopyObject().(client.Object))).To(MatchError("could not update virtualmachine status: test"))
 		})
 	})
 })

@@ -36,7 +36,7 @@ func NewReadyUnreachableChangedPredicate(logger logr.Logger) predicate.Predicate
 		},
 
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			if e.MetaOld == nil || e.MetaNew == nil || e.ObjectOld == nil || e.ObjectNew == nil {
+			if e.ObjectOld == nil || e.ObjectNew == nil {
 				logger.Error(nil, "UpdateEvent has no old or new metadata, or no old or new object", "event", e)
 				return false
 			}
@@ -48,7 +48,7 @@ func NewReadyUnreachableChangedPredicate(logger logr.Logger) predicate.Predicate
 			if newNode, ok = e.ObjectNew.(*corev1.Node); !ok {
 				return false
 			}
-			if e.MetaOld.GetDeletionTimestamp() != e.MetaNew.GetDeletionTimestamp() {
+			if e.ObjectOld.GetDeletionTimestamp() != e.ObjectNew.GetDeletionTimestamp() {
 				logger.Info("Updating the deletion timestamp of a node")
 				return true
 			}

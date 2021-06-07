@@ -100,7 +100,7 @@ func simulate(vmName string) error {
 			StorageClassName: pointer.StringPtr("managed-standard-ssd"),
 		},
 	}
-	_, err = clientset.CoreV1().PersistentVolumeClaims("default").Create(pvc)
+	_, err = clientset.CoreV1().PersistentVolumeClaims("default").Create(ctx, pvc, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
@@ -142,14 +142,14 @@ func simulate(vmName string) error {
 			},
 		},
 	}
-	pod, err = clientset.CoreV1().Pods("default").Create(pod)
+	pod, err = clientset.CoreV1().Pods("default").Create(ctx, pod, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
 
 	// Wait until pod is running
 	err = retry(60, 6*time.Second, func() error {
-		pod, err = clientset.CoreV1().Pods("default").Get("dnfsim", metav1.GetOptions{})
+		pod, err = clientset.CoreV1().Pods("default").Get(ctx, "dnfsim", metav1.GetOptions{})
 		if err != nil {
 			return err
 		}

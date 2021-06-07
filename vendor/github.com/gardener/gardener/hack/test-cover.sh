@@ -15,17 +15,29 @@
 # limitations under the License.
 set -e
 
+TEST_BIN_DIR="$(dirname "${0}")/../dev/testbin"
+mkdir -p ${TEST_BIN_DIR}
+
+ENVTEST_ASSETS_DIR="$(realpath ${TEST_BIN_DIR})"
+
+source "$(dirname $0)/setup-envtest.sh"
+
+fetch_envtest_tools ${ENVTEST_ASSETS_DIR}
+setup_envtest_env ${ENVTEST_ASSETS_DIR}
+
 echo "> Test Cover"
 
-"$(dirname $0)"/test.sh -cover $@
+export KUBEBUILDER_CONTROLPLANE_START_TIMEOUT=1m
+GO111MODULE=on ginkgo -cover -timeout=2m -race -mod=vendor $@
 
-COVERPROFILE="$(dirname $0)/../test.coverprofile"
-COVERPROFILE_TMP="$(dirname $0)/../test.coverprofile.tmp"
-COVERPROFILE_HTML="$(dirname $0)/../test.coverage.html"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+COVERPROFILE="$REPO_ROOT/test.coverprofile"
+COVERPROFILE_TMP="$REPO_ROOT/test.coverprofile.tmp"
+COVERPROFILE_HTML="$REPO_ROOT/test.coverage.html"
 
 echo "mode: set" > "$COVERPROFILE_TMP"
-find . -name "*.coverprofile" -type f | xargs cat | grep -v mode: | sort -r | awk '{if($$1 != last) {print $$0;last=$$1}}' >> "$COVERPROFILE_TMP"
-cat "$COVERPROFILE_TMP" | grep -vE "\.pb\.go|\/test\/|zz_generated" > "$COVERPROFILE"
+find . -name "*.coverprofile" -type f | xargs cat | grep -v mode: | sort -r | awk '{if($1 != last) {print $0;last=$1}}' >> "$COVERPROFILE_TMP"
+cat "$COVERPROFILE_TMP" | grep -vE "\.pb\.go|zz_generated" > "$COVERPROFILE"
 rm -rf "$COVERPROFILE_TMP"
 go tool cover -html="$COVERPROFILE" -o="$COVERPROFILE_HTML"
 

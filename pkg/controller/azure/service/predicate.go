@@ -38,7 +38,7 @@ func NewLoadBalancerIPsChangedPredicate(logger logr.Logger) predicate.Predicate 
 		},
 
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			if e.MetaOld == nil || e.MetaNew == nil || e.ObjectOld == nil || e.ObjectNew == nil {
+			if e.ObjectOld == nil || e.ObjectNew == nil {
 				logger.Error(nil, "UpdateEvent has no old or new metadata, or no old or new object", "event", e)
 				return false
 			}
@@ -51,7 +51,7 @@ func NewLoadBalancerIPsChangedPredicate(logger logr.Logger) predicate.Predicate 
 				return false
 			}
 			oldIPs, newIPs := getServiceLoadBalancerIPs(oldService), getServiceLoadBalancerIPs(newService)
-			if len(newIPs) > 0 && e.MetaOld.GetDeletionTimestamp() != e.MetaNew.GetDeletionTimestamp() {
+			if len(newIPs) > 0 && e.ObjectOld.GetDeletionTimestamp() != e.ObjectNew.GetDeletionTimestamp() {
 				logger.Info("Updating the deletion timestamp of a service with LoadBalancer IPs")
 				return true
 			}

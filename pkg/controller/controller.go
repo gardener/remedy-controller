@@ -20,7 +20,7 @@ import (
 
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -32,11 +32,11 @@ import (
 // Actuator acts upon objects being reconciled by a Reconciler.
 type Actuator interface {
 	// CreateOrUpdate reconciles object creation or update.
-	CreateOrUpdate(context.Context, runtime.Object) (time.Duration, error)
+	CreateOrUpdate(context.Context, client.Object) (time.Duration, error)
 	// Delete reconciles object deletion.
-	Delete(context.Context, runtime.Object) error
+	Delete(context.Context, client.Object) error
 	// ShouldFinalize returns true if the object should be finalized.
-	ShouldFinalize(context.Context, runtime.Object) (bool, error)
+	ShouldFinalize(context.Context, client.Object) (bool, error)
 }
 
 // AddArgs are arguments for adding a controller to a manager.
@@ -51,7 +51,7 @@ type AddArgs struct {
 	// The Reconciler field is always overridden with a reconciler created from the given actuator.
 	ControllerOptions controller.Options
 	// Type is the object type to watch.
-	Type runtime.Object
+	Type client.Object
 	// Predicates are the predicates to use when watching objects.
 	Predicates []predicate.Predicate
 	// WatchBuilder defines additional watches that should be set up.

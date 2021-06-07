@@ -71,6 +71,10 @@ func (client ExpressRouteServiceProvidersClient) List(ctx context.Context) (resu
 	result.ersplr, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteServiceProvidersClient", "List", resp, "Failure responding to request")
+		return
+	}
+	if result.ersplr.hasNextLink() && result.ersplr.IsEmpty() {
+		err = result.NextWithContext(ctx)
 	}
 
 	return
@@ -98,8 +102,7 @@ func (client ExpressRouteServiceProvidersClient) ListPreparer(ctx context.Contex
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client ExpressRouteServiceProvidersClient) ListSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -107,7 +110,6 @@ func (client ExpressRouteServiceProvidersClient) ListSender(req *http.Request) (
 func (client ExpressRouteServiceProvidersClient) ListResponder(resp *http.Response) (result ExpressRouteServiceProviderListResult, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -132,6 +134,7 @@ func (client ExpressRouteServiceProvidersClient) listNextResults(ctx context.Con
 	result, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteServiceProvidersClient", "listNextResults", resp, "Failure responding to next results request")
+		return
 	}
 	return
 }

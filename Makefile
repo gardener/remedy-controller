@@ -80,14 +80,11 @@ docker-images:
 .PHONY: install-requirements
 install-requirements:
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/ahmetb/gen-crd-api-reference-docs
-	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/gobuffalo/packr/v2/packr2
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/golang/mock/mockgen
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/onsi/ginkgo/ginkgo
-
-	@$(REPO_ROOT)/hack/install-requirements.sh
+	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/install-requirements.sh
 	@python3 -m venv $(REPO_ROOT)/.env
 	@. $(REPO_ROOT)/.env/bin/activate && pip3 install --upgrade pip && pip3 install -r $(REPO_ROOT)/test/requirements.txt
-
 
 .PHONY: revendor
 revendor:
@@ -95,11 +92,11 @@ revendor:
 	@GO111MODULE=on go mod tidy
 	@chmod +x $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/*
 	@chmod +x $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/.ci/*
-	@chmod +x $(REPO_ROOT)/vendor/github.com/gardener/gardener/extensions/hack/*
+	@$(REPO_ROOT)/hack/update-github-templates.sh
 
 .PHONY: clean
 clean:
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/clean.sh ./cmd/... ./pkg/...
+	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/clean.sh ./cmd/... ./pkg/... ./test/...
 
 .PHONY: check-generate
 check-generate:
@@ -121,21 +118,21 @@ format:
 
 .PHONY: test
 test:
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/test.sh -r ./cmd/... ./pkg/...
+	@SKIP_FETCH_TOOLS=1 $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/test.sh ./cmd/... ./pkg/...
 
 .PHONY: test-cov
 test-cov:
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/test-cover.sh -r ./cmd/... ./pkg/...
+	@SKIP_FETCH_TOOLS=1 $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/test-cover.sh ./cmd/... ./pkg/...
 
 .PHONY: test-clean
 test-clean:
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/test-cover-clean.sh
 
 .PHONY: verify
-verify: check test
+verify: check format test
 
 .PHONY: verify-extended
-verify-extended: install-requirements check-generate check test-cov test-clean
+verify-extended: install-requirements check-generate check format test-cov test-clean
 
 .PHONY: pubip-remedy-test
 pubip-remedy-test:

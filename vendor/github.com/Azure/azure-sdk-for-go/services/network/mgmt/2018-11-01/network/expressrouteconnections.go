@@ -110,9 +110,8 @@ func (client ExpressRouteConnectionsClient) CreateOrUpdatePreparer(ctx context.C
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client ExpressRouteConnectionsClient) CreateOrUpdateSender(req *http.Request) (future ExpressRouteConnectionsCreateOrUpdateFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -125,7 +124,6 @@ func (client ExpressRouteConnectionsClient) CreateOrUpdateSender(req *http.Reque
 func (client ExpressRouteConnectionsClient) CreateOrUpdateResponder(resp *http.Response) (result ExpressRouteConnection, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusCreated),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -189,9 +187,8 @@ func (client ExpressRouteConnectionsClient) DeletePreparer(ctx context.Context, 
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client ExpressRouteConnectionsClient) DeleteSender(req *http.Request) (future ExpressRouteConnectionsDeleteFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -204,7 +201,6 @@ func (client ExpressRouteConnectionsClient) DeleteSender(req *http.Request) (fut
 func (client ExpressRouteConnectionsClient) DeleteResponder(resp *http.Response) (result autorest.Response, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent),
 		autorest.ByClosing())
 	result.Response = resp
@@ -243,6 +239,7 @@ func (client ExpressRouteConnectionsClient) Get(ctx context.Context, resourceGro
 	result, err = client.GetResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteConnectionsClient", "Get", resp, "Failure responding to request")
+		return
 	}
 
 	return
@@ -273,8 +270,7 @@ func (client ExpressRouteConnectionsClient) GetPreparer(ctx context.Context, res
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client ExpressRouteConnectionsClient) GetSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -282,7 +278,6 @@ func (client ExpressRouteConnectionsClient) GetSender(req *http.Request) (*http.
 func (client ExpressRouteConnectionsClient) GetResponder(resp *http.Response) (result ExpressRouteConnection, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -321,6 +316,7 @@ func (client ExpressRouteConnectionsClient) List(ctx context.Context, resourceGr
 	result, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "network.ExpressRouteConnectionsClient", "List", resp, "Failure responding to request")
+		return
 	}
 
 	return
@@ -350,8 +346,7 @@ func (client ExpressRouteConnectionsClient) ListPreparer(ctx context.Context, re
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client ExpressRouteConnectionsClient) ListSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -359,7 +354,6 @@ func (client ExpressRouteConnectionsClient) ListSender(req *http.Request) (*http
 func (client ExpressRouteConnectionsClient) ListResponder(resp *http.Response) (result ExpressRouteConnectionList, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())

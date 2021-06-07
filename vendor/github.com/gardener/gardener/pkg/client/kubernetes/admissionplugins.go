@@ -37,17 +37,12 @@ var (
 		{Name: "MutatingAdmissionWebhook"},
 		{Name: "ValidatingAdmissionWebhook"},
 	}
-	defaultPluginsWithInitializers = append(defaultPlugins, gardencorev1beta1.AdmissionPlugin{Name: "Initializers"})
 
-	lowestSupportedKubernetesVersionMajorMinor = "1.10"
+	lowestSupportedKubernetesVersionMajorMinor = "1.15"
 	lowestSupportedKubernetesVersion, _        = semver.NewVersion(lowestSupportedKubernetesVersionMajorMinor)
 
 	admissionPlugins = map[string][]gardencorev1beta1.AdmissionPlugin{
-		"1.10": defaultPluginsWithInitializers,
-		"1.11": defaultPluginsWithInitializers,
-		"1.12": defaultPluginsWithInitializers,
-		"1.13": defaultPluginsWithInitializers,
-		"1.14": defaultPlugins,
+		"1.15": defaultPlugins,
 	}
 )
 
@@ -55,6 +50,10 @@ var (
 // If the given Kubernetes version does not explicitly define admission plugins the set of names for the next
 // available version will be returned (e.g., for version X not defined the set of version X-1 will be returned).
 func GetAdmissionPluginsForVersion(v string) []gardencorev1beta1.AdmissionPlugin {
+	return copyPlugins(getAdmissionPluginsForVersionInternal(v))
+}
+
+func getAdmissionPluginsForVersionInternal(v string) []gardencorev1beta1.AdmissionPlugin {
 	version, err := semver.NewVersion(v)
 	if err != nil {
 		return admissionPlugins[lowestSupportedKubernetesVersionMajorMinor]
@@ -78,4 +77,13 @@ func GetAdmissionPluginsForVersion(v string) []gardencorev1beta1.AdmissionPlugin
 
 func formatMajorMinor(major, minor int64) string {
 	return fmt.Sprintf("%d.%d", major, minor)
+}
+
+func copyPlugins(admissionPlugins []gardencorev1beta1.AdmissionPlugin) []gardencorev1beta1.AdmissionPlugin {
+	dst := make([]gardencorev1beta1.AdmissionPlugin, 0)
+	for _, plugin := range admissionPlugins {
+		pluginPointer := &plugin
+		dst = append(dst, *pluginPointer.DeepCopy())
+	}
+	return dst
 }

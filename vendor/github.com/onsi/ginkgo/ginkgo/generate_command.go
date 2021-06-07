@@ -39,7 +39,7 @@ import (
 	{{if .IncludeImports}}. "github.com/onsi/ginkgo"{{end}}
 	{{if .IncludeImports}}. "github.com/onsi/gomega"{{end}}
 
-	{{if .DotImportPackage}}. "{{.PackageImportPath}}"{{end}}
+	{{if .ImportPackage}}"{{.PackageImportPath}}"{{end}}
 )
 
 var _ = Describe("{{.Subject}}", func() {
@@ -55,7 +55,7 @@ import (
 	"github.com/sclevine/agouti"
 	. "github.com/sclevine/agouti/matchers"
 
-	{{if .DotImportPackage}}. "{{.PackageImportPath}}"{{end}}
+	{{if .ImportPackage}}"{{.PackageImportPath}}"{{end}}
 )
 
 var _ = Describe("{{.Subject}}", func() {
@@ -78,7 +78,7 @@ type specData struct {
 	Subject           string
 	PackageImportPath string
 	IncludeImports    bool
-	DotImportPackage  bool
+	ImportPackage     bool
 }
 
 func generateSpec(args []string, agouti, noDot, internal bool) {
@@ -119,7 +119,7 @@ func generateSpecForSubject(subject string, agouti, noDot, internal bool) error 
 		Subject:           formattedName,
 		PackageImportPath: getPackageImportPath(),
 		IncludeImports:    !noDot,
-		DotImportPackage:  !internal,
+		ImportPackage:     !internal,
 	}
 
 	targetFile := fmt.Sprintf("%s_test.go", specFilePrefix)
@@ -233,18 +233,20 @@ func getPackageImportPath() string {
 		panic(err.Error())
 	}
 
+	sep := string(filepath.Separator)
+
 	// Try go.mod file first
 	modRoot := findModuleRoot(workingDir)
 	if modRoot != "" {
 		modName := moduleName(modRoot)
 		if modName != "" {
 			cd := strings.Replace(workingDir, modRoot, "", -1)
+			cd = strings.ReplaceAll(cd, sep, "/")
 			return modName + cd
 		}
 	}
 
 	// Fallback to GOPATH structure
-	sep := string(filepath.Separator)
 	paths := strings.Split(workingDir, sep+"src"+sep)
 	if len(paths) == 1 {
 		fmt.Printf("\nCouldn't identify package import path.\n\n\tginkgo generate\n\nMust be run within a package directory under $GOPATH/src/...\nYou're going to have to change UNKNOWN_PACKAGE_PATH in the generated file...\n\n")

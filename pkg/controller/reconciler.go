@@ -18,15 +18,14 @@ import (
 	"context"
 	"time"
 
-	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
 	controllererror "github.com/gardener/gardener/extensions/pkg/controller/error"
-	"github.com/gardener/gardener/extensions/pkg/util"
+	"github.com/gardener/gardener/pkg/controllerutils"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
@@ -36,14 +35,14 @@ type reconciler struct {
 	actuator       Actuator
 	controllerName string
 	finalizerName  string
-	typ            runtime.Object
-	ctx            context.Context
+	typ            client.Object
 	client         client.Client
+	reader         client.Reader
 	logger         logr.Logger
 }
 
 // NewReconciler creates a new generic Reconciler.
-func NewReconciler(mgr manager.Manager, actuator Actuator, controllerName, finalizerName string, typ runtime.Object, logger logr.Logger) reconcile.Reconciler {
+func NewReconciler(mgr manager.Manager, actuator Actuator, controllerName, finalizerName string, typ client.Object, logger logr.Logger) reconcile.Reconciler {
 	logger.Info("Creating reconciler", "controllerName", controllerName)
 	return &reconciler{
 		actuator:       actuator,
@@ -63,14 +62,14 @@ func (r *reconciler) InjectClient(client client.Client) error {
 	return nil
 }
 
-func (r *reconciler) InjectStopChannel(stopCh <-chan struct{}) error {
-	r.ctx = util.ContextFromStopChannel(stopCh)
+func (r *reconciler) InjectAPIReader(reader client.Reader) error {
+	r.reader = reader
 	return nil
 }
 
-func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	obj := r.typ.DeepCopyObject()
-	if err := r.client.Get(r.ctx, request.NamespacedName, obj); err != nil {
+func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	obj := r.typ.DeepCopyObject().(client.Object)
+	if err := r.client.Get(ctx, request.NamespacedName, obj); err != nil {
 		if apierrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
@@ -86,27 +85,23 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	switch {
 	case accessor.GetDeletionTimestamp() != nil:
-		return r.delete(r.ctx, obj, logger)
+		return r.delete(ctx, obj, logger)
 	default:
-		return r.createOrUpdate(r.ctx, obj, logger)
+		return r.createOrUpdate(ctx, obj, logger)
 	}
 }
 
-func (r *reconciler) createOrUpdate(ctx context.Context, obj runtime.Object, logger logr.Logger) (reconcile.Result, error) {
+func (r *reconciler) createOrUpdate(ctx context.Context, obj client.Object, logger logr.Logger) (reconcile.Result, error) {
 	shouldFinalize, err := r.actuator.ShouldFinalize(ctx, obj)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrap(err, "could not check if the object should be finalized")
 	}
 	if shouldFinalize {
-		if err := extensionscontroller.EnsureFinalizer(ctx, r.client, r.finalizerName, obj); err != nil {
+		if err := controllerutils.EnsureFinalizer(ctx, r.reader, r.client, obj, r.finalizerName); err != nil {
 			return reconcile.Result{}, errors.Wrap(err, "could not ensure finalizer")
 		}
 	} else {
-		hasFinalizer, err := extensionscontroller.HasFinalizer(obj, r.finalizerName)
-		if err != nil {
-			return reconcile.Result{}, errors.Wrap(err, "could not check for finalizer")
-		}
-		if !hasFinalizer {
+		if !controllerutil.ContainsFinalizer(obj, r.finalizerName) {
 			return reconcile.Result{}, nil
 		}
 	}
@@ -120,7 +115,7 @@ func (r *reconciler) createOrUpdate(ctx context.Context, obj runtime.Object, log
 
 	if !shouldFinalize {
 		logger.Info("Removing finalizer")
-		if err := extensionscontroller.DeleteFinalizer(ctx, r.client, r.finalizerName, obj); err != nil {
+		if err := controllerutils.RemoveFinalizer(ctx, r.reader, r.client, obj, r.finalizerName); err != nil {
 			return reconcile.Result{}, errors.Wrap(err, "could not remove finalizer")
 		}
 	}
@@ -131,23 +126,19 @@ func (r *reconciler) createOrUpdate(ctx context.Context, obj runtime.Object, log
 	return reconcile.Result{}, nil
 }
 
-func (r *reconciler) delete(ctx context.Context, obj runtime.Object, logger logr.Logger) (reconcile.Result, error) {
-	hasFinalizer, err := extensionscontroller.HasFinalizer(obj, r.finalizerName)
-	if err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "could not check for finalizer")
-	}
-	if !hasFinalizer {
+func (r *reconciler) delete(ctx context.Context, obj client.Object, logger logr.Logger) (reconcile.Result, error) {
+	if !controllerutil.ContainsFinalizer(obj, r.finalizerName) {
 		return reconcile.Result{}, nil
 	}
 
 	logger.Info("Reconciling object deletion")
-	if err := r.actuator.Delete(r.ctx, obj); err != nil {
+	if err := r.actuator.Delete(ctx, obj); err != nil {
 		return reconcileErr(errors.Wrap(err, "could not reconcile object deletion"))
 	}
 	logger.Info("Successfully reconciled object deletion")
 
 	logger.Info("Removing finalizer")
-	if err := extensionscontroller.DeleteFinalizer(ctx, r.client, r.finalizerName, obj); err != nil {
+	if err := controllerutils.RemoveFinalizer(ctx, r.reader, r.client, obj, r.finalizerName); err != nil {
 		return reconcile.Result{}, errors.Wrap(err, "could not remove finalizer")
 	}
 

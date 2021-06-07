@@ -6,38 +6,39 @@ package azure
 
 import (
 	context "context"
+	reflect "reflect"
+
 	compute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-07-01/compute"
 	network "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
 	autorest "github.com/Azure/go-autorest/autorest"
 	azure "github.com/gardener/remedy-controller/pkg/client/azure"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockFuture is a mock of Future interface
+// MockFuture is a mock of Future interface.
 type MockFuture struct {
 	ctrl     *gomock.Controller
 	recorder *MockFutureMockRecorder
 }
 
-// MockFutureMockRecorder is the mock recorder for MockFuture
+// MockFutureMockRecorder is the mock recorder for MockFuture.
 type MockFutureMockRecorder struct {
 	mock *MockFuture
 }
 
-// NewMockFuture creates a new mock instance
+// NewMockFuture creates a new mock instance.
 func NewMockFuture(ctrl *gomock.Controller) *MockFuture {
 	mock := &MockFuture{ctrl: ctrl}
 	mock.recorder = &MockFutureMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockFuture) EXPECT() *MockFutureMockRecorder {
 	return m.recorder
 }
 
-// WaitForCompletionRef mocks base method
+// WaitForCompletionRef mocks base method.
 func (m *MockFuture) WaitForCompletionRef(arg0 context.Context, arg1 autorest.Client) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WaitForCompletionRef", arg0, arg1)
@@ -45,36 +46,36 @@ func (m *MockFuture) WaitForCompletionRef(arg0 context.Context, arg1 autorest.Cl
 	return ret0
 }
 
-// WaitForCompletionRef indicates an expected call of WaitForCompletionRef
+// WaitForCompletionRef indicates an expected call of WaitForCompletionRef.
 func (mr *MockFutureMockRecorder) WaitForCompletionRef(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForCompletionRef", reflect.TypeOf((*MockFuture)(nil).WaitForCompletionRef), arg0, arg1)
 }
 
-// MockPublicIPAddressesClient is a mock of PublicIPAddressesClient interface
+// MockPublicIPAddressesClient is a mock of PublicIPAddressesClient interface.
 type MockPublicIPAddressesClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockPublicIPAddressesClientMockRecorder
 }
 
-// MockPublicIPAddressesClientMockRecorder is the mock recorder for MockPublicIPAddressesClient
+// MockPublicIPAddressesClientMockRecorder is the mock recorder for MockPublicIPAddressesClient.
 type MockPublicIPAddressesClientMockRecorder struct {
 	mock *MockPublicIPAddressesClient
 }
 
-// NewMockPublicIPAddressesClient creates a new mock instance
+// NewMockPublicIPAddressesClient creates a new mock instance.
 func NewMockPublicIPAddressesClient(ctrl *gomock.Controller) *MockPublicIPAddressesClient {
 	mock := &MockPublicIPAddressesClient{ctrl: ctrl}
 	mock.recorder = &MockPublicIPAddressesClientMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockPublicIPAddressesClient) EXPECT() *MockPublicIPAddressesClientMockRecorder {
 	return m.recorder
 }
 
-// Client mocks base method
+// Client mocks base method.
 func (m *MockPublicIPAddressesClient) Client() autorest.Client {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Client")
@@ -82,13 +83,13 @@ func (m *MockPublicIPAddressesClient) Client() autorest.Client {
 	return ret0
 }
 
-// Client indicates an expected call of Client
+// Client indicates an expected call of Client.
 func (mr *MockPublicIPAddressesClientMockRecorder) Client() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Client", reflect.TypeOf((*MockPublicIPAddressesClient)(nil).Client))
 }
 
-// Delete mocks base method
+// Delete mocks base method.
 func (m *MockPublicIPAddressesClient) Delete(arg0 context.Context, arg1, arg2 string) (azure.Future, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", arg0, arg1, arg2)
@@ -97,13 +98,13 @@ func (m *MockPublicIPAddressesClient) Delete(arg0 context.Context, arg1, arg2 st
 	return ret0, ret1
 }
 
-// Delete indicates an expected call of Delete
+// Delete indicates an expected call of Delete.
 func (mr *MockPublicIPAddressesClientMockRecorder) Delete(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPublicIPAddressesClient)(nil).Delete), arg0, arg1, arg2)
 }
 
-// Get mocks base method
+// Get mocks base method.
 func (m *MockPublicIPAddressesClient) Get(arg0 context.Context, arg1, arg2, arg3 string) (network.PublicIPAddress, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0, arg1, arg2, arg3)
@@ -112,13 +113,13 @@ func (m *MockPublicIPAddressesClient) Get(arg0 context.Context, arg1, arg2, arg3
 	return ret0, ret1
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockPublicIPAddressesClientMockRecorder) Get(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPublicIPAddressesClient)(nil).Get), arg0, arg1, arg2, arg3)
 }
 
-// List mocks base method
+// List mocks base method.
 func (m *MockPublicIPAddressesClient) List(arg0 context.Context, arg1 string) (network.PublicIPAddressListResultPage, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", arg0, arg1)
@@ -127,36 +128,36 @@ func (m *MockPublicIPAddressesClient) List(arg0 context.Context, arg1 string) (n
 	return ret0, ret1
 }
 
-// List indicates an expected call of List
+// List indicates an expected call of List.
 func (mr *MockPublicIPAddressesClientMockRecorder) List(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockPublicIPAddressesClient)(nil).List), arg0, arg1)
 }
 
-// MockLoadBalancersClient is a mock of LoadBalancersClient interface
+// MockLoadBalancersClient is a mock of LoadBalancersClient interface.
 type MockLoadBalancersClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockLoadBalancersClientMockRecorder
 }
 
-// MockLoadBalancersClientMockRecorder is the mock recorder for MockLoadBalancersClient
+// MockLoadBalancersClientMockRecorder is the mock recorder for MockLoadBalancersClient.
 type MockLoadBalancersClientMockRecorder struct {
 	mock *MockLoadBalancersClient
 }
 
-// NewMockLoadBalancersClient creates a new mock instance
+// NewMockLoadBalancersClient creates a new mock instance.
 func NewMockLoadBalancersClient(ctrl *gomock.Controller) *MockLoadBalancersClient {
 	mock := &MockLoadBalancersClient{ctrl: ctrl}
 	mock.recorder = &MockLoadBalancersClientMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockLoadBalancersClient) EXPECT() *MockLoadBalancersClientMockRecorder {
 	return m.recorder
 }
 
-// Client mocks base method
+// Client mocks base method.
 func (m *MockLoadBalancersClient) Client() autorest.Client {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Client")
@@ -164,13 +165,13 @@ func (m *MockLoadBalancersClient) Client() autorest.Client {
 	return ret0
 }
 
-// Client indicates an expected call of Client
+// Client indicates an expected call of Client.
 func (mr *MockLoadBalancersClientMockRecorder) Client() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Client", reflect.TypeOf((*MockLoadBalancersClient)(nil).Client))
 }
 
-// CreateOrUpdate mocks base method
+// CreateOrUpdate mocks base method.
 func (m *MockLoadBalancersClient) CreateOrUpdate(arg0 context.Context, arg1, arg2 string, arg3 network.LoadBalancer) (azure.Future, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateOrUpdate", arg0, arg1, arg2, arg3)
@@ -179,13 +180,13 @@ func (m *MockLoadBalancersClient) CreateOrUpdate(arg0 context.Context, arg1, arg
 	return ret0, ret1
 }
 
-// CreateOrUpdate indicates an expected call of CreateOrUpdate
+// CreateOrUpdate indicates an expected call of CreateOrUpdate.
 func (mr *MockLoadBalancersClientMockRecorder) CreateOrUpdate(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrUpdate", reflect.TypeOf((*MockLoadBalancersClient)(nil).CreateOrUpdate), arg0, arg1, arg2, arg3)
 }
 
-// Get mocks base method
+// Get mocks base method.
 func (m *MockLoadBalancersClient) Get(arg0 context.Context, arg1, arg2, arg3 string) (network.LoadBalancer, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0, arg1, arg2, arg3)
@@ -194,36 +195,36 @@ func (m *MockLoadBalancersClient) Get(arg0 context.Context, arg1, arg2, arg3 str
 	return ret0, ret1
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockLoadBalancersClientMockRecorder) Get(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockLoadBalancersClient)(nil).Get), arg0, arg1, arg2, arg3)
 }
 
-// MockVirtualMachinesClient is a mock of VirtualMachinesClient interface
+// MockVirtualMachinesClient is a mock of VirtualMachinesClient interface.
 type MockVirtualMachinesClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockVirtualMachinesClientMockRecorder
 }
 
-// MockVirtualMachinesClientMockRecorder is the mock recorder for MockVirtualMachinesClient
+// MockVirtualMachinesClientMockRecorder is the mock recorder for MockVirtualMachinesClient.
 type MockVirtualMachinesClientMockRecorder struct {
 	mock *MockVirtualMachinesClient
 }
 
-// NewMockVirtualMachinesClient creates a new mock instance
+// NewMockVirtualMachinesClient creates a new mock instance.
 func NewMockVirtualMachinesClient(ctrl *gomock.Controller) *MockVirtualMachinesClient {
 	mock := &MockVirtualMachinesClient{ctrl: ctrl}
 	mock.recorder = &MockVirtualMachinesClientMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockVirtualMachinesClient) EXPECT() *MockVirtualMachinesClientMockRecorder {
 	return m.recorder
 }
 
-// Client mocks base method
+// Client mocks base method.
 func (m *MockVirtualMachinesClient) Client() autorest.Client {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Client")
@@ -231,13 +232,13 @@ func (m *MockVirtualMachinesClient) Client() autorest.Client {
 	return ret0
 }
 
-// Client indicates an expected call of Client
+// Client indicates an expected call of Client.
 func (mr *MockVirtualMachinesClientMockRecorder) Client() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Client", reflect.TypeOf((*MockVirtualMachinesClient)(nil).Client))
 }
 
-// Get mocks base method
+// Get mocks base method.
 func (m *MockVirtualMachinesClient) Get(arg0 context.Context, arg1, arg2 string, arg3 compute.InstanceViewTypes) (compute.VirtualMachine, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0, arg1, arg2, arg3)
@@ -246,13 +247,13 @@ func (m *MockVirtualMachinesClient) Get(arg0 context.Context, arg1, arg2 string,
 	return ret0, ret1
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *MockVirtualMachinesClientMockRecorder) Get(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockVirtualMachinesClient)(nil).Get), arg0, arg1, arg2, arg3)
 }
 
-// Reapply mocks base method
+// Reapply mocks base method.
 func (m *MockVirtualMachinesClient) Reapply(arg0 context.Context, arg1, arg2 string) (azure.Future, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Reapply", arg0, arg1, arg2)
@@ -261,7 +262,7 @@ func (m *MockVirtualMachinesClient) Reapply(arg0 context.Context, arg1, arg2 str
 	return ret0, ret1
 }
 
-// Reapply indicates an expected call of Reapply
+// Reapply indicates an expected call of Reapply.
 func (mr *MockVirtualMachinesClientMockRecorder) Reapply(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reapply", reflect.TypeOf((*MockVirtualMachinesClient)(nil).Reapply), arg0, arg1, arg2)

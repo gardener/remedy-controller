@@ -16,45 +16,56 @@ package kubernetes
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"strings"
 
 	jsoniter "github.com/json-iterator/go"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/strategicpatch"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var json = jsoniter.ConfigFastest
 
-// CreateTwoWayMergePatch creates a two way merge patch of the given objects.
-// The two objects have to be pointers implementing the interfaces.
-func CreateTwoWayMergePatch(obj1 metav1.Object, obj2 metav1.Object) ([]byte, error) {
-	t1, t2 := reflect.TypeOf(obj1), reflect.TypeOf(obj2)
-	if t1 != t2 {
-		return nil, fmt.Errorf("cannot patch two objects of different type: %q - %q", t1, t2)
-	}
-	if t1.Kind() != reflect.Ptr {
-		return nil, fmt.Errorf("type has to be of kind pointer but got %q", t1)
-	}
+// TryPatch tries to apply the given transformation function onto the given object, and to patch it afterwards with optimistic locking.
+// It retries the patch with an exponential backoff.
+func TryPatch(ctx context.Context, backoff wait.Backoff, c client.Client, obj client.Object, transform func() error) error {
+	return tryPatch(ctx, backoff, c, obj, c.Patch, transform)
+}
 
-	obj1Data, err := json.Marshal(obj1)
-	if err != nil {
-		return nil, err
-	}
+// TryPatchStatus tries to apply the given transformation function onto the given object, and to patch its
+// status afterwards with optimistic locking. It retries the status patch with an exponential backoff.
+func TryPatchStatus(ctx context.Context, backoff wait.Backoff, c client.Client, obj client.Object, transform func() error) error {
+	return tryPatch(ctx, backoff, c, obj, c.Status().Patch, transform)
+}
 
-	obj2Data, err := json.Marshal(obj2)
-	if err != nil {
-		return nil, err
-	}
+func tryPatch(ctx context.Context, backoff wait.Backoff, c client.Client, obj client.Object, patchFunc func(context.Context, client.Object, client.Patch, ...client.PatchOption) error, transform func() error) error {
+	resetCopy := obj.DeepCopyObject()
+	return exponentialBackoff(ctx, backoff, func() (bool, error) {
+		if err := c.Get(ctx, client.ObjectKeyFromObject(obj), obj); err != nil {
+			return false, err
+		}
+		beforeTransform := obj.DeepCopyObject()
+		if err := transform(); err != nil {
+			return false, err
+		}
 
-	dataStructType := t1.Elem()
-	dataStruct := reflect.New(dataStructType).Elem().Interface()
+		if reflect.DeepEqual(obj, beforeTransform) {
+			return true, nil
+		}
 
-	return strategicpatch.CreateTwoWayMergePatch(obj1Data, obj2Data, dataStruct)
+		patch := client.MergeFromWithOptions(beforeTransform, client.MergeFromWithOptimisticLock{})
+
+		if err := patchFunc(ctx, obj, patch); err != nil {
+			if apierrors.IsConflict(err) {
+				reflect.ValueOf(obj).Elem().Set(reflect.ValueOf(resetCopy).Elem())
+				return false, nil
+			}
+			return false, err
+		}
+		return true, nil
+	})
 }
 
 // IsEmptyPatch checks if the given patch is empty. A patch is considered empty if it is
@@ -73,6 +84,6 @@ func IsEmptyPatch(patch []byte) bool {
 }
 
 // SubmitEmptyPatch submits an empty patch to the given `obj` with the given `client` instance.
-func SubmitEmptyPatch(ctx context.Context, c client.Client, obj runtime.Object) error {
-	return c.Patch(ctx, obj, client.ConstantPatch(types.StrategicMergePatchType, []byte("{}")))
+func SubmitEmptyPatch(ctx context.Context, c client.Client, obj client.Object) error {
+	return c.Patch(ctx, obj, client.RawPatch(types.StrategicMergePatchType, []byte("{}")))
 }

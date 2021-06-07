@@ -99,9 +99,8 @@ func (client GalleriesClient) CreateOrUpdatePreparer(ctx context.Context, resour
 // CreateOrUpdateSender sends the CreateOrUpdate request. The method will close the
 // http.Response Body if it receives an error.
 func (client GalleriesClient) CreateOrUpdateSender(req *http.Request) (future GalleriesCreateOrUpdateFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -114,7 +113,6 @@ func (client GalleriesClient) CreateOrUpdateSender(req *http.Request) (future Ga
 func (client GalleriesClient) CreateOrUpdateResponder(resp *http.Response) (result Gallery, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusCreated, http.StatusAccepted),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -176,9 +174,8 @@ func (client GalleriesClient) DeletePreparer(ctx context.Context, resourceGroupN
 // DeleteSender sends the Delete request. The method will close the
 // http.Response Body if it receives an error.
 func (client GalleriesClient) DeleteSender(req *http.Request) (future GalleriesDeleteFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -191,7 +188,6 @@ func (client GalleriesClient) DeleteSender(req *http.Request) (future GalleriesD
 func (client GalleriesClient) DeleteResponder(resp *http.Response) (result autorest.Response, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK, http.StatusAccepted, http.StatusNoContent),
 		autorest.ByClosing())
 	result.Response = resp
@@ -229,6 +225,7 @@ func (client GalleriesClient) Get(ctx context.Context, resourceGroupName string,
 	result, err = client.GetResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "compute.GalleriesClient", "Get", resp, "Failure responding to request")
+		return
 	}
 
 	return
@@ -258,8 +255,7 @@ func (client GalleriesClient) GetPreparer(ctx context.Context, resourceGroupName
 // GetSender sends the Get request. The method will close the
 // http.Response Body if it receives an error.
 func (client GalleriesClient) GetSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // GetResponder handles the response to the Get request. The method always
@@ -267,7 +263,6 @@ func (client GalleriesClient) GetSender(req *http.Request) (*http.Response, erro
 func (client GalleriesClient) GetResponder(resp *http.Response) (result Gallery, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -304,6 +299,10 @@ func (client GalleriesClient) List(ctx context.Context) (result GalleryListPage,
 	result.gl, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "compute.GalleriesClient", "List", resp, "Failure responding to request")
+		return
+	}
+	if result.gl.hasNextLink() && result.gl.IsEmpty() {
+		err = result.NextWithContext(ctx)
 	}
 
 	return
@@ -331,8 +330,7 @@ func (client GalleriesClient) ListPreparer(ctx context.Context) (*http.Request, 
 // ListSender sends the List request. The method will close the
 // http.Response Body if it receives an error.
 func (client GalleriesClient) ListSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // ListResponder handles the response to the List request. The method always
@@ -340,7 +338,6 @@ func (client GalleriesClient) ListSender(req *http.Request) (*http.Response, err
 func (client GalleriesClient) ListResponder(resp *http.Response) (result GalleryList, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -365,6 +362,7 @@ func (client GalleriesClient) listNextResults(ctx context.Context, lastResults G
 	result, err = client.ListResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "compute.GalleriesClient", "listNextResults", resp, "Failure responding to next results request")
+		return
 	}
 	return
 }
@@ -416,6 +414,10 @@ func (client GalleriesClient) ListByResourceGroup(ctx context.Context, resourceG
 	result.gl, err = client.ListByResourceGroupResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "compute.GalleriesClient", "ListByResourceGroup", resp, "Failure responding to request")
+		return
+	}
+	if result.gl.hasNextLink() && result.gl.IsEmpty() {
+		err = result.NextWithContext(ctx)
 	}
 
 	return
@@ -444,8 +446,7 @@ func (client GalleriesClient) ListByResourceGroupPreparer(ctx context.Context, r
 // ListByResourceGroupSender sends the ListByResourceGroup request. The method will close the
 // http.Response Body if it receives an error.
 func (client GalleriesClient) ListByResourceGroupSender(req *http.Request) (*http.Response, error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
-	return autorest.SendWithSender(client, req, sd...)
+	return client.Send(req, azure.DoRetryWithRegistration(client.Client))
 }
 
 // ListByResourceGroupResponder handles the response to the ListByResourceGroup request. The method always
@@ -453,7 +454,6 @@ func (client GalleriesClient) ListByResourceGroupSender(req *http.Request) (*htt
 func (client GalleriesClient) ListByResourceGroupResponder(resp *http.Response) (result GalleryList, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
@@ -478,6 +478,7 @@ func (client GalleriesClient) listByResourceGroupNextResults(ctx context.Context
 	result, err = client.ListByResourceGroupResponder(resp)
 	if err != nil {
 		err = autorest.NewErrorWithError(err, "compute.GalleriesClient", "listByResourceGroupNextResults", resp, "Failure responding to next results request")
+		return
 	}
 	return
 }
@@ -556,9 +557,8 @@ func (client GalleriesClient) UpdatePreparer(ctx context.Context, resourceGroupN
 // UpdateSender sends the Update request. The method will close the
 // http.Response Body if it receives an error.
 func (client GalleriesClient) UpdateSender(req *http.Request) (future GalleriesUpdateFuture, err error) {
-	sd := autorest.GetSendDecorators(req.Context(), azure.DoRetryWithRegistration(client.Client))
 	var resp *http.Response
-	resp, err = autorest.SendWithSender(client, req, sd...)
+	resp, err = client.Send(req, azure.DoRetryWithRegistration(client.Client))
 	if err != nil {
 		return
 	}
@@ -571,7 +571,6 @@ func (client GalleriesClient) UpdateSender(req *http.Request) (future GalleriesU
 func (client GalleriesClient) UpdateResponder(resp *http.Response) (result Gallery, err error) {
 	err = autorest.Respond(
 		resp,
-		client.ByInspecting(),
 		azure.WithErrorUnlessStatusCode(http.StatusOK),
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())

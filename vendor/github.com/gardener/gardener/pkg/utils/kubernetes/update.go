@@ -20,31 +20,26 @@ import (
 	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // TryUpdate tries to apply the given transformation function onto the given object, and to update it afterwards.
 // It retries the update with an exponential backoff.
-func TryUpdate(ctx context.Context, backoff wait.Backoff, c client.Client, obj runtime.Object, transform func() error) error {
+func TryUpdate(ctx context.Context, backoff wait.Backoff, c client.Client, obj client.Object, transform func() error) error {
 	return tryUpdate(ctx, backoff, c, obj, c.Update, transform)
 }
 
 // TryUpdateStatus tries to apply the given transformation function onto the given object, and to update its
 // status afterwards. It retries the status update with an exponential backoff.
-func TryUpdateStatus(ctx context.Context, backoff wait.Backoff, c client.Client, obj runtime.Object, transform func() error) error {
+func TryUpdateStatus(ctx context.Context, backoff wait.Backoff, c client.Client, obj client.Object, transform func() error) error {
 	return tryUpdate(ctx, backoff, c, obj, c.Status().Update, transform)
 }
 
-func tryUpdate(ctx context.Context, backoff wait.Backoff, c client.Client, obj runtime.Object, updateFunc func(context.Context, runtime.Object, ...client.UpdateOption) error, transform func() error) error {
-	key, err := client.ObjectKeyFromObject(obj)
-	if err != nil {
-		return err
-	}
-
+func tryUpdate(ctx context.Context, backoff wait.Backoff, c client.Client, obj client.Object, updateFunc func(context.Context, client.Object, ...client.UpdateOption) error, transform func() error) error {
+	resetCopy := obj.DeepCopyObject()
 	return exponentialBackoff(ctx, backoff, func() (bool, error) {
-		if err := c.Get(ctx, key, obj); err != nil {
+		if err := c.Get(ctx, client.ObjectKeyFromObject(obj), obj); err != nil {
 			return false, err
 		}
 
@@ -59,6 +54,12 @@ func tryUpdate(ctx context.Context, backoff wait.Backoff, c client.Client, obj r
 
 		if err := updateFunc(ctx, obj); err != nil {
 			if apierrors.IsConflict(err) {
+				// In case of a conflict we are resetting the obj to its original version, as it was
+				// passed to the function, to ensure that, on the next iteration the
+				// equality check of the obj recieved from the server and the object after
+				// its transformation would be valid. Otherwise the obj would be with mutated
+				// fields in result of the transform function from previous iteration.
+				reflect.ValueOf(obj).Elem().Set(reflect.ValueOf(resetCopy).Elem())
 				return false, nil
 			}
 			return false, err

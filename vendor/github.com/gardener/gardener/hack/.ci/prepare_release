@@ -35,7 +35,7 @@ apk add --no-cache \
     gcc \
     sed
 
-GOLANG_VERSION="$(sed -rn 's/FROM golang:([^ ]+).*/\1/p' < "$repo_root_dir/Dockerfile")"
+GOLANG_VERSION="$(sed -rn 's/FROM (eu\.gcr\.io\/gardener-project\/3rd\/golang|golang):([^ ]+).*/\2/p' < "$repo_root_dir/Dockerfile")"
 
 export \
     GOROOT="$(go env GOROOT)" \
@@ -49,6 +49,10 @@ wget -q -O - "https://golang.org/dl/go$GOLANG_VERSION.src.tar.gz" | tar zx -C /u
 cd /usr/local/go/src
 echo "Executing make on go $GOLANG_VERSION"
 ./make.bash > /dev/null 2>&1
+
+# Make the newly "installed from source" go the default one
+export PATH="/usr/local/go/bin:$PATH"
+export GOROOT="/usr/local/go"
 
 export GOPATH="$(mktemp -d)"
 export GOBIN="$GOPATH/bin"
@@ -73,4 +77,3 @@ if ! make generate; then
 fi
 cd "$cur_dir"
 cp -RT "$REPO_PATH/" "$repo_root_dir/"
-

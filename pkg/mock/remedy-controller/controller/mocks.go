@@ -6,37 +6,38 @@ package controller
 
 import (
 	context "context"
-	gomock "github.com/golang/mock/gomock"
-	runtime "k8s.io/apimachinery/pkg/runtime"
 	reflect "reflect"
 	time "time"
+
+	gomock "github.com/golang/mock/gomock"
+	client "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// MockActuator is a mock of Actuator interface
+// MockActuator is a mock of Actuator interface.
 type MockActuator struct {
 	ctrl     *gomock.Controller
 	recorder *MockActuatorMockRecorder
 }
 
-// MockActuatorMockRecorder is the mock recorder for MockActuator
+// MockActuatorMockRecorder is the mock recorder for MockActuator.
 type MockActuatorMockRecorder struct {
 	mock *MockActuator
 }
 
-// NewMockActuator creates a new mock instance
+// NewMockActuator creates a new mock instance.
 func NewMockActuator(ctrl *gomock.Controller) *MockActuator {
 	mock := &MockActuator{ctrl: ctrl}
 	mock.recorder = &MockActuatorMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockActuator) EXPECT() *MockActuatorMockRecorder {
 	return m.recorder
 }
 
-// CreateOrUpdate mocks base method
-func (m *MockActuator) CreateOrUpdate(arg0 context.Context, arg1 runtime.Object) (time.Duration, error) {
+// CreateOrUpdate mocks base method.
+func (m *MockActuator) CreateOrUpdate(arg0 context.Context, arg1 client.Object) (time.Duration, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateOrUpdate", arg0, arg1)
 	ret0, _ := ret[0].(time.Duration)
@@ -44,28 +45,28 @@ func (m *MockActuator) CreateOrUpdate(arg0 context.Context, arg1 runtime.Object)
 	return ret0, ret1
 }
 
-// CreateOrUpdate indicates an expected call of CreateOrUpdate
+// CreateOrUpdate indicates an expected call of CreateOrUpdate.
 func (mr *MockActuatorMockRecorder) CreateOrUpdate(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrUpdate", reflect.TypeOf((*MockActuator)(nil).CreateOrUpdate), arg0, arg1)
 }
 
-// Delete mocks base method
-func (m *MockActuator) Delete(arg0 context.Context, arg1 runtime.Object) error {
+// Delete mocks base method.
+func (m *MockActuator) Delete(arg0 context.Context, arg1 client.Object) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Delete indicates an expected call of Delete
+// Delete indicates an expected call of Delete.
 func (mr *MockActuatorMockRecorder) Delete(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockActuator)(nil).Delete), arg0, arg1)
 }
 
-// ShouldFinalize mocks base method
-func (m *MockActuator) ShouldFinalize(arg0 context.Context, arg1 runtime.Object) (bool, error) {
+// ShouldFinalize mocks base method.
+func (m *MockActuator) ShouldFinalize(arg0 context.Context, arg1 client.Object) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ShouldFinalize", arg0, arg1)
 	ret0, _ := ret[0].(bool)
@@ -73,7 +74,7 @@ func (m *MockActuator) ShouldFinalize(arg0 context.Context, arg1 runtime.Object)
 	return ret0, ret1
 }
 
-// ShouldFinalize indicates an expected call of ShouldFinalize
+// ShouldFinalize indicates an expected call of ShouldFinalize.
 func (mr *MockActuatorMockRecorder) ShouldFinalize(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ShouldFinalize", reflect.TypeOf((*MockActuator)(nil).ShouldFinalize), arg0, arg1)

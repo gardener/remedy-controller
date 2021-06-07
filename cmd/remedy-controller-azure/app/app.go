@@ -164,13 +164,13 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			wg.Add(2)
 			go func() {
 				defer wg.Done()
-				if err := mgr.Start(ctx.Done()); err != nil {
+				if err := mgr.Start(ctx); err != nil {
 					controllercmd.LogErrAndExit(err, "Error starting manager")
 				}
 			}()
 			go func() {
 				defer wg.Done()
-				if err := targetMgr.Start(ctx.Done()); err != nil {
+				if err := targetMgr.Start(ctx); err != nil {
 					controllercmd.LogErrAndExit(err, "Error starting target cluster manager")
 				}
 			}()

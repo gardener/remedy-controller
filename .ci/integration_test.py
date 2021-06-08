@@ -17,7 +17,9 @@ repo_dir = os.path.abspath(os.path.join(own_dir, os.pardir))
 sys.path.insert(0, os.path.join(repo_dir, 'test'))
 
 import pubip_remedy_test as pubip_test # noqa
-import failed_vm_test as vm_test # noqa
+# TODO: failed_vm_test fails on newer Azure, and it's not clear how to fix it since it was based on
+# some weird Azure behavior that was meanwhile patched.
+# import failed_vm_test as vm_test # noqa
 import test_util # noqa
 
 HELM_CHART_NAME = 'remedy-controller-azure'
@@ -72,29 +74,29 @@ def main():
             path_to_kubeconfig=kubeconfig_path,
             test_namespace=HELM_CHART_DEPLOYMENT_NAMESPACE,
         )
-        failed_vm_future = executor.submit(
-            fn=vm_test.run_test,
-            path_to_credentials_file=credentials_path,
-            path_to_kubeconfig=kubeconfig_path,
-            required_attempts=VM_TEST_REQUIRED_ATTEMPTS,
-            test_namespace=HELM_CHART_DEPLOYMENT_NAMESPACE,
-            check_interval=10,
-            run_duration=360,
-        )
+        # failed_vm_future = executor.submit(
+        #     fn=vm_test.run_test,
+        #     path_to_credentials_file=credentials_path,
+        #     path_to_kubeconfig=kubeconfig_path,
+        #     required_attempts=VM_TEST_REQUIRED_ATTEMPTS,
+        #     test_namespace=HELM_CHART_DEPLOYMENT_NAMESPACE,
+        #     check_interval=10,
+        #     run_duration=360,
+        # )
 
     pubip_test_ok = False
-    vm_test_ok = False
+    # vm_test_ok = False
 
     try:
         pubip_test_ok = pubip_future.result()
-        vm_test_ok = failed_vm_future.result()
+        # vm_test_ok = failed_vm_future.result()
     finally:
         uninstall_helm_deployment(
             kubernetes_config,
             HELM_CHART_DEPLOYMENT_NAMESPACE,
             HELM_CHART_NAME,
         )
-    if not pubip_test_ok or not vm_test_ok:
+    if not pubip_test_ok: # or not vm_test_ok:
         exit(1)
 
 

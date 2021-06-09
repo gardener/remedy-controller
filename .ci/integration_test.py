@@ -10,7 +10,6 @@ import concurrent.futures
 import yaml
 
 import model.kubernetes
-import landscape_setup.utils
 
 own_dir = os.path.abspath(os.path.dirname(__file__))
 repo_dir = os.path.abspath(os.path.join(own_dir, os.pardir))
@@ -58,8 +57,7 @@ def main():
     chart_dir = os.path.join(repo_dir, 'charts', HELM_CHART_NAME)
     values = create_helm_values(chart_dir, version, credentials_path)
 
-
-    landscape_setup.utils.execute_helm_deployment(
+    test_util.execute_helm_deployment(
         kubernetes_config,
         HELM_CHART_DEPLOYMENT_NAMESPACE,
         chart_dir,
@@ -138,7 +136,7 @@ def uninstall_helm_deployment(
     namespace: str,
     release_name: str,
 ):
-    helm_executable = landscape_setup.utils.ensure_helm_setup()
+    helm_executable = test_util.ensure_helm_setup()
 
     KUBECONFIG_FILE_NAME = "kubecfg"
 

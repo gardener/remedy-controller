@@ -20,6 +20,9 @@ import (
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:shortName=vm
+// +kubebuilder:subresource:status
 
 // VirtualMachine represents an Azure virtual machine.
 type VirtualMachine struct {
@@ -55,6 +58,7 @@ type VirtualMachineStatus struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // VirtualMachineList contains a list of VirtualMachine.
 type VirtualMachineList struct {

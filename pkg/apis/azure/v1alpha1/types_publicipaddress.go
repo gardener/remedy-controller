@@ -20,6 +20,9 @@ import (
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:shortName=pubip
+// +kubebuilder:subresource:status
 
 // PublicIPAddress represents an Azure public IP address.
 type PublicIPAddress struct {
@@ -51,6 +54,7 @@ type PublicIPAddressStatus struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // PublicIPAddressList contains a list of PublicIPAddress.
 type PublicIPAddressList struct {

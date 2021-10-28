@@ -10,6 +10,13 @@ import concurrent.futures
 import yaml
 
 import model.kubernetes
+import kube.ctx
+
+from ci.util import (
+    Failure,
+    info,
+    which,
+)
 
 own_dir = os.path.abspath(os.path.dirname(__file__))
 repo_dir = os.path.abspath(os.path.join(own_dir, os.pardir))
@@ -20,7 +27,6 @@ import pubip_remedy_test as pubip_test # noqa
 # TODO: failed_vm_test fails on newer Azure, and it's not clear how to fix it since it was based on
 # some weird Azure behavior that was meanwhile patched.
 # import failed_vm_test as vm_test # noqa
-import test_util # noqa
 
 HELM_CHART_NAME = 'remedy-controller-azure'
 HELM_CHART_DEPLOYMENT_NAMESPACE = 'default'
@@ -28,6 +34,10 @@ HELM_CHART_DEPLOYMENT_NAMESPACE = 'default'
 VM_TEST_REQUIRED_ATTEMPTS = 4
 
 KUBECONFIG_DIR = os.environ['TM_KUBECONFIG_PATH']
+
+
+CONCOURSE_HELM_CHART_REPO = "https://concourse-charts.storage.googleapis.com/"
+kube_ctx = kube.ctx.Ctx()
 
 
 def main():
@@ -59,7 +69,7 @@ def main():
     chart_dir = os.path.join(repo_dir, 'charts', HELM_CHART_NAME)
     values = create_helm_values(chart_dir, version, credentials_path)
 
-    test_util.execute_helm_deployment(
+    execute_helm_deployment(
         kubernetes_config,
         HELM_CHART_DEPLOYMENT_NAMESPACE,
         chart_dir,
@@ -138,7 +148,7 @@ def uninstall_helm_deployment(
     namespace: str,
     release_name: str,
 ):
-    helm_executable = test_util.ensure_helm_setup()
+    helm_executable = ensure_helm_setup()
 
     KUBECONFIG_FILE_NAME = "kubecfg"
 
@@ -156,6 +166,83 @@ def uninstall_helm_deployment(
 
     # create temp dir containing all previously referenced files
     with tempfile.TemporaryDirectory() as temp_dir:
+
+        with open(os.path.join(temp_dir, KUBECONFIG_FILE_NAME), 'w') as f:
+            yaml.dump(kubernetes_config.kubeconfig(), f)
+
+        # run helm from inside the temporary directory so that the prepared file paths work
+        subprocess.run(subprocess_args, check=True, cwd=temp_dir, env=helm_env)
+
+
+def ensure_helm_setup():
+    """Ensure up-to-date helm installation. Return the path to the found Helm executable"""
+    # we currently have both helmV3 and helmV2 in our images. To keep it convenient for local
+    # execution, try both
+    try:
+        helm_executable = which('helm3')
+    except Failure:
+        info("No executable 'helm3' found in path. Falling back to 'helm'")
+        helm_executable = which('helm')
+
+    with open(os.devnull) as devnull:
+        subprocess.run([helm_executable, 'repo', 'update'], check=True, stdout=devnull)
+    return helm_executable
+
+
+# Stuff used for yaml formatting, when dumping a dictionary
+class LiteralStr(str):
+    """Used to create yaml block style indicator | """
+
+
+def literal_str_representer(dumper, data):
+    """Used to create yaml block style indicator"""
+    return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
+
+
+def execute_helm_deployment(
+    kubernetes_config,
+    namespace: str,
+    chart_name: str,
+    release_name: str,
+    *values: dict,
+    chart_version: str=None,
+):
+    yaml.add_representer(LiteralStr, literal_str_representer)
+    helm_executable = ensure_helm_setup()
+    # create namespace if absent
+    namespace_helper = kube_ctx.namespace_helper()
+    if not namespace_helper.get_namespace(namespace):
+        namespace_helper.create_namespace(namespace)
+
+    KUBECONFIG_FILE_NAME = "kubecfg"
+
+    # prepare subprocess args using relative file paths for the values files
+    subprocess_args = [
+        helm_executable,
+        "upgrade",
+        release_name,
+        chart_name,
+        "--install",
+        "--force",
+        "--namespace",
+        namespace,
+    ]
+
+    if chart_version:
+        subprocess_args += ["--version", chart_version]
+
+    for idx, _ in enumerate(values):
+        subprocess_args.append("--values")
+        subprocess_args.append("value" + str(idx))
+
+    helm_env = os.environ.copy()
+    helm_env['KUBECONFIG'] = KUBECONFIG_FILE_NAME
+
+    # create temp dir containing all previously referenced files
+    with tempfile.TemporaryDirectory() as temp_dir:
+        for idx, value in enumerate(values):
+            with open(os.path.join(temp_dir, "value" + str(idx)), 'w') as f:
+                yaml.dump(value, f)
 
         with open(os.path.join(temp_dir, KUBECONFIG_FILE_NAME), 'w') as f:
             yaml.dump(kubernetes_config.kubeconfig(), f)

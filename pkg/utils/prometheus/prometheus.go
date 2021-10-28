@@ -16,6 +16,7 @@ package prometheus
 
 import "github.com/prometheus/client_golang/prometheus"
 
+// GaugeVec is an interface that contains the relevant methods of prometheus.GaugeVec.
 type GaugeVec interface {
 	WithLabelValues(lvs ...string) prometheus.Gauge
 	DeleteLabelValues(lvs ...string) bool

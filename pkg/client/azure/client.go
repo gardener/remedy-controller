@@ -112,7 +112,7 @@ type VirtualMachinesClientImpl struct {
 	compute.VirtualMachinesClient
 }
 
-// CreateOrUpdate implements VirtualMachinesClient.
+// Reapply implements VirtualMachinesClient.
 func (c VirtualMachinesClientImpl) Reapply(ctx context.Context, resourceGroupName string, vmName string) (Future, error) {
 	f, err := c.VirtualMachinesClient.Reapply(ctx, resourceGroupName, vmName)
 	return &f, err
@@ -137,7 +137,7 @@ func ReadConfig(path string) (*Credentials, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "could not open configuration file")
 	}
-	defer input.Close()
+	defer input.Close() // nolint:errcheck
 
 	// Decode Azure credentials from JSON
 	decoder := yaml.NewDecoder(io.Reader(input))

@@ -37,9 +37,12 @@ import (
 )
 
 const (
-	VMStateOK                float64 = 0
+	// VMStateOK is a constant for an OK state of an Azure virtual machine.
+	VMStateOK float64 = 0
+	// VMStateFailedWillReapply is a constant for a Failed state of an Azure virtual machine that will be reapplied.
 	VMStateFailedWillReapply float64 = 1
-	VMStateFailed            float64 = 2
+	// VMStateFailed is a constant for a Failed state of an Azure virtual machine.
+	VMStateFailed float64 = 2
 )
 
 type actuator struct {
@@ -223,11 +226,7 @@ func (a *actuator) Delete(ctx context.Context, obj client.Object) error {
 	a.setVMStatesGauge(azureVM, vmName)
 
 	// Update resource status
-	if err := a.updateVirtualMachineStatus(ctx, vm, azureVM, failedOperations); err != nil {
-		return err
-	}
-
-	return nil
+	return a.updateVirtualMachineStatus(ctx, vm, azureVM, failedOperations)
 }
 
 // ShouldFinalize returns true if the object should be finalized.

@@ -35,9 +35,12 @@ import (
 )
 
 const (
+	// ControllerName is the name of the Azure virtualmachine controller.
 	ControllerName = "azurevirtualmachine-controller"
-	ActuatorName   = "azurevirtualmachine-actuator"
-	FinalizerName  = "azure.remedy.gardener.cloud/virtualmachine"
+	// ActuatorName is the name of the Azure virtualmachine actuator.
+	ActuatorName = "azurevirtualmachine-actuator"
+	// FinalizerName is the finalizer to put on virtualmachine resources.
+	FinalizerName = "azure.remedy.gardener.cloud/virtualmachine"
 )
 
 var (

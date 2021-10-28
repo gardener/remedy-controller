@@ -23,6 +23,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
+// NewLoadBalancerIPsChangedPredicate creates a new predicate that filters only relevant service events,
+// such as service creation and deletion, updating the deletion timestamp of a service with LoadBalancer IPs,
+// and changes to the LandBalancer IPs of a service.
 func NewLoadBalancerIPsChangedPredicate(logger logr.Logger) predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {

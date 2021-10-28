@@ -36,6 +36,7 @@ import (
 )
 
 const (
+	// Name is the name of the Azure remedy controller command.
 	Name = "remedy-controller-azure"
 )
 

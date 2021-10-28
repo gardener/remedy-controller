@@ -36,6 +36,7 @@ func NewLoadBalancerIPsChangedPredicate(logger logr.Logger) predicate.Predicate 
 			if _, ok := e.Object.(*corev1.Service); !ok {
 				return false
 			}
+			logger := logger.WithValues("name", e.Object.GetName(), "namespace", e.Object.GetNamespace())
 			logger.Info("Creating a service")
 			return true
 		},
@@ -53,6 +54,7 @@ func NewLoadBalancerIPsChangedPredicate(logger logr.Logger) predicate.Predicate 
 			if newService, ok = e.ObjectNew.(*corev1.Service); !ok {
 				return false
 			}
+			logger := logger.WithValues("name", e.ObjectNew.GetName(), "namespace", e.ObjectNew.GetNamespace())
 			oldIPs, newIPs := getServiceLoadBalancerIPs(oldService), getServiceLoadBalancerIPs(newService)
 			if len(newIPs) > 0 && e.ObjectOld.GetDeletionTimestamp() != e.ObjectNew.GetDeletionTimestamp() {
 				logger.Info("Updating the deletion timestamp of a service with LoadBalancer IPs")
@@ -77,6 +79,7 @@ func NewLoadBalancerIPsChangedPredicate(logger logr.Logger) predicate.Predicate 
 			if _, ok := e.Object.(*corev1.Service); !ok {
 				return false
 			}
+			logger := logger.WithValues("name", e.Object.GetName(), "namespace", e.Object.GetNamespace())
 			logger.Info("Deleting a service")
 			return true
 		},

@@ -34,6 +34,7 @@ func NewReadyUnreachableChangedPredicate(logger logr.Logger) predicate.Predicate
 			if _, ok := e.Object.(*corev1.Node); !ok {
 				return false
 			}
+			logger := logger.WithValues("name", e.Object.GetName())
 			logger.Info("Creating a node")
 			return true
 		},
@@ -51,12 +52,13 @@ func NewReadyUnreachableChangedPredicate(logger logr.Logger) predicate.Predicate
 			if newNode, ok = e.ObjectNew.(*corev1.Node); !ok {
 				return false
 			}
+			logger := logger.WithValues("name", e.ObjectNew.GetName())
 			if e.ObjectOld.GetDeletionTimestamp() != e.ObjectNew.GetDeletionTimestamp() {
-				logger.Info("Updating the deletion timestamp of a node")
+				logger.Info("Updating the deletion timestamp of a node", "name", e.ObjectNew.GetName())
 				return true
 			}
 			if isNodeReady(oldNode) != isNodeReady(newNode) || isNodeUnreachable(oldNode) != isNodeUnreachable(newNode) {
-				logger.Info("Updating the ready condition or unreachable taint of a node")
+				logger.Info("Updating the ready condition or unreachable taint of a node", "name", e.ObjectNew.GetName())
 				return true
 			}
 			return false
@@ -70,6 +72,7 @@ func NewReadyUnreachableChangedPredicate(logger logr.Logger) predicate.Predicate
 			if _, ok := e.Object.(*corev1.Node); !ok {
 				return false
 			}
+			logger := logger.WithValues("name", e.Object.GetName())
 			logger.Info("Deleting a node")
 			return true
 		},

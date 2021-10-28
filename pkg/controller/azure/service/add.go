@@ -26,10 +26,14 @@ import (
 )
 
 const (
+	// ControllerName is the name of the Azure service controller.
 	ControllerName = "azureservice-controller"
-	ActuatorName   = "azureservice-actuator"
-	PredicateName  = "azureservice-load-balancer-ips-changed-predicate"
-	FinalizerName  = "azure.remedy.gardener.cloud/service"
+	// ActuatorName is the name of the Azure service actuator.
+	ActuatorName = "azureservice-actuator"
+	// PredicateName is the name of the predicate of the Azure service controller.
+	PredicateName = "azureservice-load-balancer-ips-changed-predicate"
+	// FinalizerName is the finalizer to put on service resources.
+	FinalizerName = "azure.remedy.gardener.cloud/service"
 )
 
 var (

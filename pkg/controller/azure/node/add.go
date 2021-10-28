@@ -26,10 +26,14 @@ import (
 )
 
 const (
+	// ControllerName is the name of the Azure node controller.
 	ControllerName = "azurenode-controller"
-	ActuatorName   = "azurenode-actuator"
-	PredicateName  = "azurenode-ready-unreachable-changed-predicate"
-	FinalizerName  = "azure.remedy.gardener.cloud/node"
+	// ActuatorName is the name of the Azure service actuator.
+	ActuatorName = "azurenode-actuator"
+	// PredicateName is the name of the predicate of the Azure node controller.
+	PredicateName = "azurenode-ready-unreachable-changed-predicate"
+	// FinalizerName is the finalizer to put on node resources.
+	FinalizerName = "azure.remedy.gardener.cloud/node"
 )
 
 var (

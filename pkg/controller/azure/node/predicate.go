@@ -21,6 +21,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
+// NewReadyUnreachableChangedPredicate creates a new predicate that filters only relevant node events,
+// such as node creation and deletion, updating the deletion timestamp of a node, changes to the "Ready" condition,
+// and changes to the "Unreachable" taint.
 func NewReadyUnreachableChangedPredicate(logger logr.Logger) predicate.Predicate {
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {

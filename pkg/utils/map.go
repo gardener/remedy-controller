@@ -14,6 +14,7 @@
 
 package utils
 
+// Add adds to the given map the given key mapped to the given value.
 func Add(m map[string]string, key, value string) map[string]string {
 	if m == nil {
 		m = make(map[string]string)

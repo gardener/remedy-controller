@@ -35,9 +35,12 @@ import (
 )
 
 const (
+	// ControllerName is the name of the Azure publicipaddress controller.
 	ControllerName = "azurepublicipaddress-controller"
-	ActuatorName   = "azurepublicipaddress-actuator"
-	FinalizerName  = "azure.remedy.gardener.cloud/publicipaddress"
+	// ActuatorName is the name of the Azure publicipaddress actuator.
+	ActuatorName = "azurepublicipaddress-actuator"
+	// FinalizerName is the finalizer to put on publicipaddress resources.
+	FinalizerName = "azure.remedy.gardener.cloud/publicipaddress"
 )
 
 var (

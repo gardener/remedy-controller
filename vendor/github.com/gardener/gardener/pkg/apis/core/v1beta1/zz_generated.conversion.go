@@ -1937,6 +1937,9 @@ func autoConvert_v1beta1_ClusterAutoscaler_To_core_ClusterAutoscaler(in *Cluster
 	out.ScaleDownUnneededTime = (*metav1.Duration)(unsafe.Pointer(in.ScaleDownUnneededTime))
 	out.ScaleDownUtilizationThreshold = (*float64)(unsafe.Pointer(in.ScaleDownUtilizationThreshold))
 	out.ScanInterval = (*metav1.Duration)(unsafe.Pointer(in.ScanInterval))
+	out.Expander = (*core.ExpanderMode)(unsafe.Pointer(in.Expander))
+	out.MaxNodeProvisionTime = (*metav1.Duration)(unsafe.Pointer(in.MaxNodeProvisionTime))
+	out.MaxGracefulTerminationSeconds = (*int32)(unsafe.Pointer(in.MaxGracefulTerminationSeconds))
 	return nil
 }
 
@@ -1952,6 +1955,9 @@ func autoConvert_core_ClusterAutoscaler_To_v1beta1_ClusterAutoscaler(in *core.Cl
 	out.ScaleDownUnneededTime = (*metav1.Duration)(unsafe.Pointer(in.ScaleDownUnneededTime))
 	out.ScaleDownUtilizationThreshold = (*float64)(unsafe.Pointer(in.ScaleDownUtilizationThreshold))
 	out.ScanInterval = (*metav1.Duration)(unsafe.Pointer(in.ScanInterval))
+	out.Expander = (*ExpanderMode)(unsafe.Pointer(in.Expander))
+	out.MaxNodeProvisionTime = (*metav1.Duration)(unsafe.Pointer(in.MaxNodeProvisionTime))
+	out.MaxGracefulTerminationSeconds = (*int32)(unsafe.Pointer(in.MaxGracefulTerminationSeconds))
 	return nil
 }
 
@@ -2779,6 +2785,7 @@ func autoConvert_v1beta1_KubeProxyConfig_To_core_KubeProxyConfig(in *KubeProxyCo
 		return err
 	}
 	out.Mode = (*core.ProxyMode)(unsafe.Pointer(in.Mode))
+	out.Enabled = (*bool)(unsafe.Pointer(in.Enabled))
 	return nil
 }
 
@@ -2792,6 +2799,7 @@ func autoConvert_core_KubeProxyConfig_To_v1beta1_KubeProxyConfig(in *core.KubePr
 		return err
 	}
 	out.Mode = (*ProxyMode)(unsafe.Pointer(in.Mode))
+	out.Enabled = (*bool)(unsafe.Pointer(in.Enabled))
 	return nil
 }
 
@@ -2844,6 +2852,8 @@ func autoConvert_v1beta1_KubeletConfig_To_core_KubeletConfig(in *KubeletConfig, 
 	out.FailSwapOn = (*bool)(unsafe.Pointer(in.FailSwapOn))
 	out.KubeReserved = (*core.KubeletConfigReserved)(unsafe.Pointer(in.KubeReserved))
 	out.SystemReserved = (*core.KubeletConfigReserved)(unsafe.Pointer(in.SystemReserved))
+	out.ImageGCHighThresholdPercent = (*int32)(unsafe.Pointer(in.ImageGCHighThresholdPercent))
+	out.ImageGCLowThresholdPercent = (*int32)(unsafe.Pointer(in.ImageGCLowThresholdPercent))
 	return nil
 }
 
@@ -2870,6 +2880,8 @@ func autoConvert_core_KubeletConfig_To_v1beta1_KubeletConfig(in *core.KubeletCon
 	out.FailSwapOn = (*bool)(unsafe.Pointer(in.FailSwapOn))
 	out.KubeReserved = (*KubeletConfigReserved)(unsafe.Pointer(in.KubeReserved))
 	out.SystemReserved = (*KubeletConfigReserved)(unsafe.Pointer(in.SystemReserved))
+	out.ImageGCHighThresholdPercent = (*int32)(unsafe.Pointer(in.ImageGCHighThresholdPercent))
+	out.ImageGCLowThresholdPercent = (*int32)(unsafe.Pointer(in.ImageGCLowThresholdPercent))
 	return nil
 }
 
@@ -3796,6 +3808,7 @@ func autoConvert_v1beta1_ProjectStatus_To_core_ProjectStatus(in *ProjectStatus, 
 	out.Phase = core.ProjectPhase(in.Phase)
 	out.StaleSinceTimestamp = (*metav1.Time)(unsafe.Pointer(in.StaleSinceTimestamp))
 	out.StaleAutoDeleteTimestamp = (*metav1.Time)(unsafe.Pointer(in.StaleAutoDeleteTimestamp))
+	out.LastActivityTimestamp = (*metav1.Time)(unsafe.Pointer(in.LastActivityTimestamp))
 	return nil
 }
 
@@ -3809,6 +3822,7 @@ func autoConvert_core_ProjectStatus_To_v1beta1_ProjectStatus(in *core.ProjectSta
 	out.Phase = ProjectPhase(in.Phase)
 	out.StaleSinceTimestamp = (*metav1.Time)(unsafe.Pointer(in.StaleSinceTimestamp))
 	out.StaleAutoDeleteTimestamp = (*metav1.Time)(unsafe.Pointer(in.StaleAutoDeleteTimestamp))
+	out.LastActivityTimestamp = (*metav1.Time)(unsafe.Pointer(in.LastActivityTimestamp))
 	return nil
 }
 
@@ -4252,7 +4266,7 @@ func Convert_core_SeedProvider_To_v1beta1_SeedProvider(in *core.SeedProvider, ou
 }
 
 func autoConvert_v1beta1_SeedSelector_To_core_SeedSelector(in *SeedSelector, out *core.SeedSelector, s conversion.Scope) error {
-	out.LabelSelector = (*metav1.LabelSelector)(unsafe.Pointer(in.LabelSelector))
+	out.LabelSelector = in.LabelSelector
 	out.ProviderTypes = *(*[]string)(unsafe.Pointer(&in.ProviderTypes))
 	return nil
 }
@@ -4263,7 +4277,7 @@ func Convert_v1beta1_SeedSelector_To_core_SeedSelector(in *SeedSelector, out *co
 }
 
 func autoConvert_core_SeedSelector_To_v1beta1_SeedSelector(in *core.SeedSelector, out *SeedSelector, s conversion.Scope) error {
-	out.LabelSelector = (*metav1.LabelSelector)(unsafe.Pointer(in.LabelSelector))
+	out.LabelSelector = in.LabelSelector
 	out.ProviderTypes = *(*[]string)(unsafe.Pointer(&in.ProviderTypes))
 	return nil
 }
@@ -4576,6 +4590,8 @@ func Convert_core_SeedVolumeProvider_To_v1beta1_SeedVolumeProvider(in *core.Seed
 func autoConvert_v1beta1_ServiceAccountConfig_To_core_ServiceAccountConfig(in *ServiceAccountConfig, out *core.ServiceAccountConfig, s conversion.Scope) error {
 	out.Issuer = (*string)(unsafe.Pointer(in.Issuer))
 	out.SigningKeySecret = (*v1.LocalObjectReference)(unsafe.Pointer(in.SigningKeySecret))
+	out.ExtendTokenExpiration = (*bool)(unsafe.Pointer(in.ExtendTokenExpiration))
+	out.MaxTokenExpiration = (*metav1.Duration)(unsafe.Pointer(in.MaxTokenExpiration))
 	return nil
 }
 
@@ -4587,6 +4603,8 @@ func Convert_v1beta1_ServiceAccountConfig_To_core_ServiceAccountConfig(in *Servi
 func autoConvert_core_ServiceAccountConfig_To_v1beta1_ServiceAccountConfig(in *core.ServiceAccountConfig, out *ServiceAccountConfig, s conversion.Scope) error {
 	out.Issuer = (*string)(unsafe.Pointer(in.Issuer))
 	out.SigningKeySecret = (*v1.LocalObjectReference)(unsafe.Pointer(in.SigningKeySecret))
+	out.ExtendTokenExpiration = (*bool)(unsafe.Pointer(in.ExtendTokenExpiration))
+	out.MaxTokenExpiration = (*metav1.Duration)(unsafe.Pointer(in.MaxTokenExpiration))
 	return nil
 }
 

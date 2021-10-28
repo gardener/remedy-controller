@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:revive
 package v1alpha1
 
 import (
-	fmt "fmt"
+	"fmt"
 
 	"github.com/gardener/gardener/pkg/apis/operations"
 

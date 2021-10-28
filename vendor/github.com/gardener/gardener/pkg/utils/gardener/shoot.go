@@ -15,7 +15,6 @@
 package gardener
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -25,7 +24,6 @@ import (
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	v1beta1constants "github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
-	"github.com/gardener/gardener/pkg/operation/common"
 	"github.com/gardener/gardener/pkg/utils"
 )
 
@@ -138,11 +136,6 @@ func EffectiveShootMaintenanceTimeWindow(shoot *v1beta1.Shoot) *utils.Maintenanc
 	return EffectiveMaintenanceTimeWindow(timeWindow)
 }
 
-// GardenEtcdEncryptionSecretName returns the name to the 'backup' of the etcd encryption secret in the Garden cluster.
-func GardenEtcdEncryptionSecretName(shootName string) string {
-	return fmt.Sprintf("%s.%s", shootName, common.EtcdEncryptionSecretName)
-}
-
 // GetShootNameFromOwnerReferences attempts to get the name of the Shoot object which owns the passed in object.
 // If it is not owned by a Shoot, an empty string is returned.
 func GetShootNameFromOwnerReferences(objectMeta metav1.Object) string {
@@ -159,6 +152,8 @@ const (
 	ShootProjectSecretSuffixKubeconfig = "kubeconfig"
 	// ShootProjectSecretSuffixSSHKeypair is a constant for a shoot project secret with suffix 'ssh-keypair'.
 	ShootProjectSecretSuffixSSHKeypair = v1beta1constants.SecretNameSSHKeyPair
+	// ShootProjectSecretSuffixOldSSHKeypair is a constant for a shoot project secret with suffix 'ssh-keypair.old'.
+	ShootProjectSecretSuffixOldSSHKeypair = v1beta1constants.SecretNameOldSSHKeyPair
 	// ShootProjectSecretSuffixMonitoring is a constant for a shoot project secret with suffix 'monitoring'.
 	ShootProjectSecretSuffixMonitoring = "monitoring"
 )
@@ -168,6 +163,7 @@ func GetShootProjectSecretSuffixes() []string {
 	return []string{
 		ShootProjectSecretSuffixKubeconfig,
 		ShootProjectSecretSuffixSSHKeypair,
+		ShootProjectSecretSuffixOldSSHKeypair,
 		ShootProjectSecretSuffixMonitoring,
 	}
 }

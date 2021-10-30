@@ -259,7 +259,9 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubip2).Return(nil)
 
-			Expect(actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))).To(Succeed())
+			requeueAfter, err := actuator.CreateOrUpdate(ctx, pubip.DeepCopyObject().(client.Object))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should fail if updating the PublicIPAddress object status fails", func() {
@@ -288,7 +290,9 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubipWithStatus).Return(nil)
 			sw.EXPECT().Update(ctx, pubip).Return(nil)
 
-			Expect(actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))).To(Succeed())
+			requeueAfter, err := actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
 
 		It("should not update the PublicIPAddress object status if the IP is not found", func() {
@@ -296,7 +300,9 @@ var _ = Describe("Actuator", func() {
 			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(nil, nil)
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 
-			Expect(actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))).To(Succeed())
+			requeueAfter, err := actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
 
 		It("should not update the PublicIPAddress object status if the IP is found but doesn't have the service tag", func() {
@@ -305,7 +311,9 @@ var _ = Describe("Actuator", func() {
 			pubipUtils.EXPECT().GetByIP(ctx, ip).Return(azurePublicIPAddress, nil)
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 
-			Expect(actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))).To(Succeed())
+			requeueAfter, err := actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
 
 		It("should clean the IP and not update the PublicIPAddress object status if the IP is found and the status is already initialized", func() {
@@ -320,7 +328,9 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubipWithStatus).Return(nil)
 			sw.EXPECT().Update(ctx, pubip).Return(nil)
 
-			Expect(actuator.Delete(ctx, pubipWithStatus.DeepCopyObject().(client.Object))).To(Succeed())
+			requeueAfter, err := actuator.Delete(ctx, pubipWithStatus.DeepCopyObject().(client.Object))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
 
 		It("should update the PublicIPAddress object status if the IP is not found and the status is already initialized", func() {
@@ -331,7 +341,9 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubipWithStatus).Return(nil)
 			sw.EXPECT().Update(ctx, pubip).Return(nil)
 
-			Expect(actuator.Delete(ctx, pubipWithStatus.DeepCopyObject().(client.Object))).To(Succeed())
+			requeueAfter, err := actuator.Delete(ctx, pubipWithStatus.DeepCopyObject().(client.Object))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
 
 		It("should update the PublicIPAddress object status if the IP address has changed and the status is already initialized", func() {
@@ -343,7 +355,9 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubipWithStatus).Return(nil)
 			sw.EXPECT().Update(ctx, pubip).Return(nil)
 
-			Expect(actuator.Delete(ctx, pubipWithStatus.DeepCopyObject().(client.Object))).To(Succeed())
+			requeueAfter, err := actuator.Delete(ctx, pubipWithStatus.DeepCopyObject().(client.Object))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
 
 		It("should not clean the IP if it has the do-not-clean annotation", func() {
@@ -355,7 +369,9 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubipWithStatus).Return(nil)
 
-			Expect(actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))).To(Succeed())
+			requeueAfter, err := actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
 
 		It("should fail if updating the PublicIPAddress object status fails", func() {
@@ -366,7 +382,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubipWithStatus).Return(errors.New("test"))
 
-			err := actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))
+			_, err := actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))
 			Expect(err).To(MatchError("could not update publicipaddress status: test"))
 		})
 
@@ -376,7 +392,7 @@ var _ = Describe("Actuator", func() {
 			pubipUtils.EXPECT().GetByName(ctx, azurePublicIPAddressName).Return(azurePublicIPAddress, nil)
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 
-			err := actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))
+			_, err := actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))
 			Expect(err).To(HaveOccurred())
 			requeueAfterError, ok := err.(*controllererror.RequeueAfterError)
 			Expect(ok).To(BeTrue())
@@ -392,7 +408,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubipWithFailedOps).Return(nil)
 
-			err := actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))
+			_, err := actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))
 			Expect(err).To(HaveOccurred())
 			requeueAfterError, ok := err.(*controllererror.RequeueAfterError)
 			Expect(ok).To(BeTrue())
@@ -409,7 +425,9 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubip2).Return(nil)
 
-			Expect(actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))).To(Succeed())
+			requeueAfter, err := actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should fail and requeue if removing the Azure IP from the load balancer fails", func() {
@@ -423,7 +441,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubipWithFailedOps).Return(nil)
 
-			err := actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))
+			_, err := actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))
 			Expect(err).To(HaveOccurred())
 			requeueAfterError, ok := err.(*controllererror.RequeueAfterError)
 			Expect(ok).To(BeTrue())
@@ -443,7 +461,7 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubipWithFailedOps).Return(nil)
 
-			err := actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))
+			_, err := actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))
 			Expect(err).To(HaveOccurred())
 			requeueAfterError, ok := err.(*controllererror.RequeueAfterError)
 			Expect(ok).To(BeTrue())
@@ -464,7 +482,9 @@ var _ = Describe("Actuator", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: pubipName}, pubip).Return(nil)
 			sw.EXPECT().Update(ctx, pubip2).Return(nil)
 
-			Expect(actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))).To(Succeed())
+			requeueAfter, err := actuator.Delete(ctx, pubip.DeepCopyObject().(client.Object))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 	})
 })

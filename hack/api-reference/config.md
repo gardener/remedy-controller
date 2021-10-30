@@ -15,7 +15,7 @@ Resource Types:
 <h3 id="&#34;remedy.config.gardener.cloud&#34;/v1alpha1.ControllerConfiguration">ControllerConfiguration
 </h3>
 <p>
-<p>ControllerConfiguration defines the configuration for the GCP provider.</p>
+<p>ControllerConfiguration defines the configuration for the remedy controller.</p>
 </p>
 <table>
 <thead>
@@ -146,8 +146,8 @@ Kubernetes meta/v1.Duration
 </td>
 <td>
 <em>(Optional)</em>
-<p>RequeueInterval specifies the time after which reconciliation requests will be
-requeued in case of an error or a transient state. Applies to both creation/update and deletion.</p>
+<p>RequeueInterval specifies the time after which VirtualMachine reconciliation requests will be
+requeued in case of an error or a transient state.</p>
 </td>
 </tr>
 <tr>
@@ -161,8 +161,21 @@ Kubernetes meta/v1.Duration
 </td>
 <td>
 <em>(Optional)</em>
-<p>SyncPeriod determines the minimum frequency at which VirtualMachine resources will be reconciled.
-Only applies to creation/update.</p>
+<p>SyncPeriod determines the minimum frequency at which VirtualMachine resources will be reconciled.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>nodeSyncPeriod</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#duration-v1-meta">
+Kubernetes meta/v1.Duration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>NodeSyncPeriod determines the minimum frequency at which Node resources will be reconciled.</p>
 </td>
 </tr>
 <tr>
@@ -219,8 +232,8 @@ Kubernetes meta/v1.Duration
 </td>
 <td>
 <em>(Optional)</em>
-<p>RequeueInterval specifies the time after which reconciliation requests will be
-requeued in case of an error or a transient state. Applies to both creation/update and deletion.</p>
+<p>RequeueInterval specifies the time after which PublicIPAddress reconciliation requests will be
+requeued in case of an error or a transient state.</p>
 </td>
 </tr>
 <tr>
@@ -234,8 +247,21 @@ Kubernetes meta/v1.Duration
 </td>
 <td>
 <em>(Optional)</em>
-<p>SyncPeriod determines the minimum frequency at which PublicIPAddress resources will be reconciled.
-Only applies to creation/update.</p>
+<p>SyncPeriod determines the minimum frequency at which PublicIPAddress resources will be reconciled.</p>
+</td>
+</tr>
+<tr>
+<td>
+<code>serviceSyncPeriod</code></br>
+<em>
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.15/#duration-v1-meta">
+Kubernetes meta/v1.Duration
+</a>
+</em>
+</td>
+<td>
+<em>(Optional)</em>
+<p>ServiceSyncPeriod determines the minimum frequency at which Service resources will be reconciled.</p>
 </td>
 </tr>
 <tr>

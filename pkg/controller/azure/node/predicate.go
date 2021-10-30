@@ -15,36 +15,46 @@
 package node
 
 import (
+	"time"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/cache"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-// NewReadyUnreachableChangedPredicate creates a new predicate that filters only relevant node events,
-// such as node creation and deletion, updating the deletion timestamp of a node, changes to the "Ready" condition,
-// and changes to the "Unreachable" taint.
-func NewReadyUnreachableChangedPredicate(logger logr.Logger) predicate.Predicate {
+const (
+	nodeCacheTTL = 10 * time.Hour
+)
+
+// NewNodePredicate creates a new predicate that filters only relevant node events,
+// such as creating or deleting a node, updating the deletion timestamp of a node,
+// or updating the ready condition or unreachable taint of a node.
+func NewNodePredicate(logger logr.Logger) predicate.Predicate {
+	nodeCache := cache.NewExpiring()
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
 			if e.Object == nil {
 				logger.Error(nil, "CreateEvent has no object", "event", e)
 				return false
 			}
-			if _, ok := e.Object.(*corev1.Node); !ok {
+			node, ok := e.Object.(*corev1.Node)
+			if !ok {
 				return false
 			}
-			logger := logger.WithValues("name", e.Object.GetName())
+			logger := logger.WithValues("name", node.Name)
 			logger.Info("Creating a node")
+			nodeCache.Set(node.Name, node, nodeCacheTTL)
 			return true
 		},
 
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			if e.ObjectOld == nil || e.ObjectNew == nil {
-				logger.Error(nil, "UpdateEvent has no old or new metadata, or no old or new object", "event", e)
+				logger.Error(nil, "UpdateEvent has no no old or new object", "event", e)
 				return false
 			}
-			var oldNode, newNode *corev1.Node
+			var oldNode, newNode, cachedNode *corev1.Node
 			var ok bool
 			if oldNode, ok = e.ObjectOld.(*corev1.Node); !ok {
 				return false
@@ -52,13 +62,21 @@ func NewReadyUnreachableChangedPredicate(logger logr.Logger) predicate.Predicate
 			if newNode, ok = e.ObjectNew.(*corev1.Node); !ok {
 				return false
 			}
-			logger := logger.WithValues("name", e.ObjectNew.GetName())
-			if e.ObjectOld.GetDeletionTimestamp() != e.ObjectNew.GetDeletionTimestamp() {
-				logger.Info("Updating the deletion timestamp of a node", "name", e.ObjectNew.GetName())
+			if v, ok := nodeCache.Get(newNode.Name); ok {
+				cachedNode = v.(*corev1.Node)
+			}
+			defer nodeCache.Set(newNode.Name, newNode, nodeCacheTTL)
+			logger := logger.WithValues("name", newNode.Name)
+			if cachedNode == nil {
+				logger.Info("Updating a node that is missing in the node cache")
 				return true
 			}
-			if isNodeReady(oldNode) != isNodeReady(newNode) || isNodeUnreachable(oldNode) != isNodeUnreachable(newNode) {
-				logger.Info("Updating the ready condition or unreachable taint of a node", "name", e.ObjectNew.GetName())
+			if newNode.DeletionTimestamp != oldNode.DeletionTimestamp || newNode.DeletionTimestamp != cachedNode.DeletionTimestamp {
+				logger.Info("Updating the deletion timestamp of a node")
+				return true
+			}
+			if isNodeNotReadyOrUnreachable(newNode) != isNodeNotReadyOrUnreachable(oldNode) || isNodeNotReadyOrUnreachable(newNode) != isNodeNotReadyOrUnreachable(cachedNode) {
+				logger.Info("Updating the ready condition or unreachable taint of a node")
 				return true
 			}
 			return false
@@ -69,11 +87,13 @@ func NewReadyUnreachableChangedPredicate(logger logr.Logger) predicate.Predicate
 				logger.Error(nil, "DeleteEvent has no object", "event", e)
 				return false
 			}
-			if _, ok := e.Object.(*corev1.Node); !ok {
+			node, ok := e.Object.(*corev1.Node)
+			if !ok {
 				return false
 			}
-			logger := logger.WithValues("name", e.Object.GetName())
+			logger := logger.WithValues("name", node.Name)
 			logger.Info("Deleting a node")
+			nodeCache.Delete(node.Name)
 			return true
 		},
 

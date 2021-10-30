@@ -44,6 +44,8 @@ var _ = Describe("Actuator", func() {
 		serviceNamespace = "test"
 		namespace        = "default"
 		ip               = "1.2.3.4"
+
+		syncPeriod = 1 * time.Minute
 	)
 
 	var (
@@ -71,7 +73,7 @@ var _ = Describe("Actuator", func() {
 		c = mockclient.NewMockClient(ctrl)
 
 		logger = log.Log.WithName("test")
-		actuator = azureservice.NewActuator(c, namespace, logger)
+		actuator = azureservice.NewActuator(c, namespace, syncPeriod, logger)
 
 		svc = &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
@@ -169,7 +171,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, svc)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should fail when creating the PublicIPAddress object for a service of type LoadBalancer and an error occurs", func() {
@@ -207,7 +209,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, svc)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should not update the PublicIPAddress object for a service of type LoadBalancer if it already exists and is properly initialized", func() {
@@ -224,7 +226,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, svc)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should retry when updating the PublicIPAddress object for a service of type LoadBalancer and a Conflict error occurs", func() {
@@ -248,7 +250,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, svc)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should fail when updating the PublicIPAddress object for a service of type LoadBalancer and an error different from Conflict occurs", func() {
@@ -272,7 +274,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, clusterIPSvc)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should delete the PublicIPAddress object for a service of type ClusterIP if it already exists", func() {
@@ -285,7 +287,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, clusterIPSvc)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should succeed when deleting the PublicIPAddress object for a service of type ClusterIP and a NotFound error occurs", func() {
@@ -298,7 +300,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, clusterIPSvc)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should fail when deleting the PublicIPAddress object for a service of type ClusterIP and an error different from NotFound occurs", func() {
@@ -322,7 +324,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, ignoredSvc)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should add the do-not-clean annotation and then delete the PublicIPAddress object for a service of type LoadBalancer that has the ignore annotation if it already exists", func() {
@@ -336,32 +338,89 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, ignoredSvc)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 	})
 
 	Describe("#Delete", func() {
 		It("should delete the PublicIPAddress object for a service of type LoadBalancer", func() {
 			c.EXPECT().Delete(ctx, emptyPubip).Return(nil)
+			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(namespace), client.MatchingLabels(pubipLabels)).
+				DoAndReturn(func(_ context.Context, list *azurev1alpha1.PublicIPAddressList, _ ...client.ListOption) error {
+					list.Items = nil
+					return nil
+				})
 
-			Expect(actuator.Delete(ctx, svc)).To(Succeed())
+			requeueAfter, err := actuator.Delete(ctx, svc)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
 
 		It("should succeed when deleting the PublicIPAddress object for a service of type LoadBalancer and a NotFound error occurs", func() {
 			c.EXPECT().Delete(ctx, emptyPubip).Return(apierrors.NewNotFound(schema.GroupResource{}, pubip.Name))
+			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(namespace), client.MatchingLabels(pubipLabels)).
+				DoAndReturn(func(_ context.Context, list *azurev1alpha1.PublicIPAddressList, _ ...client.ListOption) error {
+					list.Items = nil
+					return nil
+				})
 
-			Expect(actuator.Delete(ctx, svc)).To(Succeed())
+			requeueAfter, err := actuator.Delete(ctx, svc)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
 
 		It("should fail when deleting the PublicIPAddress object for a service of type LoadBalancer and an error different from NotFound occurs", func() {
 			c.EXPECT().Delete(ctx, emptyPubip).Return(apierrors.NewInternalError(errors.New("test")))
 
-			err := actuator.Delete(ctx, svc)
+			_, err := actuator.Delete(ctx, svc)
 			Expect(err).To(MatchError("could not delete publicipaddress: Internal error occurred: test"))
 		})
 
-		It("should do nothing for a service of type ClusterIP", func() {
-			Expect(actuator.Delete(ctx, clusterIPSvc)).To(Succeed())
+		It("should fail when an error occurs while listing PublicIPAddress objects", func() {
+			c.EXPECT().Delete(ctx, emptyPubip).Return(nil)
+			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(namespace), client.MatchingLabels(pubipLabels)).
+				Return(apierrors.NewInternalError(errors.New("test")))
+
+			_, err := actuator.Delete(ctx, svc)
+			Expect(err).To(MatchError("could not list publicipaddresses: Internal error occurred: test"))
+		})
+
+		It("should delete the PublicIPAddress object for a service of type ClusterIP if it already exists", func() {
+			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(namespace), client.MatchingLabels(pubipLabels)).
+				DoAndReturn(func(_ context.Context, list *azurev1alpha1.PublicIPAddressList, _ ...client.ListOption) error {
+					list.Items = []azurev1alpha1.PublicIPAddress{*pubip}
+					return nil
+				})
+			c.EXPECT().Delete(ctx, pubip).Return(nil)
+
+			requeueAfter, err := actuator.Delete(ctx, clusterIPSvc)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(requeueAfter).To(Equal(time.Duration(0)))
+		})
+
+		It("should succeed when deleting the PublicIPAddress object for a service of type ClusterIP and a NotFound error occurs", func() {
+			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(namespace), client.MatchingLabels(pubipLabels)).
+				DoAndReturn(func(_ context.Context, list *azurev1alpha1.PublicIPAddressList, _ ...client.ListOption) error {
+					list.Items = []azurev1alpha1.PublicIPAddress{*pubip}
+					return nil
+				})
+			c.EXPECT().Delete(ctx, pubip).Return(apierrors.NewNotFound(schema.GroupResource{}, pubip.Name))
+
+			requeueAfter, err := actuator.Delete(ctx, clusterIPSvc)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(requeueAfter).To(Equal(time.Duration(0)))
+		})
+
+		It("should fail when deleting the PublicIPAddress object for a service of type ClusterIP and an error different from NotFound occurs", func() {
+			c.EXPECT().List(ctx, &azurev1alpha1.PublicIPAddressList{}, client.InNamespace(namespace), client.MatchingLabels(pubipLabels)).
+				DoAndReturn(func(_ context.Context, list *azurev1alpha1.PublicIPAddressList, _ ...client.ListOption) error {
+					list.Items = []azurev1alpha1.PublicIPAddress{*pubip}
+					return nil
+				})
+			c.EXPECT().Delete(ctx, pubip).Return(apierrors.NewInternalError(errors.New("test")))
+
+			_, err := actuator.Delete(ctx, clusterIPSvc)
+			Expect(err).To(MatchError("could not delete publicipaddress: Internal error occurred: test"))
 		})
 	})
 

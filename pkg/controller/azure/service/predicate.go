@@ -16,28 +16,37 @@ package service
 
 import (
 	"reflect"
+	"time"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/cache"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-// NewLoadBalancerIPsChangedPredicate creates a new predicate that filters only relevant service events,
-// such as service creation and deletion, updating the deletion timestamp of a service with LoadBalancer IPs,
-// and changes to the LandBalancer IPs of a service.
-func NewLoadBalancerIPsChangedPredicate(logger logr.Logger) predicate.Predicate {
+const (
+	serviceCacheTTL = 10 * time.Hour
+)
+
+// NewServicePredicate creates a new predicate that filters only relevant service events,
+// such as creating or deleting a service, updating the deletion timestamp of a service with LoadBalancer IPs,
+// updating the ignore annotation of a service with LoadBalancer IPs, and updating the service LoadBalancer IPs.
+func NewServicePredicate(logger logr.Logger) predicate.Predicate {
+	serviceCache := cache.NewExpiring()
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
 			if e.Object == nil {
 				logger.Error(nil, "CreateEvent has no object", "event", e)
 				return false
 			}
-			if _, ok := e.Object.(*corev1.Service); !ok {
+			service, ok := e.Object.(*corev1.Service)
+			if !ok {
 				return false
 			}
-			logger := logger.WithValues("name", e.Object.GetName(), "namespace", e.Object.GetNamespace())
+			logger := logger.WithValues("name", service.Name, "namespace", service.Namespace)
 			logger.Info("Creating a service")
+			serviceCache.Set(service.Name, service, serviceCacheTTL)
 			return true
 		},
 
@@ -46,7 +55,7 @@ func NewLoadBalancerIPsChangedPredicate(logger logr.Logger) predicate.Predicate 
 				logger.Error(nil, "UpdateEvent has no old or new metadata, or no old or new object", "event", e)
 				return false
 			}
-			var oldService, newService *corev1.Service
+			var oldService, newService, cachedService *corev1.Service
 			var ok bool
 			if oldService, ok = e.ObjectOld.(*corev1.Service); !ok {
 				return false
@@ -54,17 +63,25 @@ func NewLoadBalancerIPsChangedPredicate(logger logr.Logger) predicate.Predicate 
 			if newService, ok = e.ObjectNew.(*corev1.Service); !ok {
 				return false
 			}
-			logger := logger.WithValues("name", e.ObjectNew.GetName(), "namespace", e.ObjectNew.GetNamespace())
-			oldIPs, newIPs := getServiceLoadBalancerIPs(oldService), getServiceLoadBalancerIPs(newService)
-			if len(newIPs) > 0 && e.ObjectOld.GetDeletionTimestamp() != e.ObjectNew.GetDeletionTimestamp() {
+			if v, ok := serviceCache.Get(newService.Name); ok {
+				cachedService = v.(*corev1.Service)
+			}
+			defer serviceCache.Set(newService.Name, newService, serviceCacheTTL)
+			logger := logger.WithValues("name", newService.Name, "namespace", newService.Namespace)
+			if cachedService == nil {
+				logger.Info("Updating a service that is missing in the service cache")
+				return true
+			}
+			oldIPs, newIPs, cachedIPs := getServiceLoadBalancerIPs(oldService), getServiceLoadBalancerIPs(newService), getServiceLoadBalancerIPs(cachedService)
+			if len(newIPs) > 0 && (newService.DeletionTimestamp != oldService.DeletionTimestamp || newService.DeletionTimestamp != cachedService.DeletionTimestamp) {
 				logger.Info("Updating the deletion timestamp of a service with LoadBalancer IPs")
 				return true
 			}
-			if len(newIPs) > 0 && shouldIgnoreService(oldService) != shouldIgnoreService(newService) {
+			if len(newIPs) > 0 && (shouldIgnoreService(newService) != shouldIgnoreService(oldService) || shouldIgnoreService(newService) != shouldIgnoreService(cachedService)) {
 				logger.Info("Updating the ignore annotation of a service with LoadBalancer IPs")
 				return true
 			}
-			if !reflect.DeepEqual(oldIPs, newIPs) {
+			if !reflect.DeepEqual(newIPs, oldIPs) || !reflect.DeepEqual(newIPs, cachedIPs) {
 				logger.Info("Updating service LoadBalancer IPs")
 				return true
 			}
@@ -76,11 +93,13 @@ func NewLoadBalancerIPsChangedPredicate(logger logr.Logger) predicate.Predicate 
 				logger.Error(nil, "DeleteEvent has no object", "event", e)
 				return false
 			}
-			if _, ok := e.Object.(*corev1.Service); !ok {
+			service, ok := e.Object.(*corev1.Service)
+			if !ok {
 				return false
 			}
-			logger := logger.WithValues("name", e.Object.GetName(), "namespace", e.Object.GetNamespace())
+			logger := logger.WithValues("name", service.Name, "namespace", service.Namespace)
 			logger.Info("Deleting a service")
+			serviceCache.Delete(service.Name)
 			return true
 		},
 

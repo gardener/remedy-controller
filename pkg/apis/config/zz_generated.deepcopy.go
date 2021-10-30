@@ -56,6 +56,7 @@ func (in *AzureFailedVMRemedyConfiguration) DeepCopyInto(out *AzureFailedVMRemed
 	*out = *in
 	out.RequeueInterval = in.RequeueInterval
 	out.SyncPeriod = in.SyncPeriod
+	out.NodeSyncPeriod = in.NodeSyncPeriod
 	return
 }
 
@@ -74,6 +75,7 @@ func (in *AzureOrphanedPublicIPRemedyConfiguration) DeepCopyInto(out *AzureOrpha
 	*out = *in
 	out.RequeueInterval = in.RequeueInterval
 	out.SyncPeriod = in.SyncPeriod
+	out.ServiceSyncPeriod = in.ServiceSyncPeriod
 	out.DeletionGracePeriod = in.DeletionGracePeriod
 	return
 }

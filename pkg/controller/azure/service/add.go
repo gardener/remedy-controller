@@ -15,14 +15,23 @@
 package service
 
 import (
-	remedycontroller "github.com/gardener/remedy-controller/pkg/controller"
+	"time"
 
+	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
+	"github.com/gardener/remedy-controller/pkg/apis/config"
+	remedycontroller "github.com/gardener/remedy-controller/pkg/controller"
+	"github.com/gardener/remedy-controller/pkg/controller/azure"
+
+	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -31,14 +40,23 @@ const (
 	// ActuatorName is the name of the Azure service actuator.
 	ActuatorName = "azureservice-actuator"
 	// PredicateName is the name of the predicate of the Azure service controller.
-	PredicateName = "azureservice-load-balancer-ips-changed-predicate"
+	PredicateName = "azureservice-predicate"
+	// PublicIPAddressPredicateName is the name of the predicate of the Azure service controller for filtering publicipaddress events.
+	PublicIPAddressPredicateName = "azureservice-publicipaddress-predicate"
 	// FinalizerName is the finalizer to put on service resources.
 	FinalizerName = "azure.remedy.gardener.cloud/service"
 )
 
 var (
 	// DefaultAddOptions are the default AddOptions for AddToManager.
-	DefaultAddOptions = AddOptions{}
+	DefaultAddOptions = AddOptions{
+		Config: config.AzureOrphanedPublicIPRemedyConfiguration{
+			ServiceSyncPeriod: metav1.Duration{Duration: 4 * time.Hour},
+		},
+	}
+
+	// ObjectLabeler is used to label publicipaddress objects created by this controller.
+	ObjectLabeler = remedycontroller.NewNamespacedObjectLabeler(".")
 )
 
 // AddOptions are options to apply when adding a controller to a manager.
@@ -49,19 +67,32 @@ type AddOptions struct {
 	Client client.Client
 	// Namespace is the namespace for custom resources in the control cluster.
 	Namespace string
+	// Manager is the control cluster manager.
+	Manager manager.Manager
+	// Config is the configuration for the Azure orphaned public IP remedy.
+	Config config.AzureOrphanedPublicIPRemedyConfiguration
 }
 
 // AddToManagerWithOptions adds a controller with the given AddOptions to the given manager.
 func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 	return remedycontroller.Add(mgr, remedycontroller.AddArgs{
-		Actuator:          NewActuator(options.Client, options.Namespace, log.Log.WithName(ActuatorName)),
-		ControllerName:    ControllerName,
-		FinalizerName:     FinalizerName,
-		ControllerOptions: options.Controller,
-		Type:              &corev1.Service{},
+		Actuator:            NewActuator(options.Client, options.Namespace, options.Config.ServiceSyncPeriod.Duration, log.Log.WithName(ActuatorName)),
+		ControllerName:      ControllerName,
+		FinalizerName:       FinalizerName,
+		ControllerOptions:   options.Controller,
+		Type:                &corev1.Service{},
+		ShouldEnsureDeleted: true,
 		Predicates: []predicate.Predicate{
-			NewLoadBalancerIPsChangedPredicate(log.Log.WithName(PredicateName)),
+			NewServicePredicate(log.Log.WithName(PredicateName)),
 		},
+		WatchBuilder: extensionscontroller.NewWatchBuilder(func(ctrl controller.Controller) error {
+			serviceMapper := remedycontroller.NewLabelMapper(ObjectLabeler, azure.ServiceLabel)
+			return ctrl.Watch(
+				source.NewKindWithCache(&azurev1alpha1.PublicIPAddress{}, options.Manager.GetCache()),
+				handler.EnqueueRequestsFromMapFunc(remedycontroller.MapFuncFromMapper(serviceMapper)),
+				remedycontroller.NewOwnedObjectPredicate(&corev1.Service{}, mgr.GetCache(), serviceMapper, FinalizerName, log.Log.WithName(PublicIPAddressPredicateName)),
+			)
+		}),
 	})
 }
 

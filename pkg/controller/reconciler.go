@@ -23,33 +23,33 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 )
 
 type reconciler struct {
-	actuator       Actuator
-	controllerName string
-	finalizerName  string
-	typ            client.Object
-	client         client.Client
-	reader         client.Reader
-	logger         logr.Logger
+	actuator            Actuator
+	controllerName      string
+	finalizerName       string
+	typ                 client.Object
+	shouldEnsureDeleted bool
+	client              client.Client
+	reader              client.Reader
+	logger              logr.Logger
 }
 
 // NewReconciler creates a new generic Reconciler.
-func NewReconciler(mgr manager.Manager, actuator Actuator, controllerName, finalizerName string, typ client.Object, logger logr.Logger) reconcile.Reconciler {
+func NewReconciler(actuator Actuator, controllerName, finalizerName string, typ client.Object, shouldEnsureDeleted bool, logger logr.Logger) reconcile.Reconciler {
 	logger.Info("Creating reconciler", "controllerName", controllerName)
 	return &reconciler{
-		actuator:       actuator,
-		controllerName: controllerName,
-		finalizerName:  finalizerName,
-		typ:            typ,
-		logger:         logger,
+		actuator:            actuator,
+		controllerName:      controllerName,
+		finalizerName:       finalizerName,
+		typ:                 typ,
+		shouldEnsureDeleted: shouldEnsureDeleted,
+		logger:              logger,
 	}
 }
 
@@ -69,22 +69,22 @@ func (r *reconciler) InjectAPIReader(reader client.Reader) error {
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	obj := r.typ.DeepCopyObject().(client.Object)
+	obj.SetName(request.Name)
+	obj.SetNamespace(request.Namespace)
+	logger := r.logger.WithValues("name", obj.GetName(), "namespace", obj.GetNamespace())
+
 	if err := r.client.Get(ctx, request.NamespacedName, obj); err != nil {
 		if apierrors.IsNotFound(err) {
+			if r.shouldEnsureDeleted {
+				return r.ensureDeleted(ctx, obj, logger)
+			}
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, errors.Wrap(err, "could not get object")
 	}
 
-	accessor, err := meta.Accessor(obj)
-	if err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "could not get object accessor")
-	}
-
-	logger := r.logger.WithValues("kind", obj.GetObjectKind().GroupVersionKind(), "name", accessor.GetName(), "namespace", accessor.GetNamespace())
-
 	switch {
-	case accessor.GetDeletionTimestamp() != nil:
+	case obj.GetDeletionTimestamp() != nil:
 		return r.delete(ctx, obj, logger)
 	default:
 		return r.createOrUpdate(ctx, obj, logger)
@@ -98,6 +98,9 @@ func (r *reconciler) createOrUpdate(ctx context.Context, obj client.Object, logg
 	}
 	if shouldFinalize {
 		if err := controllerutils.EnsureFinalizer(ctx, r.reader, r.client, obj, r.finalizerName); err != nil {
+			if apierrors.IsNotFound(err) {
+				return reconcile.Result{}, nil
+			}
 			return reconcile.Result{}, errors.Wrap(err, "could not ensure finalizer")
 		}
 	} else {
@@ -115,7 +118,7 @@ func (r *reconciler) createOrUpdate(ctx context.Context, obj client.Object, logg
 
 	if !shouldFinalize {
 		logger.Info("Removing finalizer")
-		if err := controllerutils.RemoveFinalizer(ctx, r.reader, r.client, obj, r.finalizerName); err != nil {
+		if err := controllerutils.RemoveFinalizer(ctx, r.reader, r.client, obj, r.finalizerName); client.IgnoreNotFound(err) != nil {
 			return reconcile.Result{}, errors.Wrap(err, "could not remove finalizer")
 		}
 		return reconcile.Result{}, nil
@@ -133,15 +136,29 @@ func (r *reconciler) delete(ctx context.Context, obj client.Object, logger logr.
 	}
 
 	logger.Info("Reconciling object deletion")
-	if err := r.actuator.Delete(ctx, obj); err != nil {
+	requeueAfter, err := r.actuator.Delete(ctx, obj)
+	if err != nil {
 		return reconcileErr(errors.Wrap(err, "could not reconcile object deletion"))
 	}
 	logger.Info("Successfully reconciled object deletion")
 
 	logger.Info("Removing finalizer")
-	if err := controllerutils.RemoveFinalizer(ctx, r.reader, r.client, obj, r.finalizerName); err != nil {
+	if err := controllerutils.RemoveFinalizer(ctx, r.reader, r.client, obj, r.finalizerName); client.IgnoreNotFound(err) != nil {
 		return reconcile.Result{}, errors.Wrap(err, "could not remove finalizer")
 	}
+
+	if requeueAfter != time.Duration(0) {
+		return reconcile.Result{RequeueAfter: requeueAfter}, nil
+	}
+	return reconcile.Result{}, nil
+}
+
+func (r *reconciler) ensureDeleted(ctx context.Context, obj client.Object, logger logr.Logger) (reconcile.Result, error) {
+	logger.Info("Ensuring object deletion")
+	if _, err := r.actuator.Delete(ctx, obj); err != nil {
+		return reconcileErr(errors.Wrap(err, "could not ensure object deletion"))
+	}
+	logger.Info("Successfully ensured object deletion")
 
 	return reconcile.Result{}, nil
 }

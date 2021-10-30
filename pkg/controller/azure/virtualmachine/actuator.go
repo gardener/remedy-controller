@@ -184,12 +184,12 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj client.Object) (reque
 }
 
 // Delete reconciles object deletion.
-func (a *actuator) Delete(ctx context.Context, obj client.Object) error {
+func (a *actuator) Delete(ctx context.Context, obj client.Object) (requeueAfter time.Duration, err error) {
 	// Cast object to VirtualMachine
 	var vm *azurev1alpha1.VirtualMachine
 	var ok bool
 	if vm, ok = obj.(*azurev1alpha1.VirtualMachine); !ok {
-		return errors.New("reconciled object is not a virtualmachine")
+		return 0, errors.New("reconciled object is not a virtualmachine")
 	}
 
 	// Determine VM name
@@ -208,17 +208,17 @@ func (a *actuator) Delete(ctx context.Context, obj client.Object) error {
 
 		// Update resource status
 		if err := a.updateVirtualMachineStatus(ctx, vm, azureVM, failedOperations); err != nil {
-			return err
+			return 0, err
 		}
 
 		// If the failed operation has been attempted less than the configured max attempts, requeue with exponential backoff
 		if failedOperation.Attempts < a.config.MaxGetAttempts {
-			return &controllererror.RequeueAfterError{
+			return 0, &controllererror.RequeueAfterError{
 				Cause:        err,
 				RequeueAfter: a.config.RequeueInterval.Duration * (1 << (failedOperation.Attempts - 1)),
 			}
 		}
-		return nil
+		return a.config.SyncPeriod.Duration, nil
 	}
 	azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeGetVirtualMachine)
 
@@ -226,7 +226,7 @@ func (a *actuator) Delete(ctx context.Context, obj client.Object) error {
 	a.setVMStatesGauge(azureVM, vmName)
 
 	// Update resource status
-	return a.updateVirtualMachineStatus(ctx, vm, azureVM, failedOperations)
+	return 0, a.updateVirtualMachineStatus(ctx, vm, azureVM, failedOperations)
 }
 
 // ShouldFinalize returns true if the object should be finalized.
@@ -277,7 +277,7 @@ func (a *actuator) updateVirtualMachineStatus(
 	if err := extensionscontroller.TryUpdateStatus(ctx, retry.DefaultBackoff, a.client, vm, func() error {
 		vm.Status = status
 		return nil
-	}); err != nil {
+	}); client.IgnoreNotFound(err) != nil {
 		return errors.Wrap(err, "could not update virtualmachine status")
 	}
 	return nil

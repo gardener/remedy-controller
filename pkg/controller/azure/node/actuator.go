@@ -39,18 +39,20 @@ const (
 )
 
 type actuator struct {
-	client    client.Client
-	namespace string
-	logger    logr.Logger
+	client     client.Client
+	namespace  string
+	syncPeriod time.Duration
+	logger     logr.Logger
 }
 
 // NewActuator creates a new Actuator.
-func NewActuator(client client.Client, namespace string, logger logr.Logger) controller.Actuator {
-	logger.Info("Creating actuator", "namespace", namespace)
+func NewActuator(client client.Client, namespace string, syncPeriod time.Duration, logger logr.Logger) controller.Actuator {
+	logger.Info("Creating actuator", "namespace", namespace, "syncPeriod", syncPeriod)
 	return &actuator{
-		client:    client,
-		namespace: namespace,
-		logger:    logger,
+		client:     client,
+		namespace:  namespace,
+		syncPeriod: syncPeriod,
+		logger:     logger,
 	}
 }
 
@@ -65,13 +67,13 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj client.Object) (reque
 
 	// Initialize labels
 	vmLabels := map[string]string{
-		azure.NodeLabel: node.Name,
+		azure.NodeLabel: ObjectLabeler.GetLabelValue(node),
 	}
 
 	// Get node properties
 	hostname := node.Labels[HostnameLabel]
 	providerID := node.Spec.ProviderID
-	notReadyOrUnreachable := !isNodeReady(node) || isNodeUnreachable(node)
+	notReadyOrUnreachable := isNodeNotReadyOrUnreachable(node)
 
 	// Create or update the VirtualMachine object for the node
 	vm := &azurev1alpha1.VirtualMachine{
@@ -94,16 +96,16 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj client.Object) (reque
 		return 0, errors.Wrap(err, "could not create or update virtualmachine")
 	}
 
-	return 0, nil
+	return a.syncPeriod, nil
 }
 
 // Delete reconciles object deletion.
-func (a *actuator) Delete(ctx context.Context, obj client.Object) error {
+func (a *actuator) Delete(ctx context.Context, obj client.Object) (requeueAfter time.Duration, err error) {
 	// Cast object to Node
 	var node *corev1.Node
 	var ok bool
 	if node, ok = obj.(*corev1.Node); !ok {
-		return errors.New("reconciled object is not a Node")
+		return 0, errors.New("reconciled object is not a Node")
 	}
 
 	// Delete the VirtualMachine object for the node
@@ -115,15 +117,19 @@ func (a *actuator) Delete(ctx context.Context, obj client.Object) error {
 	}
 	a.logger.Info("Deleting virtualmachine", "name", vm.Name, "namespace", vm.Namespace)
 	if err := client.IgnoreNotFound(a.client.Delete(ctx, vm)); err != nil {
-		return errors.Wrap(err, "could not delete virtualmachine")
+		return 0, errors.Wrap(err, "could not delete virtualmachine")
 	}
 
-	return nil
+	return 0, nil
 }
 
 // ShouldFinalize returns true if the object should be finalized.
 func (a *actuator) ShouldFinalize(_ context.Context, _ client.Object) (bool, error) {
 	return true, nil
+}
+
+func isNodeNotReadyOrUnreachable(node *corev1.Node) bool {
+	return !isNodeReady(node) || isNodeUnreachable(node)
 }
 
 func isNodeReady(node *corev1.Node) bool {

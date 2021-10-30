@@ -17,13 +17,13 @@ package publicipaddress
 import (
 	"context"
 	"strconv"
-	"strings"
 	"time"
 
 	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
 	"github.com/gardener/remedy-controller/pkg/apis/config"
 	"github.com/gardener/remedy-controller/pkg/controller"
 	controllerazure "github.com/gardener/remedy-controller/pkg/controller/azure"
+	"github.com/gardener/remedy-controller/pkg/controller/azure/service"
 	"github.com/gardener/remedy-controller/pkg/utils"
 	"github.com/gardener/remedy-controller/pkg/utils/azure"
 
@@ -125,12 +125,12 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj client.Object) (reque
 }
 
 // Delete reconciles object deletion.
-func (a *actuator) Delete(ctx context.Context, obj client.Object) error {
+func (a *actuator) Delete(ctx context.Context, obj client.Object) (requeueAfter time.Duration, err error) {
 	// Cast object to PublicIPAddress
 	var pubip *azurev1alpha1.PublicIPAddress
 	var ok bool
 	if pubip, ok = obj.(*azurev1alpha1.PublicIPAddress); !ok {
-		return errors.New("reconciled object is not a publicipaddress")
+		return 0, errors.New("reconciled object is not a publicipaddress")
 	}
 
 	// Initialize failed operations from PublicIPAddress status
@@ -146,23 +146,23 @@ func (a *actuator) Delete(ctx context.Context, obj client.Object) error {
 
 		// Update resource status
 		if err := a.updatePublicIPAddressStatus(ctx, pubip, azurePublicIP, failedOperations); err != nil {
-			return err
+			return 0, err
 		}
 
 		// If the failed operation has been attempted less than the configured max attempts, requeue with exponential backoff
 		if failedOperation.Attempts < a.config.MaxGetAttempts {
-			return &controllererror.RequeueAfterError{
+			return 0, &controllererror.RequeueAfterError{
 				Cause:        err,
 				RequeueAfter: a.config.RequeueInterval.Duration * (1 << (failedOperation.Attempts - 1)),
 			}
 		}
-		return nil
+		return a.config.SyncPeriod.Duration, nil
 	}
 	azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeGetPublicIPAddress)
 
 	// Update resource status
 	if err := a.updatePublicIPAddressStatus(ctx, pubip, azurePublicIP, failedOperations); err != nil {
-		return err
+		return 0, err
 	}
 
 	// Clean the Azure public IP address if it still exists and the deletion grace period has elapsed
@@ -170,7 +170,7 @@ func (a *actuator) Delete(ctx context.Context, obj client.Object) error {
 		// If within the deletion grace period, requeue so we could check again
 		if pubip.DeletionTimestamp != nil &&
 			!a.timestamper.Now().After(pubip.DeletionTimestamp.Add(a.config.DeletionGracePeriod.Duration)) {
-			return &controllererror.RequeueAfterError{
+			return 0, &controllererror.RequeueAfterError{
 				Cause:        errors.New("public IP address still exists"),
 				RequeueAfter: a.config.RequeueInterval.Duration,
 			}
@@ -185,17 +185,17 @@ func (a *actuator) Delete(ctx context.Context, obj client.Object) error {
 
 			// Update resource status
 			if err := a.updatePublicIPAddressStatus(ctx, pubip, azurePublicIP, failedOperations); err != nil {
-				return err
+				return 0, err
 			}
 
 			// If the failed operation has been attempted less than the configured max attempts, requeue with exponential backoff
 			if failedOperation.Attempts < a.config.MaxCleanAttempts {
-				return &controllererror.RequeueAfterError{
+				return 0, &controllererror.RequeueAfterError{
 					Cause:        err,
 					RequeueAfter: a.config.RequeueInterval.Duration * (1 << (failedOperation.Attempts - 1)),
 				}
 			}
-			return nil
+			return a.config.SyncPeriod.Duration, nil
 		}
 		azurev1alpha1.DeleteFailedOperation(&failedOperations, azurev1alpha1.OperationTypeCleanPublicIPAddress)
 
@@ -204,11 +204,11 @@ func (a *actuator) Delete(ctx context.Context, obj client.Object) error {
 
 		// Update resource status
 		if err := a.updatePublicIPAddressStatus(ctx, pubip, nil, failedOperations); err != nil {
-			return err
+			return 0, err
 		}
 	}
 
-	return nil
+	return 0, nil
 }
 
 // ShouldFinalize returns true if the object should be finalized.
@@ -237,8 +237,8 @@ func (a *actuator) getAzurePublicIPAddress(ctx context.Context, pubip *azurev1al
 	}
 
 	// If an Azure public IP address is found, compare its service tag to the PublicIPAddress service name and return it only if there is a match
-	serviceName := getServiceName(pubip)
-	if azurePublicIP != nil && (serviceName == "" || azurePublicIP.Tags[ServiceTag] != nil && *azurePublicIP.Tags[ServiceTag] == serviceName) {
+	serviceName := service.ObjectLabeler.GetNamespacedName(pubip.Labels[controllerazure.ServiceLabel]).String()
+	if azurePublicIP != nil && (serviceName == "/" || azurePublicIP.Tags[ServiceTag] != nil && *azurePublicIP.Tags[ServiceTag] == serviceName) {
 		return azurePublicIP, nil
 	}
 
@@ -283,7 +283,7 @@ func (a *actuator) updatePublicIPAddressStatus(
 	if err := extensionscontroller.TryUpdateStatus(ctx, retry.DefaultBackoff, a.client, pubip, func() error {
 		pubip.Status = status
 		return nil
-	}); err != nil {
+	}); client.IgnoreNotFound(err) != nil {
 		return errors.Wrap(err, "could not update publicipaddress status")
 	}
 	return nil
@@ -300,13 +300,6 @@ func getFailedOperations(pubip *azurev1alpha1.PublicIPAddress) []azurev1alpha1.F
 
 func shouldNotClean(pubip *azurev1alpha1.PublicIPAddress) bool {
 	return pubip.Annotations[controllerazure.DoNotCleanAnnotation] == strconv.FormatBool(true)
-}
-
-func getServiceName(pubip *azurev1alpha1.PublicIPAddress) string {
-	if parts := strings.Split(pubip.Labels[controllerazure.ServiceLabel], "."); len(parts) == 2 {
-		return parts[0] + "/" + parts[1]
-	}
-	return ""
 }
 
 func getProvisioningState(azurePublicIP *network.PublicIPAddress) network.ProvisioningState {

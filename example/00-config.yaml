@@ -10,11 +10,13 @@ azure:
   orphanedPublicIPRemedy:
     requeueInterval: 1m
     syncPeriod: 10h
+    serviceSyncPeriod: 4h
     deletionGracePeriod: 5m
     maxGetAttempts: 5
     maxCleanAttempts: 5
   failedVMRemedy:
     requeueInterval: 30s
     syncPeriod: 2h
+    nodeSyncPeriod: 4h
     maxGetAttempts: 5
     maxReapplyAttempts: 3

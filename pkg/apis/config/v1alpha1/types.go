@@ -22,7 +22,7 @@ import (
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ControllerConfiguration defines the configuration for the GCP provider.
+// ControllerConfiguration defines the configuration for the remedy controller.
 type ControllerConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
 
@@ -46,14 +46,16 @@ type AzureConfiguration struct {
 
 // AzureOrphanedPublicIPRemedyConfiguration defines the configuration for the Azure orphaned public IP remedy.
 type AzureOrphanedPublicIPRemedyConfiguration struct {
-	// RequeueInterval specifies the time after which reconciliation requests will be
-	// requeued in case of an error or a transient state. Applies to both creation/update and deletion.
+	// RequeueInterval specifies the time after which PublicIPAddress reconciliation requests will be
+	// requeued in case of an error or a transient state.
 	// +optional
 	RequeueInterval metav1.Duration `json:"requeueInterval,omitempty"`
 	// SyncPeriod determines the minimum frequency at which PublicIPAddress resources will be reconciled.
-	// Only applies to creation/update.
 	// +optional
 	SyncPeriod metav1.Duration `json:"syncPeriod,omitempty"`
+	// ServiceSyncPeriod determines the minimum frequency at which Service resources will be reconciled.
+	// +optional
+	ServiceSyncPeriod metav1.Duration `json:"serviceSyncPeriod,omitempty"`
 	// DeletionGracePeriod specifies the period after which a public ip address will be
 	// deleted by the controller if it still exists.
 	// +optional
@@ -68,14 +70,16 @@ type AzureOrphanedPublicIPRemedyConfiguration struct {
 
 // AzureFailedVMRemedyConfiguration defines the configuration for the Azure failed VM remedy.
 type AzureFailedVMRemedyConfiguration struct {
-	// RequeueInterval specifies the time after which reconciliation requests will be
-	// requeued in case of an error or a transient state. Applies to both creation/update and deletion.
+	// RequeueInterval specifies the time after which VirtualMachine reconciliation requests will be
+	// requeued in case of an error or a transient state.
 	// +optional
 	RequeueInterval metav1.Duration `json:"requeueInterval,omitempty"`
 	// SyncPeriod determines the minimum frequency at which VirtualMachine resources will be reconciled.
-	// Only applies to creation/update.
 	// +optional
 	SyncPeriod metav1.Duration `json:"syncPeriod,omitempty"`
+	// NodeSyncPeriod determines the minimum frequency at which Node resources will be reconciled.
+	// +optional
+	NodeSyncPeriod metav1.Duration `json:"nodeSyncPeriod,omitempty"`
 	// MaxGetAttempts specifies the max attempts to get an Azure VM.
 	// +optional
 	MaxGetAttempts int `json:"maxGetAttempts,omitempty"`

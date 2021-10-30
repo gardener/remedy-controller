@@ -43,6 +43,8 @@ var _ = Describe("Actuator", func() {
 		hostname   = "test-hostname"
 		providerID = "test-provider-id"
 		namespace  = "default"
+
+		syncPeriod = 1 * time.Minute
 	)
 
 	var (
@@ -67,7 +69,7 @@ var _ = Describe("Actuator", func() {
 		c = mockclient.NewMockClient(ctrl)
 
 		logger = log.Log.WithName("test")
-		actuator = azurenode.NewActuator(c, namespace, logger)
+		actuator = azurenode.NewActuator(c, namespace, syncPeriod, logger)
 
 		node = &corev1.Node{
 			ObjectMeta: metav1.ObjectMeta{
@@ -123,7 +125,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, node)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should fail when creating the VirtualMachine object for a node and an error occurs", func() {
@@ -145,7 +147,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, node)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should not update the VirtualMachine object for a node if it already exists and is properly initialized", func() {
@@ -157,7 +159,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, node)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should retry when updating the VirtualMachine object for a node and a Conflict error occurs", func() {
@@ -176,7 +178,7 @@ var _ = Describe("Actuator", func() {
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, node)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(requeueAfter).To(Equal(time.Duration(0)))
+			Expect(requeueAfter).To(Equal(syncPeriod))
 		})
 
 		It("should fail when updating the VirtualMachine object for a node and an error different from Conflict occurs", func() {
@@ -196,19 +198,23 @@ var _ = Describe("Actuator", func() {
 		It("should delete the VirtualMachine object for a node", func() {
 			c.EXPECT().Delete(ctx, emptyVM).Return(nil)
 
-			Expect(actuator.Delete(ctx, node)).To(Succeed())
+			requeueAfter, err := actuator.Delete(ctx, node)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
 
 		It("should succeed when deleting the VirtualMachine object for a node and a NotFound error occurs", func() {
 			c.EXPECT().Delete(ctx, emptyVM).Return(apierrors.NewNotFound(schema.GroupResource{}, vm.Name))
 
-			Expect(actuator.Delete(ctx, node)).To(Succeed())
+			requeueAfter, err := actuator.Delete(ctx, node)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(requeueAfter).To(Equal(time.Duration(0)))
 		})
 
 		It("should fail when deleting the VirtualMachine object for a node and an error different from NotFound occurs", func() {
 			c.EXPECT().Delete(ctx, emptyVM).Return(apierrors.NewInternalError(errors.New("test")))
 
-			err := actuator.Delete(ctx, node)
+			_, err := actuator.Delete(ctx, node)
 			Expect(err).To(MatchError("could not delete virtualmachine: Internal error occurred: test"))
 		})
 	})

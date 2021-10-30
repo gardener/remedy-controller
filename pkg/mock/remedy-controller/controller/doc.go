@@ -12,6 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate mockgen -package controller -destination=mocks.go github.com/gardener/remedy-controller/pkg/controller Actuator
+//go:generate mockgen -package controller -destination=mocks.go github.com/gardener/remedy-controller/pkg/controller Actuator,Mapper
 
 package controller

@@ -141,16 +141,20 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 
 			publicIPAddressCtrlOpts.Completed().Apply(&azurepublicipaddress.DefaultAddOptions.Controller)
 			configFileOpts.Completed().ApplyAzureOrphanedPublicIPRemedy(&azurepublicipaddress.DefaultAddOptions.Config)
+			configFileOpts.Completed().ApplyAzureOrphanedPublicIPRemedy(&azureservice.DefaultAddOptions.Config)
 			virtualMachineCtrlOpts.Completed().Apply(&azurevirtualmachine.DefaultAddOptions.Controller)
 			configFileOpts.Completed().ApplyAzureFailedVMRemedy(&azurevirtualmachine.DefaultAddOptions.Config)
+			configFileOpts.Completed().ApplyAzureFailedVMRemedy(&azurenode.DefaultAddOptions.Config)
 			serviceCtrlOpts.Completed().Apply(&azureservice.DefaultAddOptions.Controller)
 			nodeCtrlOpts.Completed().Apply(&azurenode.DefaultAddOptions.Controller)
 			reconcilerOpts.Completed().Apply(&azurepublicipaddress.DefaultAddOptions.InfraConfigPath)
 			reconcilerOpts.Completed().Apply(&azurevirtualmachine.DefaultAddOptions.InfraConfigPath)
 			azureservice.DefaultAddOptions.Client = mgr.GetClient()
 			azureservice.DefaultAddOptions.Namespace = mgrOpts.Completed().Namespace
+			azureservice.DefaultAddOptions.Manager = mgr
 			azurenode.DefaultAddOptions.Client = mgr.GetClient()
 			azurenode.DefaultAddOptions.Namespace = mgrOpts.Completed().Namespace
+			azurenode.DefaultAddOptions.Manager = mgr
 
 			logger.Info("Adding controllers to managers")
 			if err := controllerSwitches.Completed().AddToManager(mgr); err != nil {

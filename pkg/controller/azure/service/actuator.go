@@ -34,18 +34,20 @@ import (
 )
 
 type actuator struct {
-	client    client.Client
-	namespace string
-	logger    logr.Logger
+	client     client.Client
+	namespace  string
+	syncPeriod time.Duration
+	logger     logr.Logger
 }
 
 // NewActuator creates a new Actuator.
-func NewActuator(client client.Client, namespace string, logger logr.Logger) controller.Actuator {
-	logger.Info("Creating actuator", "namespace", namespace)
+func NewActuator(client client.Client, namespace string, syncPeriod time.Duration, logger logr.Logger) controller.Actuator {
+	logger.Info("Creating actuator", "namespace", namespace, "syncPeriod", syncPeriod)
 	return &actuator{
-		client:    client,
-		namespace: namespace,
-		logger:    logger,
+		client:     client,
+		namespace:  namespace,
+		syncPeriod: syncPeriod,
+		logger:     logger,
 	}
 }
 
@@ -60,7 +62,7 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj client.Object) (reque
 
 	// Initialize labels
 	pubipLabels := map[string]string{
-		azure.ServiceLabel: svc.Namespace + "." + svc.Name,
+		azure.ServiceLabel: ObjectLabeler.GetLabelValue(svc),
 	}
 
 	// Get LoadBalancer IPs
@@ -114,16 +116,21 @@ func (a *actuator) CreateOrUpdate(ctx context.Context, obj client.Object) (reque
 		}
 	}
 
-	return 0, nil
+	return a.syncPeriod, nil
 }
 
 // Delete reconciles object deletion.
-func (a *actuator) Delete(ctx context.Context, obj client.Object) error {
+func (a *actuator) Delete(ctx context.Context, obj client.Object) (requeueAfter time.Duration, err error) {
 	// Cast object to Service
 	var svc *corev1.Service
 	var ok bool
 	if svc, ok = obj.(*corev1.Service); !ok {
-		return errors.New("reconciled object is not a service")
+		return 0, errors.New("reconciled object is not a service")
+	}
+
+	// Initialize labels
+	pubipLabels := map[string]string{
+		azure.ServiceLabel: ObjectLabeler.GetLabelValue(svc),
 	}
 
 	// Get LoadBalancer IPs
@@ -139,11 +146,25 @@ func (a *actuator) Delete(ctx context.Context, obj client.Object) error {
 		}
 		a.logger.Info("Deleting publicipaddress", "name", pubip.Name, "namespace", pubip.Namespace)
 		if err := client.IgnoreNotFound(a.client.Delete(ctx, pubip)); err != nil {
-			return errors.Wrap(err, "could not delete publicipaddress")
+			return 0, errors.Wrap(err, "could not delete publicipaddress")
 		}
 	}
 
-	return nil
+	// Delete PublicIPAddress objects for non-existing LoadBalancer IPs
+	pubipList := &azurev1alpha1.PublicIPAddressList{}
+	if err := a.client.List(ctx, pubipList, client.InNamespace(a.namespace), client.MatchingLabels(pubipLabels)); err != nil {
+		return 0, errors.Wrap(err, "could not list publicipaddresses")
+	}
+	for _, pubip := range pubipList.Items {
+		if _, ok := ips[pubip.Spec.IPAddress]; !ok {
+			a.logger.Info("Deleting publicipaddress", "name", pubip.Name, "namespace", pubip.Namespace)
+			if err := client.IgnoreNotFound(a.client.Delete(ctx, &pubip)); err != nil {
+				return 0, errors.Wrap(err, "could not delete publicipaddress")
+			}
+		}
+	}
+
+	return 0, nil
 }
 
 // ShouldFinalize returns true if the object should be finalized.

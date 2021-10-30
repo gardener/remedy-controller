@@ -34,7 +34,7 @@ type Actuator interface {
 	// CreateOrUpdate reconciles object creation or update.
 	CreateOrUpdate(context.Context, client.Object) (time.Duration, error)
 	// Delete reconciles object deletion.
-	Delete(context.Context, client.Object) error
+	Delete(context.Context, client.Object) (time.Duration, error)
 	// ShouldFinalize returns true if the object should be finalized.
 	ShouldFinalize(context.Context, client.Object) (bool, error)
 }
@@ -52,6 +52,8 @@ type AddArgs struct {
 	ControllerOptions controller.Options
 	// Type is the object type to watch.
 	Type client.Object
+	// ShouldEnsureDeleted specifies that the controller should ensure the object is properly deleted on not found.
+	ShouldEnsureDeleted bool
 	// Predicates are the predicates to use when watching objects.
 	Predicates []predicate.Predicate
 	// WatchBuilder defines additional watches that should be set up.
@@ -65,7 +67,7 @@ func DefaultPredicates() []predicate.Predicate {
 
 // Add creates a new controller and adds it to the given manager using the given args.
 func Add(mgr manager.Manager, args AddArgs) error {
-	args.ControllerOptions.Reconciler = NewReconciler(mgr, args.Actuator, args.ControllerName, args.FinalizerName, args.Type, log.Log.WithName(args.ControllerName))
+	args.ControllerOptions.Reconciler = NewReconciler(args.Actuator, args.ControllerName, args.FinalizerName, args.Type, args.ShouldEnsureDeleted, log.Log.WithName(args.ControllerName))
 	return add(mgr, args)
 }
 

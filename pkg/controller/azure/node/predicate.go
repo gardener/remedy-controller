@@ -49,7 +49,7 @@ func NewNodePredicate(logger logr.Logger) predicate.Predicate {
 			return true
 		},
 
-		UpdateFunc: func(e event.UpdateEvent) bool {
+		UpdateFunc: func(e event.UpdateEvent) (result bool) {
 			if e.ObjectOld == nil || e.ObjectNew == nil {
 				logger.Error(nil, "UpdateEvent has no no old or new object", "event", e)
 				return false
@@ -65,7 +65,15 @@ func NewNodePredicate(logger logr.Logger) predicate.Predicate {
 			if v, ok := nodeCache.Get(newNode.Name); ok {
 				cachedNode = v.(*corev1.Node)
 			}
-			defer nodeCache.Set(newNode.Name, newNode, nodeCacheTTL)
+			defer func() {
+				// In order to prevent lock contention and scalability issues when the cache contains a large number
+				// of objects, only update the cache if we detected a change we are interested in
+				// We can avoid updating the cache on other changes since they won't affect subsequent comparisons
+				// with the cached object
+				if result {
+					nodeCache.Set(newNode.Name, newNode, nodeCacheTTL)
+				}
+			}()
 			logger := logger.WithValues("name", newNode.Name)
 			if cachedNode == nil {
 				logger.Info("Updating a node that is missing in the node cache")

@@ -27,13 +27,14 @@ import (
 )
 
 const (
-	nodeCacheTTL = 10 * time.Hour
+	// CacheTTL is the TTL for node cache entries.
+	CacheTTL = 10 * time.Hour
 )
 
-// NewNodePredicate creates a new predicate that filters only relevant node events,
+// NewPredicate creates a new predicate that filters only relevant node events,
 // such as creating or deleting a node, updating the deletion timestamp of a node,
 // or updating the ready condition or unreachable taint of a node.
-func NewNodePredicate(nodeCache utils.ExpiringCache, logger logr.Logger) predicate.Predicate {
+func NewPredicate(nodeCache utils.ExpiringCache, logger logr.Logger) predicate.Predicate {
 	return &nodePredicate{
 		nodeCache: nodeCache,
 		logger:    logger,
@@ -57,7 +58,7 @@ func (p *nodePredicate) Create(e event.CreateEvent) bool {
 	}
 	logger := p.logger.WithValues("name", node.Name)
 	logger.Info("Creating a node")
-	p.nodeCache.Set(node.Name, nodeProjectionFromNode(node), nodeCacheTTL)
+	p.nodeCache.Set(node.Name, NewProjection(node), CacheTTL)
 	return true
 }
 
@@ -75,9 +76,9 @@ func (p *nodePredicate) Update(e event.UpdateEvent) (result bool) {
 	if newNode, ok = e.ObjectNew.(*corev1.Node); !ok {
 		return false
 	}
-	var cachedNode *nodeProjection
+	var cachedNode *Projection
 	if v, ok := p.nodeCache.Get(newNode.Name); ok {
-		cachedNode = v.(*nodeProjection)
+		cachedNode = v.(*Projection)
 	}
 	defer func() {
 		// In order to prevent lock contention and scalability issues when the cache contains a large number
@@ -85,7 +86,7 @@ func (p *nodePredicate) Update(e event.UpdateEvent) (result bool) {
 		// We can avoid updating the cache on other changes since they won't affect subsequent comparisons
 		// with the cached object
 		if result {
-			p.nodeCache.Set(newNode.Name, nodeProjectionFromNode(newNode), nodeCacheTTL)
+			p.nodeCache.Set(newNode.Name, NewProjection(newNode), CacheTTL)
 		}
 	}()
 	logger := p.logger.WithValues("name", newNode.Name)
@@ -93,11 +94,11 @@ func (p *nodePredicate) Update(e event.UpdateEvent) (result bool) {
 		logger.Info("Updating a node that is missing in the node cache")
 		return true
 	}
-	if newNode.DeletionTimestamp != oldNode.DeletionTimestamp || newNode.DeletionTimestamp != cachedNode.deletionTimestamp {
+	if newNode.DeletionTimestamp != oldNode.DeletionTimestamp || newNode.DeletionTimestamp != cachedNode.DeletionTimestamp {
 		logger.Info("Updating the deletion timestamp of a node")
 		return true
 	}
-	if isNodeNotReadyOrUnreachable(newNode) != isNodeNotReadyOrUnreachable(oldNode) || isNodeNotReadyOrUnreachable(newNode) != cachedNode.notReadyOrUnreachable {
+	if isNodeNotReadyOrUnreachable(newNode) != isNodeNotReadyOrUnreachable(oldNode) || isNodeNotReadyOrUnreachable(newNode) != cachedNode.NotReadyOrUnreachable {
 		logger.Info("Updating the ready condition or unreachable taint of a node")
 		return true
 	}
@@ -125,16 +126,17 @@ func (p *nodePredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
 
-// nodeProjection captures only the essential properties of a node that is being cached.
+// Projection captures only the essential properties of a node that is being cached.
 // By using projections, we prevent the cache from getting too big for clusters with large number of nodes.
-type nodeProjection struct {
-	deletionTimestamp     *metav1.Time
-	notReadyOrUnreachable bool
+type Projection struct {
+	DeletionTimestamp     *metav1.Time
+	NotReadyOrUnreachable bool
 }
 
-func nodeProjectionFromNode(node *corev1.Node) *nodeProjection {
-	return &nodeProjection{
-		deletionTimestamp:     node.DeletionTimestamp,
-		notReadyOrUnreachable: isNodeNotReadyOrUnreachable(node),
+// NewProjection creates a new Projection from the given node.
+func NewProjection(node *corev1.Node) *Projection {
+	return &Projection{
+		DeletionTimestamp:     node.DeletionTimestamp,
+		NotReadyOrUnreachable: isNodeNotReadyOrUnreachable(node),
 	}
 }

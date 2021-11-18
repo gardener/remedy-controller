@@ -28,13 +28,14 @@ import (
 )
 
 const (
-	serviceCacheTTL = 10 * time.Hour
+	// CacheTTL is the TTL for service cache entries.
+	CacheTTL = 10 * time.Hour
 )
 
-// NewServicePredicate creates a new predicate that filters only relevant service events,
+// NewPredicate creates a new predicate that filters only relevant service events,
 // such as creating or deleting a service, updating the deletion timestamp of a service with LoadBalancer IPs,
 // updating the ignore annotation of a service with LoadBalancer IPs, and updating the service LoadBalancer IPs.
-func NewServicePredicate(serviceCache utils.ExpiringCache, logger logr.Logger) predicate.Predicate {
+func NewPredicate(serviceCache utils.ExpiringCache, logger logr.Logger) predicate.Predicate {
 	return &servicePredicate{
 		serviceCache: serviceCache,
 		logger:       logger,
@@ -58,7 +59,7 @@ func (p *servicePredicate) Create(e event.CreateEvent) bool {
 	}
 	logger := p.logger.WithValues("name", service.Name, "namespace", service.Namespace)
 	logger.Info("Creating a service")
-	p.serviceCache.Set(service.Name, serviceProjectionFromService(service), serviceCacheTTL)
+	p.serviceCache.Set(service.Name, NewProjection(service), CacheTTL)
 	return true
 }
 
@@ -76,9 +77,9 @@ func (p *servicePredicate) Update(e event.UpdateEvent) (result bool) {
 	if newService, ok = e.ObjectNew.(*corev1.Service); !ok {
 		return false
 	}
-	var cachedService *serviceProjection
+	var cachedService *Projection
 	if v, ok := p.serviceCache.Get(newService.Name); ok {
-		cachedService = v.(*serviceProjection)
+		cachedService = v.(*Projection)
 	}
 	defer func() {
 		// In order to prevent lock contention and scalability issues when the cache contains a large number
@@ -86,7 +87,7 @@ func (p *servicePredicate) Update(e event.UpdateEvent) (result bool) {
 		// We can avoid updating the cache on other changes since they won't affect subsequent comparisons
 		// with the cached object
 		if result {
-			p.serviceCache.Set(newService.Name, serviceProjectionFromService(newService), serviceCacheTTL)
+			p.serviceCache.Set(newService.Name, NewProjection(newService), CacheTTL)
 		}
 	}()
 	logger := p.logger.WithValues("name", newService.Name, "namespace", newService.Namespace)
@@ -95,15 +96,15 @@ func (p *servicePredicate) Update(e event.UpdateEvent) (result bool) {
 		return true
 	}
 	oldIPs, newIPs := getServiceLoadBalancerIPs(oldService), getServiceLoadBalancerIPs(newService)
-	if len(newIPs) > 0 && (newService.DeletionTimestamp != oldService.DeletionTimestamp || newService.DeletionTimestamp != cachedService.deletionTimestamp) {
+	if len(newIPs) > 0 && (newService.DeletionTimestamp != oldService.DeletionTimestamp || newService.DeletionTimestamp != cachedService.DeletionTimestamp) {
 		logger.Info("Updating the deletion timestamp of a service with LoadBalancer IPs")
 		return true
 	}
-	if len(newIPs) > 0 && (shouldIgnoreService(newService) != shouldIgnoreService(oldService) || shouldIgnoreService(newService) != cachedService.shouldIgnore) {
+	if len(newIPs) > 0 && (shouldIgnoreService(newService) != shouldIgnoreService(oldService) || shouldIgnoreService(newService) != cachedService.ShouldIgnore) {
 		logger.Info("Updating the ignore annotation of a service with LoadBalancer IPs")
 		return true
 	}
-	if !reflect.DeepEqual(newIPs, oldIPs) || !reflect.DeepEqual(newIPs, cachedService.loadBalancerIPs) {
+	if !reflect.DeepEqual(newIPs, oldIPs) || !reflect.DeepEqual(newIPs, cachedService.LoadBalancerIPs) {
 		logger.Info("Updating service LoadBalancer IPs")
 		return true
 	}
@@ -131,18 +132,19 @@ func (p *servicePredicate) Generic(e event.GenericEvent) bool {
 	return false
 }
 
-// serviceProjection captures only the essential properties of a service that is being cached.
+// Projection captures only the essential properties of a service that is being cached.
 // By using projections, we prevent the cache from getting too big for clusters with large number of services.
-type serviceProjection struct {
-	deletionTimestamp *metav1.Time
-	shouldIgnore      bool
-	loadBalancerIPs   map[string]bool
+type Projection struct {
+	DeletionTimestamp *metav1.Time
+	ShouldIgnore      bool
+	LoadBalancerIPs   map[string]bool
 }
 
-func serviceProjectionFromService(service *corev1.Service) *serviceProjection {
-	return &serviceProjection{
-		deletionTimestamp: service.DeletionTimestamp,
-		shouldIgnore:      shouldIgnoreService(service),
-		loadBalancerIPs:   getServiceLoadBalancerIPs(service),
+// NewProjection creates a new Projection from the given service.
+func NewProjection(service *corev1.Service) *Projection {
+	return &Projection{
+		DeletionTimestamp: service.DeletionTimestamp,
+		ShouldIgnore:      shouldIgnoreService(service),
+		LoadBalancerIPs:   getServiceLoadBalancerIPs(service),
 	}
 }

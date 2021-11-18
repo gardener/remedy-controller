@@ -84,7 +84,7 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 		Type:                &corev1.Node{},
 		ShouldEnsureDeleted: true,
 		Predicates: []predicate.Predicate{
-			NewNodePredicate(cache.NewExpiring(), log.Log.WithName(PredicateName)),
+			NewPredicate(cache.NewExpiring(), log.Log.WithName(PredicateName)),
 		},
 		WatchBuilder: extensionscontroller.NewWatchBuilder(func(ctrl controller.Controller) error {
 			nodeMapper := remedycontroller.NewLabelMapper(ObjectLabeler, azure.NodeLabel)

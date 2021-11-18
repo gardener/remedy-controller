@@ -84,7 +84,7 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 		Type:                &corev1.Service{},
 		ShouldEnsureDeleted: true,
 		Predicates: []predicate.Predicate{
-			NewServicePredicate(cache.NewExpiring(), log.Log.WithName(PredicateName)),
+			NewPredicate(cache.NewExpiring(), log.Log.WithName(PredicateName)),
 		},
 		WatchBuilder: extensionscontroller.NewWatchBuilder(func(ctrl controller.Controller) error {
 			serviceMapper := remedycontroller.NewLabelMapper(ObjectLabeler, azure.ServiceLabel)

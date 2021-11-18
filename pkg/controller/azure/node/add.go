@@ -25,6 +25,7 @@ import (
 	"github.com/gardener/remedy-controller/pkg/controller/azure"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -83,7 +84,7 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 		Type:                &corev1.Node{},
 		ShouldEnsureDeleted: true,
 		Predicates: []predicate.Predicate{
-			NewNodePredicate(log.Log.WithName(PredicateName)),
+			NewNodePredicate(cache.NewExpiring(), log.Log.WithName(PredicateName)),
 		},
 		WatchBuilder: extensionscontroller.NewWatchBuilder(func(ctrl controller.Controller) error {
 			nodeMapper := remedycontroller.NewLabelMapper(ObjectLabeler, azure.NodeLabel)

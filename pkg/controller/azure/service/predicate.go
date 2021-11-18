@@ -18,10 +18,11 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/gardener/remedy-controller/pkg/utils"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/cache"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
@@ -33,90 +34,101 @@ const (
 // NewServicePredicate creates a new predicate that filters only relevant service events,
 // such as creating or deleting a service, updating the deletion timestamp of a service with LoadBalancer IPs,
 // updating the ignore annotation of a service with LoadBalancer IPs, and updating the service LoadBalancer IPs.
-func NewServicePredicate(logger logr.Logger) predicate.Predicate {
-	serviceCache := cache.NewExpiring()
-	return predicate.Funcs{
-		CreateFunc: func(e event.CreateEvent) bool {
-			if e.Object == nil {
-				logger.Error(nil, "CreateEvent has no object", "event", e)
-				return false
-			}
-			service, ok := e.Object.(*corev1.Service)
-			if !ok {
-				return false
-			}
-			logger := logger.WithValues("name", service.Name, "namespace", service.Namespace)
-			logger.Info("Creating a service")
-			serviceCache.Set(service.Name, serviceProjectionFromService(service), serviceCacheTTL)
-			return true
-		},
-
-		UpdateFunc: func(e event.UpdateEvent) (result bool) {
-			if e.ObjectOld == nil || e.ObjectNew == nil {
-				logger.Error(nil, "UpdateEvent has no old or new metadata, or no old or new object", "event", e)
-				return false
-			}
-			var oldService, newService *corev1.Service
-			var ok bool
-			if oldService, ok = e.ObjectOld.(*corev1.Service); !ok {
-				return false
-			}
-			if newService, ok = e.ObjectNew.(*corev1.Service); !ok {
-				return false
-			}
-			var cachedService *serviceProjection
-			if v, ok := serviceCache.Get(newService.Name); ok {
-				cachedService = v.(*serviceProjection)
-			}
-			defer func() {
-				// In order to prevent lock contention and scalability issues when the cache contains a large number
-				// of objects, only update the cache if we detected a change we are interested in
-				// We can avoid updating the cache on other changes since they won't affect subsequent comparisons
-				// with the cached object
-				if result {
-					serviceCache.Set(newService.Name, serviceProjectionFromService(newService), serviceCacheTTL)
-				}
-			}()
-			logger := logger.WithValues("name", newService.Name, "namespace", newService.Namespace)
-			if cachedService == nil {
-				logger.Info("Updating a service that is missing in the service cache")
-				return true
-			}
-			oldIPs, newIPs := getServiceLoadBalancerIPs(oldService), getServiceLoadBalancerIPs(newService)
-			if len(newIPs) > 0 && (newService.DeletionTimestamp != oldService.DeletionTimestamp || newService.DeletionTimestamp != cachedService.deletionTimestamp) {
-				logger.Info("Updating the deletion timestamp of a service with LoadBalancer IPs")
-				return true
-			}
-			if len(newIPs) > 0 && (shouldIgnoreService(newService) != shouldIgnoreService(oldService) || shouldIgnoreService(newService) != cachedService.shouldIgnore) {
-				logger.Info("Updating the ignore annotation of a service with LoadBalancer IPs")
-				return true
-			}
-			if !reflect.DeepEqual(newIPs, oldIPs) || !reflect.DeepEqual(newIPs, cachedService.loadBalancerIPs) {
-				logger.Info("Updating service LoadBalancer IPs")
-				return true
-			}
-			return false
-		},
-
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			if e.Object == nil {
-				logger.Error(nil, "DeleteEvent has no object", "event", e)
-				return false
-			}
-			service, ok := e.Object.(*corev1.Service)
-			if !ok {
-				return false
-			}
-			logger := logger.WithValues("name", service.Name, "namespace", service.Namespace)
-			logger.Info("Deleting a service")
-			serviceCache.Delete(service.Name)
-			return true
-		},
-
-		GenericFunc: func(e event.GenericEvent) bool {
-			return false
-		},
+func NewServicePredicate(serviceCache utils.ExpiringCache, logger logr.Logger) predicate.Predicate {
+	return &servicePredicate{
+		serviceCache: serviceCache,
+		logger:       logger,
 	}
+}
+
+type servicePredicate struct {
+	serviceCache utils.ExpiringCache
+	logger       logr.Logger
+}
+
+// Create returns true if the Create event should be processed.
+func (p *servicePredicate) Create(e event.CreateEvent) bool {
+	if e.Object == nil {
+		p.logger.Error(nil, "CreateEvent has no object", "event", e)
+		return false
+	}
+	service, ok := e.Object.(*corev1.Service)
+	if !ok {
+		return false
+	}
+	logger := p.logger.WithValues("name", service.Name, "namespace", service.Namespace)
+	logger.Info("Creating a service")
+	p.serviceCache.Set(service.Name, serviceProjectionFromService(service), serviceCacheTTL)
+	return true
+}
+
+// Update returns true if the Update event should be processed.
+func (p *servicePredicate) Update(e event.UpdateEvent) (result bool) {
+	if e.ObjectOld == nil || e.ObjectNew == nil {
+		p.logger.Error(nil, "UpdateEvent has no old or new metadata, or no old or new object", "event", e)
+		return false
+	}
+	var oldService, newService *corev1.Service
+	var ok bool
+	if oldService, ok = e.ObjectOld.(*corev1.Service); !ok {
+		return false
+	}
+	if newService, ok = e.ObjectNew.(*corev1.Service); !ok {
+		return false
+	}
+	var cachedService *serviceProjection
+	if v, ok := p.serviceCache.Get(newService.Name); ok {
+		cachedService = v.(*serviceProjection)
+	}
+	defer func() {
+		// In order to prevent lock contention and scalability issues when the cache contains a large number
+		// of objects, only update the cache if we detected a change we are interested in
+		// We can avoid updating the cache on other changes since they won't affect subsequent comparisons
+		// with the cached object
+		if result {
+			p.serviceCache.Set(newService.Name, serviceProjectionFromService(newService), serviceCacheTTL)
+		}
+	}()
+	logger := p.logger.WithValues("name", newService.Name, "namespace", newService.Namespace)
+	if cachedService == nil {
+		logger.Info("Updating a service that is missing in the service cache")
+		return true
+	}
+	oldIPs, newIPs := getServiceLoadBalancerIPs(oldService), getServiceLoadBalancerIPs(newService)
+	if len(newIPs) > 0 && (newService.DeletionTimestamp != oldService.DeletionTimestamp || newService.DeletionTimestamp != cachedService.deletionTimestamp) {
+		logger.Info("Updating the deletion timestamp of a service with LoadBalancer IPs")
+		return true
+	}
+	if len(newIPs) > 0 && (shouldIgnoreService(newService) != shouldIgnoreService(oldService) || shouldIgnoreService(newService) != cachedService.shouldIgnore) {
+		logger.Info("Updating the ignore annotation of a service with LoadBalancer IPs")
+		return true
+	}
+	if !reflect.DeepEqual(newIPs, oldIPs) || !reflect.DeepEqual(newIPs, cachedService.loadBalancerIPs) {
+		logger.Info("Updating service LoadBalancer IPs")
+		return true
+	}
+	return false
+}
+
+// Delete returns true if the Delete event should be processed.
+func (p *servicePredicate) Delete(e event.DeleteEvent) bool {
+	if e.Object == nil {
+		p.logger.Error(nil, "DeleteEvent has no object", "event", e)
+		return false
+	}
+	service, ok := e.Object.(*corev1.Service)
+	if !ok {
+		return false
+	}
+	logger := p.logger.WithValues("name", service.Name, "namespace", service.Namespace)
+	logger.Info("Deleting a service")
+	p.serviceCache.Delete(service.Name)
+	return true
+}
+
+// Generic returns true if the Generic event should be processed.
+func (p *servicePredicate) Generic(e event.GenericEvent) bool {
+	return false
 }
 
 // serviceProjection captures only the essential properties of a service that is being cached.

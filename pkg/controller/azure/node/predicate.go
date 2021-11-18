@@ -19,6 +19,7 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/cache"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -45,7 +46,7 @@ func NewNodePredicate(logger logr.Logger) predicate.Predicate {
 			}
 			logger := logger.WithValues("name", node.Name)
 			logger.Info("Creating a node")
-			nodeCache.Set(node.Name, node, nodeCacheTTL)
+			nodeCache.Set(node.Name, nodeProjectionFromNode(node), nodeCacheTTL)
 			return true
 		},
 
@@ -54,7 +55,7 @@ func NewNodePredicate(logger logr.Logger) predicate.Predicate {
 				logger.Error(nil, "UpdateEvent has no no old or new object", "event", e)
 				return false
 			}
-			var oldNode, newNode, cachedNode *corev1.Node
+			var oldNode, newNode *corev1.Node
 			var ok bool
 			if oldNode, ok = e.ObjectOld.(*corev1.Node); !ok {
 				return false
@@ -62,8 +63,9 @@ func NewNodePredicate(logger logr.Logger) predicate.Predicate {
 			if newNode, ok = e.ObjectNew.(*corev1.Node); !ok {
 				return false
 			}
+			var cachedNode *nodeProjection
 			if v, ok := nodeCache.Get(newNode.Name); ok {
-				cachedNode = v.(*corev1.Node)
+				cachedNode = v.(*nodeProjection)
 			}
 			defer func() {
 				// In order to prevent lock contention and scalability issues when the cache contains a large number
@@ -71,7 +73,7 @@ func NewNodePredicate(logger logr.Logger) predicate.Predicate {
 				// We can avoid updating the cache on other changes since they won't affect subsequent comparisons
 				// with the cached object
 				if result {
-					nodeCache.Set(newNode.Name, newNode, nodeCacheTTL)
+					nodeCache.Set(newNode.Name, nodeProjectionFromNode(newNode), nodeCacheTTL)
 				}
 			}()
 			logger := logger.WithValues("name", newNode.Name)
@@ -79,11 +81,11 @@ func NewNodePredicate(logger logr.Logger) predicate.Predicate {
 				logger.Info("Updating a node that is missing in the node cache")
 				return true
 			}
-			if newNode.DeletionTimestamp != oldNode.DeletionTimestamp || newNode.DeletionTimestamp != cachedNode.DeletionTimestamp {
+			if newNode.DeletionTimestamp != oldNode.DeletionTimestamp || newNode.DeletionTimestamp != cachedNode.deletionTimestamp {
 				logger.Info("Updating the deletion timestamp of a node")
 				return true
 			}
-			if isNodeNotReadyOrUnreachable(newNode) != isNodeNotReadyOrUnreachable(oldNode) || isNodeNotReadyOrUnreachable(newNode) != isNodeNotReadyOrUnreachable(cachedNode) {
+			if isNodeNotReadyOrUnreachable(newNode) != isNodeNotReadyOrUnreachable(oldNode) || isNodeNotReadyOrUnreachable(newNode) != cachedNode.notReadyOrUnreachable {
 				logger.Info("Updating the ready condition or unreachable taint of a node")
 				return true
 			}
@@ -108,5 +110,19 @@ func NewNodePredicate(logger logr.Logger) predicate.Predicate {
 		GenericFunc: func(e event.GenericEvent) bool {
 			return false
 		},
+	}
+}
+
+// nodeProjection captures only the essential properties of a node that is being cached.
+// By using projections, we prevent the cache from getting too big for clusters with large number of nodes.
+type nodeProjection struct {
+	deletionTimestamp     *metav1.Time
+	notReadyOrUnreachable bool
+}
+
+func nodeProjectionFromNode(node *corev1.Node) *nodeProjection {
+	return &nodeProjection{
+		deletionTimestamp:     node.DeletionTimestamp,
+		notReadyOrUnreachable: isNodeNotReadyOrUnreachable(node),
 	}
 }

@@ -20,6 +20,7 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/cache"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -46,7 +47,7 @@ func NewServicePredicate(logger logr.Logger) predicate.Predicate {
 			}
 			logger := logger.WithValues("name", service.Name, "namespace", service.Namespace)
 			logger.Info("Creating a service")
-			serviceCache.Set(service.Name, service, serviceCacheTTL)
+			serviceCache.Set(service.Name, serviceProjectionFromService(service), serviceCacheTTL)
 			return true
 		},
 
@@ -55,7 +56,7 @@ func NewServicePredicate(logger logr.Logger) predicate.Predicate {
 				logger.Error(nil, "UpdateEvent has no old or new metadata, or no old or new object", "event", e)
 				return false
 			}
-			var oldService, newService, cachedService *corev1.Service
+			var oldService, newService *corev1.Service
 			var ok bool
 			if oldService, ok = e.ObjectOld.(*corev1.Service); !ok {
 				return false
@@ -63,8 +64,9 @@ func NewServicePredicate(logger logr.Logger) predicate.Predicate {
 			if newService, ok = e.ObjectNew.(*corev1.Service); !ok {
 				return false
 			}
+			var cachedService *serviceProjection
 			if v, ok := serviceCache.Get(newService.Name); ok {
-				cachedService = v.(*corev1.Service)
+				cachedService = v.(*serviceProjection)
 			}
 			defer func() {
 				// In order to prevent lock contention and scalability issues when the cache contains a large number
@@ -72,7 +74,7 @@ func NewServicePredicate(logger logr.Logger) predicate.Predicate {
 				// We can avoid updating the cache on other changes since they won't affect subsequent comparisons
 				// with the cached object
 				if result {
-					serviceCache.Set(newService.Name, newService, serviceCacheTTL)
+					serviceCache.Set(newService.Name, serviceProjectionFromService(newService), serviceCacheTTL)
 				}
 			}()
 			logger := logger.WithValues("name", newService.Name, "namespace", newService.Namespace)
@@ -80,16 +82,16 @@ func NewServicePredicate(logger logr.Logger) predicate.Predicate {
 				logger.Info("Updating a service that is missing in the service cache")
 				return true
 			}
-			oldIPs, newIPs, cachedIPs := getServiceLoadBalancerIPs(oldService), getServiceLoadBalancerIPs(newService), getServiceLoadBalancerIPs(cachedService)
-			if len(newIPs) > 0 && (newService.DeletionTimestamp != oldService.DeletionTimestamp || newService.DeletionTimestamp != cachedService.DeletionTimestamp) {
+			oldIPs, newIPs := getServiceLoadBalancerIPs(oldService), getServiceLoadBalancerIPs(newService)
+			if len(newIPs) > 0 && (newService.DeletionTimestamp != oldService.DeletionTimestamp || newService.DeletionTimestamp != cachedService.deletionTimestamp) {
 				logger.Info("Updating the deletion timestamp of a service with LoadBalancer IPs")
 				return true
 			}
-			if len(newIPs) > 0 && (shouldIgnoreService(newService) != shouldIgnoreService(oldService) || shouldIgnoreService(newService) != shouldIgnoreService(cachedService)) {
+			if len(newIPs) > 0 && (shouldIgnoreService(newService) != shouldIgnoreService(oldService) || shouldIgnoreService(newService) != cachedService.shouldIgnore) {
 				logger.Info("Updating the ignore annotation of a service with LoadBalancer IPs")
 				return true
 			}
-			if !reflect.DeepEqual(newIPs, oldIPs) || !reflect.DeepEqual(newIPs, cachedIPs) {
+			if !reflect.DeepEqual(newIPs, oldIPs) || !reflect.DeepEqual(newIPs, cachedService.loadBalancerIPs) {
 				logger.Info("Updating service LoadBalancer IPs")
 				return true
 			}
@@ -114,5 +116,21 @@ func NewServicePredicate(logger logr.Logger) predicate.Predicate {
 		GenericFunc: func(e event.GenericEvent) bool {
 			return false
 		},
+	}
+}
+
+// serviceProjection captures only the essential properties of a service that is being cached.
+// By using projections, we prevent the cache from getting too big for clusters with large number of services.
+type serviceProjection struct {
+	deletionTimestamp *metav1.Time
+	shouldIgnore      bool
+	loadBalancerIPs   map[string]bool
+}
+
+func serviceProjectionFromService(service *corev1.Service) *serviceProjection {
+	return &serviceProjection{
+		deletionTimestamp: service.DeletionTimestamp,
+		shouldIgnore:      shouldIgnoreService(service),
+		loadBalancerIPs:   getServiceLoadBalancerIPs(service),
 	}
 }

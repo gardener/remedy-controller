@@ -184,8 +184,6 @@ def ensure_helm_setup():
         info("No executable 'helm3' found in path. Falling back to 'helm'")
         helm_executable = which('helm')
 
-    with open(os.devnull) as devnull:
-        subprocess.run([helm_executable, 'repo', 'update'], check=True, stdout=devnull)
     return helm_executable
 
 

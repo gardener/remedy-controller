@@ -79,13 +79,13 @@ def main():
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         pubip_future = executor.submit(
-            fn=pubip_test.run_test,
+            pubip_test.run_test,
             path_to_credentials_file=credentials_path,
             path_to_kubeconfig=kubeconfig_path,
             test_namespace=HELM_CHART_DEPLOYMENT_NAMESPACE,
         )
         # failed_vm_future = executor.submit(
-        #     fn=vm_test.run_test,
+        #     vm_test.run_test,
         #     path_to_credentials_file=credentials_path,
         #     path_to_kubeconfig=kubeconfig_path,
         #     required_attempts=VM_TEST_REQUIRED_ATTEMPTS,

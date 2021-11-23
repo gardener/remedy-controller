@@ -1,5 +1,7 @@
 flavors:
 - provider: azure
+  annotatons:
+    azure.provider.extensions.gardener.cloud/disable-remedy-controller: "true"
   kubernetes:
     pattern: "latest"
   cloudprofile: az

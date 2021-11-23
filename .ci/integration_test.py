@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
+import concurrent.futures
 import json
 import os
-import sys
+import pprint
 import subprocess
+import sys
 import tempfile
-import concurrent.futures
 
 import yaml
 
@@ -68,6 +69,9 @@ def main():
 
     chart_dir = os.path.join(repo_dir, 'charts', HELM_CHART_NAME)
     values = create_helm_values(chart_dir, version, credentials_path)
+
+    print('Deploying controller-chart')
+    pprint.pprint(values)
 
     execute_helm_deployment(
         kubernetes_config,

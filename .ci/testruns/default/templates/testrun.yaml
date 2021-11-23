@@ -106,6 +106,16 @@ spec:
     definition:
       name: create-shoot
       config:
+      {{- if  hasKey .Values.shoot "allowPrivilegedContainers" }}
+      - name: ALLOW_PRIVILEGED_CONTAINERS
+        type: env
+        value: "{{ .Values.shoot.allowPrivilegedContainers }}"
+      {{- end}}
+      {{- if  hasKey .Values.shoot "shootAnnotations" }}
+      - name: SHOOT_ANNOTATIONS
+        type: env
+        value: "{{ .Values.shoot.shootAnnotations }}"
+      {{- end}}
       - name: PROVIDER_TYPE
         type: env
         value: {{ .Values.shoot.cloudprovider }}

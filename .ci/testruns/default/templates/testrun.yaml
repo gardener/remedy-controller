@@ -143,6 +143,11 @@ spec:
     dependsOn: [ create ]
     definition:
       name: integration-test
+      {{- if  hasKey .Values "testVersion" }}
+      - name: TEST_VERSION
+        type: env
+        value: "{{ .Values.testVersion }}"
+      {{- end}}
   - name: delete
     dependsOn: [ tests ]
     definition:

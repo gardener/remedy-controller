@@ -7,6 +7,8 @@ TM_LANDSCAPE="external"
 LANDSCAPE=""
 ARGUMENTS=""
 
+repo_dir="$(readlink -f "$(dirname "${0}")/..")"
+
 
 for i in "$@"
 do
@@ -74,6 +76,8 @@ cli.py config attribute --cfg-type kubernetes --cfg-name $TM_CONFIG_NAME --key k
 
 export KUBECONFIG=$TM_CLUSTER
 
+test_version="$(cat ${repo_dir}/VERSION)"
+
 # timeout to 6h
 /testrunner run \
     --gardener-kubeconfig-path=$ACTIVE_GARDEN_CLUSTER \
@@ -87,4 +91,5 @@ export KUBECONFIG=$TM_CLUSTER
     --shoot-name="tm-" \
     --flavored-testruns-chart-path=$FLAVOR_TESTRUN_CHART_PATH \
     --flavor-config=$SOURCE_PATH/.ci/flavours/$FLAVOR_CONFIG \
+    --set "testVersion=${test_version}" \
     $ARGUMENTS

@@ -3,7 +3,6 @@
 import concurrent.futures
 import json
 import os
-import pprint
 import subprocess
 import sys
 import tempfile
@@ -64,14 +63,15 @@ def main():
         yaml.safe_dump(test_credentials, credentials_file)
         credentials_path = os.path.abspath(credentials_file.name)
 
-    with open(os.path.join(repo_dir, 'VERSION')) as version_file:
-        version = version_file.read()
+    if not (version := os.environ.get('TEST_VERSION')):
+        # fallback to local file if env-var is not set
+        with open(os.path.join(repo_dir, 'VERSION')) as version_file:
+            version = version_file.read()
 
     chart_dir = os.path.join(repo_dir, 'charts', HELM_CHART_NAME)
     values = create_helm_values(chart_dir, version, credentials_path)
 
-    print('Deploying controller-chart')
-    pprint.pprint(values)
+    print(f'Deploying Helm chart for version {version}')
 
     execute_helm_deployment(
         kubernetes_config,

@@ -33,6 +33,9 @@ PUBIP_PLURAL = 'publicipaddresses'
 VM_RESOURCE_VERSION = 'v1alpha1'
 VM_PLURAL = 'virtualmachines'
 
+SERVICE_FINALIZER = 'azure.remedy.gardener.cloud/service'
+NODE_FINALIZER = 'azure.remedy.gardener.cloud/node'
+
 
 def random_str(prefix=None, length=10):
     '''Create a random string of given length, optionally with a given prefix
@@ -562,11 +565,25 @@ class KubernetesHelper:
         self,
         namespace: str = DEFAULT_NAMESPACE,
     ):
+        self._cleanup_custom_objects(PUBIP_RESOURCE_VERSION, PUBIP_PLURAL, namespace)
+
+    def cleanup_vm_custom_objects(
+        self,
+        namespace: str = DEFAULT_NAMESPACE,
+    ):
+        self._cleanup_custom_objects(VM_RESOURCE_VERSION, VM_PLURAL, namespace)
+
+    def _cleanup_custom_objects(
+        self,
+        version: str,
+        plural: str,
+        namespace: str,
+    ):
         response = self.custom_objects_api.list_namespaced_custom_object(
                     group=REMEDY_API_GROUP,
-                    version=PUBIP_RESOURCE_VERSION,
+                    version=version,
                     namespace=namespace,
-                    plural=PUBIP_PLURAL,
+                    plural=plural,
                 )
         if not 'items' in response:
             return
@@ -577,9 +594,9 @@ class KubernetesHelper:
                 item['metadata']['finalizers'] = []
                 self.custom_objects_api.patch_namespaced_custom_object(
                     group=REMEDY_API_GROUP,
-                    version=PUBIP_RESOURCE_VERSION,
+                    version=version,
                     namespace=namespace,
-                    plural=PUBIP_PLURAL,
+                    plural=plural,
                     name=item['metadata']['name'],
                     body=item,
                 )
@@ -588,11 +605,32 @@ class KubernetesHelper:
         for item in response['items']:
             self.custom_objects_api.delete_namespaced_custom_object(
                 group=REMEDY_API_GROUP,
-                version=PUBIP_RESOURCE_VERSION,
+                version=version,
                 namespace=namespace,
-                plural=PUBIP_PLURAL,
+                plural=plural,
                 name=item['metadata']['name'],
             )
+
+    def remove_service_finalizers(self):
+        svc_list = self.core_api.list_service_for_all_namespaces()
+        for svc in svc_list.items:
+            if svc.metadata.finalizers is not None and SERVICE_FINALIZER in svc.metadata.finalizers:
+                index = svc.metadata.finalizers.index(SERVICE_FINALIZER)
+                self.core_api.patch_namespaced_service(
+                    name=svc.metadata.name,
+                    namespace=svc.metadata.namespace,
+                    body=[{'op': 'remove', 'path': f'/metadata/finalizers/{index}'}],
+                )
+
+    def remove_node_finalizers(self):
+        node_list = self.core_api.list_node()
+        for node in node_list.items:
+            if node.metadata.finalizers is not None and NODE_FINALIZER in node.metadata.finalizers:
+                index = node.metadata.finalizers.index(NODE_FINALIZER)
+                self.core_api.patch_node(
+                    name=node.metadata.name,
+                    body=[{'op': 'remove', 'path': f'/metadata/finalizers/{index}'}],
+                )
 
     def create_custom_resource_definition(self, custom_resource_definition):
         self.api_extensions_api.create_custom_resource_definition(

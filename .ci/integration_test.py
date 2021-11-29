@@ -27,6 +27,7 @@ import pubip_remedy_test as pubip_test # noqa
 # TODO: failed_vm_test fails on newer Azure, and it's not clear how to fix it since it was based on
 # some weird Azure behavior that was meanwhile patched.
 # import failed_vm_test as vm_test # noqa
+import cleanup as test_cleanup # noqa
 
 HELM_CHART_NAME = 'remedy-controller-azure'
 HELM_CHART_DEPLOYMENT_NAMESPACE = 'default'
@@ -109,6 +110,11 @@ def main():
             kubernetes_config,
             HELM_CHART_DEPLOYMENT_NAMESPACE,
             HELM_CHART_NAME,
+        )
+        test_cleanup.cleanup(
+            path_to_credentials_file=credentials_path,
+            path_to_kubeconfig=kubeconfig_path,
+            test_namespace=HELM_CHART_DEPLOYMENT_NAMESPACE,
         )
     if not pubip_test_ok: # or not vm_test_ok:
         exit(1)

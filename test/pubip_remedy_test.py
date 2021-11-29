@@ -42,7 +42,7 @@ def run_test(
         print('Found leaked resources from previous run. Cleaning up')
         # ensure that there are no leftover resources
         k8s_helper.cleanup_test_services()
-        k8s_helper.cleanup_publicip_custom_objects()
+        k8s_helper.cleanup_publicip_custom_objects(namespace=test_namespace)
         lb_helper.remove_orphaned_rules()
         ip_helper.clean_up_public_ips()
 
@@ -134,7 +134,7 @@ def run_test(
         print('Found leaked resources. Cleaning up and failing.')
         # ensure that there are no leftover resources
         k8s_helper.cleanup_test_services()
-        k8s_helper.cleanup_publicip_custom_objects()
+        k8s_helper.cleanup_publicip_custom_objects(namespace=test_namespace)
         lb_helper.remove_orphaned_rules()
         ip_helper.clean_up_public_ips()
         return False

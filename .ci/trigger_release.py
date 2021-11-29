@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
 
 import ci.util
-import concourse.client
+import ccc.concourse
 
 
 def trigger_release_job():
-    concourse_cfg = ci.util.ctx().cfg_factory() \
-      .cfg_set(ci.util.check_env('CONCOURSE_CURRENT_CFG')).concourse()
-    concourse_api = concourse.client.from_cfg(
-      concourse_cfg=concourse_cfg,
-      team_name=ci.util.check_env('CONCOURSE_CURRENT_TEAM'),
-    )
+    concourse_client = ccc.concourse.client_from_env()
 
     # RELEASE_JOB_NAME must be passed via pipeline-definition
     job_name = ci.util.check_env('RELEASE_JOB_NAME')
-    concourse_api.trigger_build(
+
+    concourse_client.trigger_build(
       pipeline_name=ci.util.check_env('PIPELINE_NAME'),
       job_name=job_name,
     )

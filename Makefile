@@ -144,3 +144,7 @@ failed-vm-test:
 	test -n $(WORKER_GROUP) # WORKER_GROUP must be given
 	@. $(REPO_ROOT)/.env/bin/activate && python3 $(REPO_ROOT)/test/failed_vm_test.py --credentials-path "$(REPO_ROOT)/dev/credentials.yaml" --fail-worker-group-name $(WORKER_GROUP)
 
+.PHONY: test-cleanup
+test-cleanup:
+	@. $(REPO_ROOT)/.env/bin/activate && python3 $(REPO_ROOT)/test/cleanup.py --credentials-path "$(REPO_ROOT)/dev/credentials.yaml"
+

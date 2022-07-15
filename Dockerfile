@@ -6,17 +6,18 @@ COPY . .
 RUN make install
 
 ############# base image
-FROM alpine:3.16.2 AS base
+FROM gcr.io/distroless/static-debian11:nonroot AS base
 
 ############# remedy-controller-azure
 FROM base AS remedy-controller-azure
+WORKDIR /
 
-#COPY charts /charts
 COPY --from=builder /go/bin/remedy-controller-azure /remedy-controller-azure
 ENTRYPOINT ["/remedy-controller-azure"]
 
 ############# remedy-applier-azure
 FROM base AS remedy-applier-azure
+WORKDIR /
 
 COPY --from=builder /go/bin/remedy-applier-azure /remedy-applier-azure
 ENTRYPOINT ["/remedy-applier-azure"]

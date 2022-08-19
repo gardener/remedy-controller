@@ -1,12 +1,12 @@
 ############# builder
-FROM golang:1.16.4 AS builder
+FROM golang:1.16.15 AS builder
 
 WORKDIR /go/src/github.com/gardener/remedy-controller
 COPY . .
 RUN make install
 
 ############# base image
-FROM alpine:3.13.5 AS base
+FROM alpine:3.16.2 AS base
 
 ############# remedy-controller-azure
 FROM base AS remedy-controller-azure

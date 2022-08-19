@@ -24,7 +24,7 @@ remedy-controller:
     head-update:
       steps:
         verify:
-          image: 'golang:1.16.4'
+          image: 'golang:1.16.15'
       traits:
         version:
           inject_effective_version: True
@@ -38,7 +38,7 @@ remedy-controller:
     pull-request:
       steps:
         verify:
-          image: 'golang:1.16.4'
+          image: 'golang:1.16.15'
       traits:
         pull-request: ~
 

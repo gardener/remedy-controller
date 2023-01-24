@@ -29,7 +29,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
-	controllererror "github.com/gardener/gardener/extensions/pkg/controller/error"
+	controllererror "github.com/gardener/gardener/pkg/controllerutils/reconciler"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"

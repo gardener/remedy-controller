@@ -38,7 +38,8 @@ type OperatingSystemConfig struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
+	// Specification of the OperatingSystemConfig.
+	// If the object's deletion timestamp is set, this field is immutable.
 	Spec OperatingSystemConfigSpec `json:"spec"`
 	// +optional
 	Status OperatingSystemConfigStatus `json:"status"`
@@ -82,6 +83,7 @@ type OperatingSystemConfigSpec struct {
 	// Purpose describes how the result of this OperatingSystemConfig is used by Gardener. Either it
 	// gets sent to the `Worker` extension controller to bootstrap a VM, or it is downloaded by the
 	// cloud-config-downloader script already running on a bootstrapped VM.
+	// This field is immutable.
 	Purpose OperatingSystemConfigPurpose `json:"purpose"`
 	// ReloadConfigFilePath is the path to the generated operating system configuration. If set, controllers
 	// are asked to use it when determining the .status.command of this resource. For example, if for CoreOS
@@ -234,3 +236,15 @@ const (
 
 // ContainerDRuntimeContainersBinFolder is the folder where Container Runtime binaries should be saved for ContainerD usage
 const ContainerDRuntimeContainersBinFolder = "/var/bin/containerruntimes"
+
+// FileCodecID is the id of a FileCodec for cloud-init scripts.
+type FileCodecID string
+
+const (
+	// B64FileCodecID is the base64 file codec id.
+	B64FileCodecID FileCodecID = "b64"
+	// GZIPFileCodecID is the gzip file codec id.
+	GZIPFileCodecID FileCodecID = "gzip"
+	// GZIPB64FileCodecID is the gzip combined with base64 codec id.
+	GZIPB64FileCodecID FileCodecID = "gzip+b64"
+)

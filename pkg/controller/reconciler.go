@@ -18,8 +18,8 @@ import (
 	"context"
 	"time"
 
-	controllererror "github.com/gardener/gardener/extensions/pkg/controller/error"
 	"github.com/gardener/gardener/pkg/controllerutils"
+	controllererror "github.com/gardener/gardener/pkg/controllerutils/reconciler"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

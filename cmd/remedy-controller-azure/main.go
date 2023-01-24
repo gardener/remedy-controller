@@ -17,16 +17,20 @@ package main
 import (
 	"github.com/gardener/remedy-controller/cmd/remedy-controller-azure/app"
 
-	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
-	"github.com/gardener/gardener/extensions/pkg/log"
+	"github.com/gardener/gardener/pkg/logger"
+
 	runtimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 func main() {
-	runtimelog.SetLogger(log.ZapLogger(false))
+	log, err := logger.NewZapLogger("info", "")
+	if err != nil {
+		//controllercmd. // TODO how to 
+	}
+	runtimelog.SetLogger(log)
 	cmd := app.NewControllerManagerCommand(signals.SetupSignalHandler())
 	if err := cmd.Execute(); err != nil {
-		controllercmd.LogErrAndExit(err, "error executing the main controller command")
+		//controllercmd.LogErrAndExit(err, "error executing the main controller command")
 	}
 }

@@ -28,7 +28,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-07-01/compute"
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
-	controllererror "github.com/gardener/gardener/extensions/pkg/controller/error"
+	controllererror "github.com/gardener/gardener/pkg/controllerutils/reconciler"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"

@@ -15,6 +15,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/gardener/remedy-controller/cmd/remedy-controller-azure/app"
 
 	"github.com/gardener/gardener/pkg/logger"
@@ -24,13 +26,11 @@ import (
 )
 
 func main() {
-	log, err := logger.NewZapLogger("info", "")
-	if err != nil {
-		//controllercmd. // TODO how to 
-	}
+	log := logger.MustNewZapLogger(logger.InfoLevel, logger.FormatText)
 	runtimelog.SetLogger(log)
 	cmd := app.NewControllerManagerCommand(signals.SetupSignalHandler())
 	if err := cmd.Execute(); err != nil {
-		//controllercmd.LogErrAndExit(err, "error executing the main controller command")
+		runtimelog.Log.Error(err, "Error executing the main controller command")
+		os.Exit(1)
 	}
 }

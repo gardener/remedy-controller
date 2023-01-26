@@ -15,7 +15,7 @@
 package k8s
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
@@ -25,7 +25,7 @@ import (
 // GetClientSet returns a Kubernetes clientset from the given kubeconfig path.
 func GetClientSet(path string) (*kubernetes.Clientset, error) {
 	// Load Kubernetes config
-	kubeconfigRaw, err := ioutil.ReadFile(path)
+	kubeconfigRaw, err := os.ReadFile(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not open kubeconfig file")
 	}

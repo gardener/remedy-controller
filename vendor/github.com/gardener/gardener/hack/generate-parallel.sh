@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Copyright (c) 2021 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
 #
@@ -34,6 +34,4 @@ popd > /dev/null
 
 read -ra PACKAGES <<< $(echo ${ROOTS})
 
-# We need to explicitly pass GO111MODULE=off to k8s.io/code-generator as it is significantly slower otherwise,
-# see https://github.com/kubernetes/code-generator/issues/100.
-GO111MODULE=off parallel --will-cite echo Generate {}';' go generate -mod=vendor {} ::: ${PACKAGES[@]}
+parallel --will-cite echo Generate {}';' go generate {} ::: ${PACKAGES[@]}

@@ -110,7 +110,7 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 
 			logger.Info("Completing options")
 			if err := aggOption.Complete(); err != nil {
-				controllercmd.LogErrAndExit(err, "Could not complete options")
+				logErrAndExit(err, "Could not complete options")
 			}
 
 			util.ApplyClientConnectionConfigurationToRESTConfig(configFileOpts.Completed().Config.ClientConnection, restOpts.Completed().Config)
@@ -119,24 +119,24 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			logger.Info("Creating managers")
 			mgr, err := manager.New(restOpts.Completed().Config, mgrOpts.Completed().Options())
 			if err != nil {
-				controllercmd.LogErrAndExit(err, "Could not create manager")
+				logErrAndExit(err, "Could not create manager")
 			}
 			targetMgr, err := manager.New(targetRestOpts.Completed().Config, targetMgrOpts.Completed().Options())
 			if err != nil {
-				controllercmd.LogErrAndExit(err, "Could not create target cluster manager")
+				logErrAndExit(err, "Could not create target cluster manager")
 			}
 
 			logger.Info("Updating manager schemes")
 			scheme := mgr.GetScheme()
 			if err := controller.AddToScheme(scheme); err != nil {
-				controllercmd.LogErrAndExit(err, "Could not update manager scheme")
+				logErrAndExit(err, "Could not update manager scheme")
 			}
 			if err := azureinstall.AddToScheme(scheme); err != nil {
-				controllercmd.LogErrAndExit(err, "Could not update manager scheme")
+				logErrAndExit(err, "Could not update manager scheme")
 			}
 			targetScheme := targetMgr.GetScheme()
 			if err := controller.AddToScheme(targetScheme); err != nil {
-				controllercmd.LogErrAndExit(err, "Could not update target cluster manager scheme")
+				logErrAndExit(err, "Could not update target cluster manager scheme")
 			}
 
 			publicIPAddressCtrlOpts.Completed().Apply(&azurepublicipaddress.DefaultAddOptions.Controller)
@@ -158,10 +158,10 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 
 			logger.Info("Adding controllers to managers")
 			if err := controllerSwitches.Completed().AddToManager(mgr); err != nil {
-				controllercmd.LogErrAndExit(err, "Could not add controllers to manager")
+				logErrAndExit(err, "Could not add controllers to manager")
 			}
 			if err := targetControllerSwitches.Completed().AddToManager(targetMgr); err != nil {
-				controllercmd.LogErrAndExit(err, "Could not add controllers to target cluster manager")
+				logErrAndExit(err, "Could not add controllers to target cluster manager")
 			}
 
 			logger.Info("Starting managers")
@@ -170,13 +170,13 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			go func() {
 				defer wg.Done()
 				if err := mgr.Start(ctx); err != nil {
-					controllercmd.LogErrAndExit(err, "Error starting manager")
+					logErrAndExit(err, "Error starting manager")
 				}
 			}()
 			go func() {
 				defer wg.Done()
 				if err := targetMgr.Start(ctx); err != nil {
-					controllercmd.LogErrAndExit(err, "Error starting target cluster manager")
+					logErrAndExit(err, "Error starting target cluster manager")
 				}
 			}()
 			wg.Wait()
@@ -186,4 +186,9 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 	aggOption.AddFlags(cmd.Flags())
 
 	return cmd
+}
+
+func logErrAndExit(err error, msg string) {
+	log.Log.Error(err, msg)
+	os.Exit(1)
 }

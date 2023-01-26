@@ -18,8 +18,8 @@ import (
 	"context"
 	"time"
 
-	controllererror "github.com/gardener/gardener/extensions/pkg/controller/error"
 	"github.com/gardener/gardener/pkg/controllerutils"
+	controllererror "github.com/gardener/gardener/pkg/controllerutils/reconciler"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -97,7 +97,8 @@ func (r *reconciler) createOrUpdate(ctx context.Context, obj client.Object, logg
 		return reconcile.Result{}, errors.Wrap(err, "could not check if the object should be finalized")
 	}
 	if shouldFinalize {
-		if err := controllerutils.EnsureFinalizer(ctx, r.reader, r.client, obj, r.finalizerName); err != nil {
+
+		if err := controllerutils.AddFinalizers(ctx, r.client, obj, r.finalizerName); err != nil {
 			if apierrors.IsNotFound(err) {
 				return reconcile.Result{}, nil
 			}
@@ -118,7 +119,7 @@ func (r *reconciler) createOrUpdate(ctx context.Context, obj client.Object, logg
 
 	if !shouldFinalize {
 		logger.Info("Removing finalizer")
-		if err := controllerutils.RemoveFinalizer(ctx, r.reader, r.client, obj, r.finalizerName); client.IgnoreNotFound(err) != nil {
+		if err := controllerutils.RemoveFinalizers(ctx, r.client, obj, r.finalizerName); client.IgnoreNotFound(err) != nil {
 			return reconcile.Result{}, errors.Wrap(err, "could not remove finalizer")
 		}
 		return reconcile.Result{}, nil
@@ -143,7 +144,7 @@ func (r *reconciler) delete(ctx context.Context, obj client.Object, logger logr.
 	logger.Info("Successfully reconciled object deletion")
 
 	logger.Info("Removing finalizer")
-	if err := controllerutils.RemoveFinalizer(ctx, r.reader, r.client, obj, r.finalizerName); client.IgnoreNotFound(err) != nil {
+	if err := controllerutils.RemoveFinalizers(ctx, r.client, obj, r.finalizerName); client.IgnoreNotFound(err) != nil {
 		return reconcile.Result{}, errors.Wrap(err, "could not remove finalizer")
 	}
 

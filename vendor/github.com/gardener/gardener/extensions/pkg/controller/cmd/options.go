@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/go-logr/logr"
 	"github.com/spf13/pflag"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
@@ -27,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
+	"github.com/gardener/gardener/pkg/logger"
 )
 
 const (
@@ -45,6 +47,13 @@ const (
 	WebhookServerPortFlag = "webhook-config-server-port"
 	// WebhookCertDirFlag is the name of the command line flag to specify the webhook certificate directory.
 	WebhookCertDirFlag = "webhook-config-cert-dir"
+	// MetricsBindAddressFlag is the name of the command line flag to specify the TCP address that the controller
+	// should bind to for serving prometheus metrics.
+	// It can be set to "0" to disable the metrics serving.
+	MetricsBindAddressFlag = "metrics-bind-address"
+	// HealthBindAddressFlag is the name of the command line flag to specify the TCP address that the controller
+	// should bind to for serving health probes
+	HealthBindAddressFlag = "health-bind-address"
 
 	// MaxConcurrentReconcilesFlag is the name of the command line flag to specify the maximum number of
 	// concurrent reconciliations a controller can do.
@@ -59,6 +68,15 @@ const (
 
 	// DisableFlag is the name of the command line flag to disable individual controllers.
 	DisableFlag = "disable-controllers"
+
+	// GardenerVersionFlag is the name of the command line flag containing the Gardener version.
+	GardenerVersionFlag = "gardener-version"
+
+	// LogLevelFlag is the name of the command line flag containing the log level.
+	LogLevelFlag = "log-level"
+
+	// LogFormatFlag is the name of the command line flag containing the log format.
+	LogFormatFlag = "log-format"
 )
 
 // LeaderElectionNameID returns a leader election ID for the given name.
@@ -150,7 +168,7 @@ func (b *OptionAggregator) Complete() error {
 type ManagerOptions struct {
 	// LeaderElection is whether leader election is turned on or not.
 	LeaderElection bool
-	// LeaderElectionResourceLock is the resource type used for leader election (defaults to `configmapsleases`).
+	// LeaderElectionResourceLock is the resource type used for leader election (defaults to `leases`).
 	//
 	// When changing the default resource lock, please make sure to migrate via multilocks to
 	// avoid situations where multiple running instances of your controller have each acquired leadership
@@ -174,6 +192,14 @@ type ManagerOptions struct {
 	WebhookServerPort int
 	// WebhookCertDir is the directory that contains the webhook server key and certificate.
 	WebhookCertDir string
+	// MetricsBindAddress is the TCP address that the controller should bind to for serving prometheus metrics.
+	MetricsBindAddress string
+	// HealthBindAddress is the TCP address that the controller should bind to for serving health probes.
+	HealthBindAddress string
+	// LogLevel defines the level/severity for the logs. Must be one of [info,debug,error]
+	LogLevel string
+	// LogFormat defines the format for the logs. Must be one of [json,text]
+	LogFormat string
 
 	config *ManagerConfig
 }
@@ -182,26 +208,40 @@ type ManagerOptions struct {
 func (m *ManagerOptions) AddFlags(fs *pflag.FlagSet) {
 	defaultLeaderElectionResourceLock := m.LeaderElectionResourceLock
 	if defaultLeaderElectionResourceLock == "" {
-		// explicitly default to configmapleases if no default is specified for migration purposes
-		// same as in controller-runtime, see
-		// https://github.com/kubernetes-sigs/controller-runtime/blob/a763c9a36c6f18660799384c9765348942bda53a/pkg/leaderelection/leader_election.go#L59-L64
-		// we might consider changing this default after many releases
-		defaultLeaderElectionResourceLock = resourcelock.ConfigMapsLeasesResourceLock
+		// explicitly default to leases if no default is specified
+		defaultLeaderElectionResourceLock = resourcelock.LeasesResourceLock
 	}
 
 	fs.BoolVar(&m.LeaderElection, LeaderElectionFlag, m.LeaderElection, "Whether to use leader election or not when running this controller manager.")
 	fs.StringVar(&m.LeaderElectionResourceLock, LeaderElectionResourceLockFlag, defaultLeaderElectionResourceLock, "Which resource type to use for leader election. "+
-		"Supported options are 'endpoints', 'configmaps', 'leases', 'endpointsleases' and 'configmapsleases'.")
+		"Supported options are 'leases', 'endpointsleases' and 'configmapsleases'.")
 	fs.StringVar(&m.LeaderElectionID, LeaderElectionIDFlag, m.LeaderElectionID, "The leader election id to use.")
 	fs.StringVar(&m.LeaderElectionNamespace, LeaderElectionNamespaceFlag, m.LeaderElectionNamespace, "The namespace to do leader election in.")
 	fs.StringVar(&m.WebhookServerHost, WebhookServerHostFlag, m.WebhookServerHost, "The webhook server host.")
 	fs.IntVar(&m.WebhookServerPort, WebhookServerPortFlag, m.WebhookServerPort, "The webhook server port.")
 	fs.StringVar(&m.WebhookCertDir, WebhookCertDirFlag, m.WebhookCertDir, "The directory that contains the webhook server key and certificate.")
+	fs.StringVar(&m.MetricsBindAddress, MetricsBindAddressFlag, ":8080", "bind address for the metrics server")
+	fs.StringVar(&m.HealthBindAddress, HealthBindAddressFlag, ":8081", "bind address for the health server")
+	fs.StringVar(&m.LogLevel, LogLevelFlag, logger.InfoLevel, "The level/severity for the logs. Must be one of [info,debug,error]")
+	fs.StringVar(&m.LogFormat, LogFormatFlag, logger.FormatJSON, "The format for the logs. Must be one of [json,text]")
 }
 
 // Complete implements Completer.Complete.
 func (m *ManagerOptions) Complete() error {
-	m.config = &ManagerConfig{m.LeaderElection, m.LeaderElectionResourceLock, m.LeaderElectionID, m.LeaderElectionNamespace, m.WebhookServerHost, m.WebhookServerPort, m.WebhookCertDir}
+	if !sets.NewString(logger.AllLogLevels...).Has(m.LogLevel) {
+		return fmt.Errorf("invalid --%s: %s", LogLevelFlag, m.LogLevel)
+	}
+
+	if !sets.NewString(logger.AllLogFormats...).Has(m.LogFormat) {
+		return fmt.Errorf("invalid --%s: %s", LogFormatFlag, m.LogFormat)
+	}
+
+	logger, err := logger.NewZapLogger(m.LogLevel, m.LogFormat)
+	if err != nil {
+		return fmt.Errorf("error instantiating zap logger: %w", err)
+	}
+
+	m.config = &ManagerConfig{m.LeaderElection, m.LeaderElectionResourceLock, m.LeaderElectionID, m.LeaderElectionNamespace, m.WebhookServerHost, m.WebhookServerPort, m.WebhookCertDir, m.MetricsBindAddress, m.HealthBindAddress, logger}
 	return nil
 }
 
@@ -226,6 +266,12 @@ type ManagerConfig struct {
 	WebhookServerPort int
 	// WebhookCertDir is the directory that contains the webhook server key and certificate.
 	WebhookCertDir string
+	// MetricsBindAddress is the TCP address that the controller should bind to for serving prometheus metrics.
+	MetricsBindAddress string
+	// HealthBindAddress is the TCP address that the controller should bind to for serving health probes.
+	HealthBindAddress string
+	// Logger is a logr.Logger compliant logger
+	Logger logr.Logger
 }
 
 // Apply sets the values of this ManagerConfig in the given manager.Options.
@@ -237,6 +283,9 @@ func (c *ManagerConfig) Apply(opts *manager.Options) {
 	opts.Host = c.WebhookServerHost
 	opts.Port = c.WebhookServerPort
 	opts.CertDir = c.WebhookCertDir
+	opts.MetricsBindAddress = c.MetricsBindAddress
+	opts.HealthProbeBindAddress = c.HealthBindAddress
+	opts.Logger = c.Logger
 }
 
 // Options initializes empty manager.Options, applies the set values and returns it.
@@ -425,4 +474,34 @@ func (d *SwitchOptions) Completed() *SwitchConfig {
 // SwitchConfig is the completed configuration of SwitchOptions.
 type SwitchConfig struct {
 	AddToManager func(manager.Manager) error
+}
+
+// GeneralOptions are command line options that can be set for general configuration.
+type GeneralOptions struct {
+	// GardenerVersion string
+	GardenerVersion string
+
+	config *GeneralConfig
+}
+
+// GeneralConfig is a completed general configuration.
+type GeneralConfig struct {
+	// GardenerVersion string
+	GardenerVersion string
+}
+
+// Complete implements Complete.
+func (r *GeneralOptions) Complete() error {
+	r.config = &GeneralConfig{r.GardenerVersion}
+	return nil
+}
+
+// Completed returns the completed GeneralConfig. Only call this if `Complete` was successful.
+func (r *GeneralOptions) Completed() *GeneralConfig {
+	return r.config
+}
+
+// AddFlags implements Flagger.AddFlags.
+func (r *GeneralOptions) AddFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&r.GardenerVersion, GardenerVersionFlag, "", "Version of the gardenlet.")
 }

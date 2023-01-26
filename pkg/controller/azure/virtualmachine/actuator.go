@@ -27,12 +27,11 @@ import (
 	utilsprometheus "github.com/gardener/remedy-controller/pkg/utils/prometheus"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-07-01/compute"
-	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
-	controllererror "github.com/gardener/gardener/extensions/pkg/controller/error"
+	"github.com/gardener/gardener/pkg/controllerutils"
+	controllererror "github.com/gardener/gardener/pkg/controllerutils/reconciler"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -274,12 +273,13 @@ func (a *actuator) updateVirtualMachineStatus(
 
 	// Update resource status
 	a.logger.Info("Updating virtualmachine status", "name", vm.Name, "namespace", vm.Namespace, "status", status)
-	if err := extensionscontroller.TryUpdateStatus(ctx, retry.DefaultBackoff, a.client, vm, func() error {
+	controllerutils.GetAndCreateOrMergePatch(ctx, a.client, vm, func() error {
 		vm.Status = status
 		return nil
-	}); client.IgnoreNotFound(err) != nil {
-		return errors.Wrap(err, "could not update virtualmachine status")
-	}
+	})
+	//patch := client.MergeFrom(vm.DeepCopy())
+	//vm.Status = status
+	//a.client.Status().Patch(ctx, vm, patch)
 	return nil
 }
 

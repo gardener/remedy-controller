@@ -78,11 +78,14 @@ docker-images:
 #####################################################################
 
 .PHONY: install-requirements
-install-requirements:
+install-requirements: # needs sudo permissions
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/ahmetb/gen-crd-api-reference-docs
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/golang/mock/mockgen
 	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/onsi/ginkgo/ginkgo
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/install-requirements.sh
+	@echo "install newer version of golangci-lint"
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.1 
+
 	@python3 -m venv $(REPO_ROOT)/.env
 	@. $(REPO_ROOT)/.env/bin/activate && pip3 install --upgrade pip && pip3 install -r $(REPO_ROOT)/test/requirements.txt
 

@@ -42,9 +42,9 @@ var (
 	targetOS   = flag.String("os", runtime.GOOS, "os to download for (e.g. linux, darwin, for listing operations, use '*' to list all platforms)")
 	targetArch = flag.String("arch", runtime.GOARCH, "architecture to download for (e.g. amd64, for listing operations, use '*' to list all platforms)")
 
-	// printFormat is the flag value for -p, --print
+	// printFormat is the flag value for -p, --print.
 	printFormat = envp.PrintOverview
-	// zapLvl is the flag value for logging verbosity
+	// zapLvl is the flag value for logging verbosity.
 	zapLvl = zap.WarnLevel
 
 	binDir = flag.String("bin-dir", "",
@@ -57,7 +57,7 @@ var (
 
 // TODO(directxman12): handle interrupts?
 
-// setupLogging configures a Zap logger
+// setupLogging configures a Zap logger.
 func setupLogging() logr.Logger {
 	logCfg := zap.NewDevelopmentConfig()
 	logCfg.Level = zap.NewAtomicLevelAt(zapLvl)
@@ -203,7 +203,7 @@ Versions:
 		1.16.x / 1.16.* / 1.16 # any 1.16 version
 		~1.19.3                # any 1.19 version that's at least 1.19.3
 		<1.17                  # any release 1.17.x or below
-		1.22.x!                # the latest one 1.22 release avaible remotely
+		1.22.x!                # the latest one 1.22 release available remotely
 
 Output:
 

@@ -28,12 +28,11 @@ import (
 	"github.com/gardener/remedy-controller/pkg/utils/azure"
 
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
-	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
-	controllererror "github.com/gardener/gardener/extensions/pkg/controller/error"
+	"github.com/gardener/gardener/pkg/controllerutils"
+	controllererror "github.com/gardener/gardener/pkg/controllerutils/reconciler"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -280,7 +279,8 @@ func (a *actuator) updatePublicIPAddressStatus(
 
 	// Update resource status
 	a.logger.Info("Updating publicipaddress status", "name", pubip.Name, "namespace", pubip.Namespace, "status", status)
-	if err := extensionscontroller.TryUpdateStatus(ctx, retry.DefaultBackoff, a.client, pubip, func() error {
+
+	if _, err := controllerutils.GetAndCreateOrMergePatch(ctx, a.client, pubip, func() error {
 		pubip.Status = status
 		return nil
 	}); client.IgnoreNotFound(err) != nil {

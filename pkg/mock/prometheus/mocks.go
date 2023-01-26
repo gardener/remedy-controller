@@ -9,7 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	prometheus "github.com/prometheus/client_golang/prometheus"
-	go0 "github.com/prometheus/client_model/go"
+	io_prometheus_client "github.com/prometheus/client_model/go"
 )
 
 // MockCounter is a mock of Counter interface.
@@ -98,7 +98,7 @@ func (mr *MockCounterMockRecorder) Inc() *gomock.Call {
 }
 
 // Write mocks base method.
-func (m *MockCounter) Write(arg0 *go0.Metric) error {
+func (m *MockCounter) Write(arg0 *io_prometheus_client.Metric) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Write", arg0)
 	ret0, _ := ret[0].(error)
@@ -245,7 +245,7 @@ func (mr *MockGaugeMockRecorder) Sub(arg0 interface{}) *gomock.Call {
 }
 
 // Write mocks base method.
-func (m *MockGauge) Write(arg0 *go0.Metric) error {
+func (m *MockGauge) Write(arg0 *io_prometheus_client.Metric) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Write", arg0)
 	ret0, _ := ret[0].(error)

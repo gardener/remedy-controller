@@ -5,9 +5,10 @@ package remote
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/md5" //nolint:gosec
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -116,7 +117,7 @@ func (c *Client) ListVersions(ctx context.Context) ([]versions.Set, error) {
 		}
 	}
 
-	var res []versions.Set
+	res := make([]versions.Set, 0, len(knownVersions))
 	for ver, details := range knownVersions {
 		res = append(res, versions.Set{Version: ver, Platforms: details})
 	}
@@ -157,20 +158,20 @@ func (c *Client) GetVersion(ctx context.Context, version versions.Concrete, plat
 		// stream in chunks to do the checksum, don't load the whole thing into
 		// memory to avoid causing issues with big files.
 		buf := make([]byte, 32*1024) // 32KiB, same as io.Copy
-		checksum := md5.New()
+		checksum := md5.New()        //nolint:gosec
 		for cont := true; cont; {
 			amt, err := resp.Body.Read(buf)
-			if err != nil && err != io.EOF {
+			if err != nil && !errors.Is(err, io.EOF) {
 				return fmt.Errorf("unable read next chunk of %s: %w", itemName, err)
 			}
 			if amt > 0 {
 				// checksum never returns errors according to docs
-				checksum.Write(buf[:amt]) //nolint errcheck
+				checksum.Write(buf[:amt])
 				if _, err := out.Write(buf[:amt]); err != nil {
 					return fmt.Errorf("unable write next chunk of %s: %w", itemName, err)
 				}
 			}
-			cont = amt > 0 && err != io.EOF
+			cont = amt > 0 && !errors.Is(err, io.EOF)
 		}
 
 		sum := base64.StdEncoding.EncodeToString(checksum.Sum(nil))
@@ -178,10 +179,8 @@ func (c *Client) GetVersion(ctx context.Context, version versions.Concrete, plat
 		if sum != platform.MD5 {
 			return fmt.Errorf("checksum mismatch for %s: %s (computed) != %s (reported from GCS)", itemName, sum, platform.MD5)
 		}
-	} else {
-		if _, err := io.Copy(out, resp.Body); err != nil {
-			return fmt.Errorf("unable to download %s: %w", itemName, err)
-		}
+	} else if _, err := io.Copy(out, resp.Body); err != nil {
+		return fmt.Errorf("unable to download %s: %w", itemName, err)
 	}
 	return nil
 }

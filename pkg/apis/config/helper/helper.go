@@ -15,7 +15,7 @@
 package helper
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/gardener/remedy-controller/pkg/apis/config"
 	"github.com/gardener/remedy-controller/pkg/apis/config/install"
@@ -46,7 +46,7 @@ func init() {
 
 // LoadFromFile takes a filename and de-serializes its contents into a ControllerConfiguration object.
 func LoadFromFile(filename string) (*config.ControllerConfiguration, error) {
-	bytes, err := ioutil.ReadFile(filename)
+	bytes, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}

@@ -273,10 +273,13 @@ func (a *actuator) updateVirtualMachineStatus(
 
 	// Update resource status
 	a.logger.Info("Updating virtualmachine status", "name", vm.Name, "namespace", vm.Namespace, "status", status)
-	controllerutils.GetAndCreateOrMergePatch(ctx, a.client, vm, func() error {
+	_, err := controllerutils.GetAndCreateOrMergePatch(ctx, a.client, vm, func() error {
 		vm.Status = status
 		return nil
 	})
+	if err != nil {
+		return errors.Wrap(err, "could not update virtualmachine status")
+	}
 	//patch := client.MergeFrom(vm.DeepCopy())
 	//vm.Status = status
 	//a.client.Status().Patch(ctx, vm, patch)

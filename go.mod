@@ -137,10 +137,6 @@ require (
 replace (
 	github.com/gardener/gardener-resource-manager/api => github.com/gardener/gardener-resource-manager/api v0.25.0
 	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.2 // keep this value in sync with sigs.k8s.io/controller-runtime
-	k8s.io/api => k8s.io/api v0.25.0
-	k8s.io/apimachinery => k8s.io/apimachinery v0.25.0
 	k8s.io/autoscaler => k8s.io/autoscaler v0.0.0-20220914084901-806eea1e04bb // translates to k8s.io/autoscaler/vertical-pod-autoscaler@v0.12.0
 	k8s.io/client-go => k8s.io/client-go v0.25.0
-	k8s.io/code-generator => k8s.io/code-generator v0.25.0
-	k8s.io/component-base => k8s.io/component-base v0.25.0
 )

@@ -28,12 +28,12 @@ import (
 	"github.com/gardener/remedy-controller/pkg/utils/azure"
 
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
-	"github.com/gardener/gardener/pkg/controllerutils"
 	controllererror "github.com/gardener/gardener/pkg/controllerutils/reconciler"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 const (
@@ -280,10 +280,11 @@ func (a *actuator) updatePublicIPAddressStatus(
 	// Update resource status
 	a.logger.Info("Updating publicipaddress status", "name", pubip.Name, "namespace", pubip.Namespace, "status", status)
 
-	if _, err := controllerutils.GetAndCreateOrMergePatch(ctx, a.client, pubip, func() error {
+	_, err := controllerutil.CreateOrPatch(ctx, a.client, pubip, func() error {
 		pubip.Status = status
 		return nil
-	}); client.IgnoreNotFound(err) != nil {
+	})
+	if client.IgnoreNotFound(err) != nil {
 		return errors.Wrap(err, "could not update publicipaddress status")
 	}
 	return nil

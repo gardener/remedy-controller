@@ -2,7 +2,7 @@
 
 Gardener remedy controllers are special controllers that attempt to detect and remedy specific issues on certain platforms. They are intended to be deployed as part of the Shoot control plane alongside other platform-specific control plane components, such as the cloud controller manager. Since issues and corresponding remedies are platform-specific, there are different remedy controllers for the different platforms. The following remedy controllers exist currently:
 
-* [Azure remedy controller](cmd/remedy-controller-azure)
+- [Azure remedy controller](cmd/remedy-controller-azure)
 
 In addition, this repository hosts additional binaries to apply remedies in batch mode and simulate certain platform issues to enable easier testing of the remedy controllers.
 
@@ -12,9 +12,9 @@ In addition, this repository hosts additional binaries to apply remedies in batc
 
 Although remedy controllers may apply different remedies for different platforms, they all follow similar design principles, outlined below.
 
-* The remedy controller watches certain Kubernetes resources, e.g. services or nodes, in a *target cluster*. It is only interested in certain changes, for example a public IP address is added to a service, or a node becomes unreachable.
-* When such a change is detected, it is reconciled by creating, updating, or deleting a special custom resource designed to track the corresponding platform resource, e.g. `PublicIPAddress` for public IP addresses, or `VirtualMachine` for virtual machines. This resource is created in a *control cluster* that may be different from the target cluster. A finalizer is put on the original resource to make sure it can't be deleted unless the deletion has been properly reconciled by the remedy controller.
-* As part of the creation, update, or deletion of the custom resource mentioned above, the remedy controller performs special actions to detect, and if needed correct, issues with the corresponding platform resource, e.g. a public IP address that still exists after its corresponding service has been deleted is considered to be orphaned and is therefore deleted by the controller.
+- The remedy controller watches certain Kubernetes resources, e.g. services or nodes, in a _target cluster_. It is only interested in certain changes, for example a public IP address is added to a service, or a node becomes unreachable.
+- When such a change is detected, it is reconciled by creating, updating, or deleting a special custom resource designed to track the corresponding platform resource, e.g. `PublicIPAddress` for public IP addresses, or `VirtualMachine` for virtual machines. This resource is created in a _control cluster_ that may be different from the target cluster. A finalizer is put on the original resource to make sure it can't be deleted unless the deletion has been properly reconciled by the remedy controller.
+- As part of the creation, update, or deletion of the custom resource mentioned above, the remedy controller performs special actions to detect, and if needed correct, issues with the corresponding platform resource, e.g. a public IP address that still exists after its corresponding service has been deleted is considered to be orphaned and is therefore deleted by the controller.
 
 ### Handling Platform Rate Limits
 
@@ -26,10 +26,10 @@ Remedy controllers expose metrics for successfully applied remedies, and the num
 
 ### Deployment Options
 
-As mentioned above, the remedy controller watches Kubernetes resources in a *target cluster*, but manages custom tracking resources in a *control cluster*. These 2 clusters can be the same or different.
+As mentioned above, the remedy controller watches Kubernetes resources in a _target cluster_, but manages custom tracking resources in a _control cluster_. These 2 clusters can be the same or different.
 
-* When using the provided [Helm charts](charts), the cluster where the remedy controller is deployed is both the target and the control cluster. This deployment option is suitable for testing, or when using the controller to target a cluster not managed by Gardener.
-* In a Gardener setup, the remedy controller is deployed to the Seed cluster as part of the Shoot control plane by the corresponding platform extension. In this case, the target cluster is the Shoot and the control cluster is the Seed.
+- When using the provided [Helm charts](charts), the cluster where the remedy controller is deployed is both the target and the control cluster. This deployment option is suitable for testing, or when using the controller to target a cluster not managed by Gardener.
+- In a Gardener setup, the remedy controller is deployed to the Seed cluster as part of the Shoot control plane by the corresponding platform extension. In this case, the target cluster is the Shoot and the control cluster is the Seed.
 
 ## Features
 
@@ -49,50 +49,50 @@ In some cases, due to certain race conditions, an Azure virtual machine can reac
 
 The Azure remedy controller exposes the following custom Prometheus metrics:
 
-| Metric | Type | Description |
-|---|---|---|
-| `cleaned_azure_public_ips_total` | Counter | Number of cleaned Azure public IPs |
+| Metric                                   | Type    | Description                                |
+| ---------------------------------------- | ------- | ------------------------------------------ |
+| `cleaned_azure_public_ips_total`         | Counter | Number of cleaned Azure public IPs         |
 | `reapplied_azure_virtual_machines_total` | Counter | Number of reapplied Azure virtual machines |
-| `azure_read_requests_total` | Counter | Number of Azure read requests |
-| `azure_write_requests_total` | Counter | Number of Azure write requests |
+| `azure_read_requests_total`              | Counter | Number of Azure read requests              |
+| `azure_write_requests_total`             | Counter | Number of Azure write requests             |
 
 ## Deploying to Kubernetes
 
 1. Clone this repository. Unless you are developing in the project, be sure to checkout to a [tagged release](https://github.com/gardener/remedy-contoller/releases).
 
-    ```bash
-    git clone https://github.com/gardener/remedy-contoller
-    cd remedy-contoller
-    git checkout <tag>
-    ```
+   ```bash
+   git clone https://github.com/gardener/remedy-contoller
+   cd remedy-contoller
+   git checkout <tag>
+   ```
 
 2. Prepare a `credentials.yaml` file with the correct platform credentials and configuration. For Azure, this file should have the following format:
 
-    ```yaml
-    aadClientId: "<client id>"
-    aadClientSecret: "<client secret>"
-    tenantId: "<tenant id>"
-    subscriptionId: "<subscription id>"
-    resourceGroup: "<resource group name>"
-    location: "<azure region name>"
-    ```
+   ```yaml
+   aadClientId: "<client id>"
+   aadClientSecret: "<client secret>"
+   tenantId: "<tenant id>"
+   subscriptionId: "<subscription id>"
+   resourceGroup: "<resource group name>"
+   location: "<azure region name>"
+   ```
 
 3. Ensure that the CRDs for custom resources used by the remedy controller for your platform are deployed to the cluster. For Azure, these CRDs are [example/20-crd-publicipaddress.yaml](example/20-crd-publicipaddress.yaml) and [example/20-crd-virtualmachine.yaml](example/20-crd-virtualmachine.yaml).
 
 4. Create the namespace to deploy the remedy controller for your platform.
 
-    ```bash
-    kubectl create namespace remedy-controller-azure
-    ```
+   ```bash
+   kubectl create namespace remedy-controller-azure
+   ```
 
 5. Deploy the remedy controller for your platform and all additional objects it requires to the cluster by applying the corresponding Helm chart, passing the `credentials.yaml` file you prepared above, and other custom values if needed. For Azure, this is [charts/remedy-controller-azure](charts/remedy-controller-azure).
 
-    ```bash
-    helm upgrade -i remedy-controller-azure charts/remedy-controller-azure -n remedy-controller-azure \
-      --set-file cloudProviderConfig=dev/credentials.yaml
-    ```
+   ```bash
+   helm upgrade -i remedy-controller-azure charts/remedy-controller-azure -n remedy-controller-azure \
+     --set-file cloudProviderConfig=dev/credentials.yaml
+   ```
 
-    **Note:** The Helm charts are designed to be applied with Helm 3. To install Helm, you can execute `make install-requirements`.
+   **Note:** The Helm charts are designed to be applied with Helm 3. To install Helm, you can execute `make install-requirements`.
 
 ## Configuration
 
@@ -100,34 +100,34 @@ The Azure remedy controller exposes the following custom Prometheus metrics:
 
 The remedy controllers for all platforms can be configured using the following command line options:
 
-| Option | Type | Description |
-|---|---|---|
-| `--config-file` | string | The path to the controller manager [configuration file](#configuration-file). |
-| `--infrastructure-config` | string | The path to the infrastructure credentials and configuration file. |
-| `--leader-election` | | Whether to use leader election or not when running this controller manager. (default true) |
-| `--leader-election-id` | string | The leader election id to use. (default "remedy-controller-azure-leader-election") |
-| `--leader-election-namespace` | string | The namespace to do leader election in. (default "garden")
-| `--kubeconfig` | string | The path to a kubeconfig file. Only required if out-of-cluster. |
-| `--master` | string | The address of the Kubernetes API server. Overrides any value in `kubeconfig`. Only required if out-of-cluster. |
-| `--namespace` | string | The namespace to watch objects in. (default "kube-system") |
-| `--metrics-bind-address` | string | The TCP address that the controller should bind to for serving prometheus metrics. (default ":6000") |
-| `--disable-controllers` | strings | Comma-separated list of controllers to disable. |
-| `--target-kubeconfig` | string | The path to a kubeconfig file for the target cluster. Only required if out-of-cluster. |
-| `--target-master` | string | The address of the Kubernetes API server for the target cluster. Overrides any value in `target-kubeconfig`. Only required if out-of-cluster. |
-| `--target-namespace` | string | The namespace to watch objects in, for the target cluster. (default all namespaces) |
-| `--target-metrics-bind-address` | string | The TCP address that the controller should bind to for serving prometheus metrics, for the target cluster. (default ":6001") |
-| `--target-disable-controllers` | string | Comma-separated list of controllers to disable for the target cluster. |
+| Option                          | Type    | Description                                                                                                                                   |
+| ------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--config-file`                 | string  | The path to the controller manager [configuration file](#configuration-file).                                                                 |
+| `--infrastructure-config`       | string  | The path to the infrastructure credentials and configuration file.                                                                            |
+| `--leader-election`             |         | Whether to use leader election or not when running this controller manager. (default true)                                                    |
+| `--leader-election-id`          | string  | The leader election id to use. (default "remedy-controller-azure-leader-election")                                                            |
+| `--leader-election-namespace`   | string  | The namespace to do leader election in. (default "garden")                                                                                    |
+| `--kubeconfig`                  | string  | The path to a kubeconfig file. Only required if out-of-cluster.                                                                               |
+| `--master`                      | string  | The address of the Kubernetes API server. Overrides any value in `kubeconfig`. Only required if out-of-cluster.                               |
+| `--namespace`                   | string  | The namespace to watch objects in. (default "kube-system")                                                                                    |
+| `--metrics-bind-address`        | string  | The TCP address that the controller should bind to for serving prometheus metrics. (default ":6000")                                          |
+| `--disable-controllers`         | strings | Comma-separated list of controllers to disable.                                                                                               |
+| `--target-kubeconfig`           | string  | The path to a kubeconfig file for the target cluster. Only required if out-of-cluster.                                                        |
+| `--target-master`               | string  | The address of the Kubernetes API server for the target cluster. Overrides any value in `target-kubeconfig`. Only required if out-of-cluster. |
+| `--target-namespace`            | string  | The namespace to watch objects in, for the target cluster. (default all namespaces)                                                           |
+| `--target-metrics-bind-address` | string  | The TCP address that the controller should bind to for serving prometheus metrics, for the target cluster. (default ":6001")                  |
+| `--target-disable-controllers`  | string  | Comma-separated list of controllers to disable for the target cluster.                                                                        |
 
 #### Azure-specific
 
 The Azure remedy controller has the following additional command line options:
 
-| Option | Type | Description |
-|---|---|---|
-| `--service-max-concurrent-reconciles` | int | The maximum number of concurrent reconciliations for the service controller. (default 5) |
-| `--node-max-concurrent-reconciles` | int | The maximum number of concurrent reconciliations for the node controller. (default 5) |
-| `--publicipaddress-max-concurrent-reconciles` | int | The maximum number of concurrent reconciliations for the publicipaddress controller. (default 5) |
-| `--virtualmachine-max-concurrent-reconciles` | int | The maximum number of concurrent reconciliations for the virtualmachine controller. (default 5) |
+| Option                                        | Type | Description                                                                                      |
+| --------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------ |
+| `--service-max-concurrent-reconciles`         | int  | The maximum number of concurrent reconciliations for the service controller. (default 5)         |
+| `--node-max-concurrent-reconciles`            | int  | The maximum number of concurrent reconciliations for the node controller. (default 5)            |
+| `--publicipaddress-max-concurrent-reconciles` | int  | The maximum number of concurrent reconciliations for the publicipaddress controller. (default 5) |
+| `--virtualmachine-max-concurrent-reconciles`  | int  | The maximum number of concurrent reconciliations for the virtualmachine controller. (default 5)  |
 
 ### Configuration File
 
@@ -153,7 +153,7 @@ We are using Go modules for dependency management and [Ginkgo](https://github.co
 
 To run integration tests against the locally running Azure controller:
 
-* Execute `make pubip-remedy-test` to run integration tests for the [Cleanup orphaned public IP addresses](#cleanup-orphaned-public-ip-addresses) Azure remedy described above.
+- Execute `make pubip-remedy-test` to run integration tests for the [Cleanup orphaned public IP addresses](#cleanup-orphaned-public-ip-addresses) Azure remedy described above.
 
 ### Testing Locally
 
@@ -177,14 +177,14 @@ To test this remedy:
 
 6. Create a `PublicIPAddress` resource in the control cluster for the newly created IP address, for example:
 
-    ```yaml
-    apiVersion: azure.remedy.gardener.cloud/v1alpha1
-    kind: PublicIPAddress
-    metadata:
-      name: foo
-    spec:
-      ipAddress: 51.138.42.226
-    ```
+   ```yaml
+   apiVersion: azure.remedy.gardener.cloud/v1alpha1
+   kind: PublicIPAddress
+   metadata:
+     name: foo
+   spec:
+     ipAddress: 51.138.42.226
+   ```
 
 7. Delete the `PublicIPAddress` resource.
 
@@ -216,7 +216,7 @@ Feedback and contributions are always welcome. Please report bugs or suggestions
 
 You can find more information about Gardener here:
 
-* [Our landing page gardener.cloud](https://gardener.cloud/)
-* ["Gardener, the Kubernetes Botanist" blog on kubernetes.io](https://kubernetes.io/blog/2018/05/17/gardener/)
-* [Gardener Extensions Golang library](https://godoc.org/github.com/gardener/gardener/extensions/pkg)
-* [Gardener API Reference](https://gardener.cloud/api-reference/)
+- [Our landing page gardener.cloud](https://gardener.cloud/)
+- ["Gardener, the Kubernetes Botanist" blog on kubernetes.io](https://kubernetes.io/blog/2018/05/17/gardener/)
+- [Gardener Extensions Golang library](https://godoc.org/github.com/gardener/gardener/extensions/pkg)
+- [Gardener API Reference](https://gardener.cloud/api-reference/)

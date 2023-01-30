@@ -33,7 +33,7 @@ import (
 	controllererror "github.com/gardener/gardener/pkg/controllerutils/reconciler"
 	"github.com/go-logr/logr"
 	"github.com/golang/mock/gomock"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -469,7 +469,7 @@ var _ = Describe("Actuator", func() {
 			Expect(requeueAfterError.RequeueAfter).To(Equal(cfg.RequeueInterval.Duration))
 		})
 
-		It("should not fail if deleting the Azure IP address fails and max attempts have been reached", func() {
+		It("should not fail if deleting the Azure IP address fails and max attempts have been reached", Focus, func() {
 			failedOps := newFailedOps(azurev1alpha1.OperationTypeCleanPublicIPAddress, cfg.MaxCleanAttempts-1, "could not delete Azure public IP address: test")
 			pubip := newPubip(true, failedOps, &earlyDeletionTimestamp, nil)
 			failedOps2 := newFailedOps(azurev1alpha1.OperationTypeCleanPublicIPAddress, cfg.MaxCleanAttempts, "could not delete Azure public IP address: test")

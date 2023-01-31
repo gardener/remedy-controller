@@ -17,10 +17,13 @@ package controller_test
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/golang/mock/gomock"
+	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -42,6 +45,28 @@ const (
 	namespace    = "test-namespace"
 	requeueAfter = 1 * time.Minute
 )
+
+type eqMatcher struct {
+	want interface{}
+}
+
+func EqMatcher(want interface{}) eqMatcher {
+	return eqMatcher{
+		want: want,
+	}
+}
+
+func (eq eqMatcher) Matches(got interface{}) bool {
+	return gomock.Eq(eq.want).Matches(got)
+}
+
+func (eq eqMatcher) Got(got interface{}) string {
+	return fmt.Sprintf("%v (%T)\nDiff (-got +want):\n%s", got, got, strings.TrimSpace(cmp.Diff(got, eq.want)))
+}
+
+func (eq eqMatcher) String() string {
+	return fmt.Sprintf("%v (%T)\n", eq.want, eq.want)
+}
 
 var _ = Describe("Controller", func() {
 	var (
@@ -152,7 +177,10 @@ var _ = Describe("Controller", func() {
 			a.EXPECT().ShouldFinalize(ctx, objWithFinalizer).Return(false, nil)
 			a.EXPECT().CreateOrUpdate(ctx, objWithFinalizer).Return(requeueAfter, nil)
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, obj).Return(nil).AnyTimes()
-			c.EXPECT().Patch(ctx, gomock.Any(), gomock.Any()).Return(nil) // TODO obj
+
+			emptyFinalizerObj := obj.DeepCopyObject().(client.Object)
+			emptyFinalizerObj.SetFinalizers([]string{})
+			c.EXPECT().Patch(ctx, EqMatcher(emptyFinalizerObj), gomock.Any()).Return(nil)
 
 			result, err := reconciler.Reconcile(ctx, request)
 			Expect(err).NotTo(HaveOccurred())
@@ -167,7 +195,10 @@ var _ = Describe("Controller", func() {
 			})
 			a.EXPECT().Delete(ctx, objWithDeletionTimestampAndFinalizer).Return(requeueAfter, nil)
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: name}, objWithDeletionTimestamp).Return(nil).AnyTimes()
-			c.EXPECT().Patch(ctx, gomock.Any(), gomock.Any()).Return(nil) /// TODO obj
+
+			emptyFinalizerObj := objWithDeletionTimestamp.DeepCopyObject().(client.Object)
+			emptyFinalizerObj.SetFinalizers([]string{})
+			c.EXPECT().Patch(ctx, EqMatcher(emptyFinalizerObj), gomock.Any()).Return(nil)
 
 			result, err := reconciler.Reconcile(ctx, request)
 			Expect(err).NotTo(HaveOccurred())

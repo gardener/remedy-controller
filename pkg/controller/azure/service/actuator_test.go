@@ -196,7 +196,7 @@ var _ = Describe("Actuator", func() {
 
 		It("should update the PublicIPAddress object for a service of type LoadBalancer if it already exists and is not properly initialized", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, emptyPubip).
-				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.PublicIPAddress) error {
+				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.PublicIPAddress, opts ...client.GetOption) error {
 					obj.Spec.IPAddress = "0.0.0.0"
 					return nil
 				})
@@ -214,7 +214,7 @@ var _ = Describe("Actuator", func() {
 
 		It("should not update the PublicIPAddress object for a service of type LoadBalancer if it already exists and is properly initialized", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, emptyPubip).
-				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.PublicIPAddress) error {
+				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.PublicIPAddress, opts ...client.GetOption) error {
 					*obj = *pubip
 					return nil
 				})
@@ -231,13 +231,13 @@ var _ = Describe("Actuator", func() {
 
 		It("should retry when updating the PublicIPAddress object for a service of type LoadBalancer and a Conflict error occurs", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, emptyPubip).
-				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.PublicIPAddress) error {
+				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.PublicIPAddress, opts ...client.GetOption) error {
 					obj.Spec.IPAddress = "0.0.0.0"
 					return nil
 				})
 			c.EXPECT().Update(ctx, pubip).Return(apierrors.NewConflict(schema.GroupResource{}, pubip.Name, nil))
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, pubip).
-				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.PublicIPAddress) error {
+				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.PublicIPAddress, opts ...client.GetOption) error {
 					obj.Spec.IPAddress = "1.1.1.1"
 					return nil
 				})
@@ -254,8 +254,9 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should fail when updating the PublicIPAddress object for a service of type LoadBalancer and an error different from Conflict occurs", func() {
+
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: pubip.Namespace, Name: pubip.Name}, emptyPubip).
-				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.PublicIPAddress) error {
+				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.PublicIPAddress, opts ...client.GetOption) error {
 					obj.Spec.IPAddress = "0.0.0.0"
 					return nil
 				})

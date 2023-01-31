@@ -81,7 +81,7 @@ var _ = Describe("OwnedObjectPredicate", func() {
 
 		expectGetOwner = func() {
 			r.EXPECT().Get(context.Background(), ownerKey, gomock.AssignableToTypeOf(&corev1.Service{})).DoAndReturn(
-				func(_ context.Context, _ client.ObjectKey, svc *corev1.Service) error {
+				func(_ context.Context, _ client.ObjectKey, svc *corev1.Service, opts ...client.GetOption) error {
 					*svc = *owner
 					return nil
 				},

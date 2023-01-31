@@ -139,7 +139,7 @@ var _ = Describe("Actuator", func() {
 
 		It("should update the VirtualMachine object for a node if it already exists and is not properly initialized", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: vm.Namespace, Name: vm.Name}, emptyVM).
-				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.VirtualMachine) error {
+				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.VirtualMachine, opts ...client.GetOption) error {
 					obj.Spec.Hostname = "unknown"
 					return nil
 				})
@@ -152,7 +152,7 @@ var _ = Describe("Actuator", func() {
 
 		It("should not update the VirtualMachine object for a node if it already exists and is properly initialized", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: vm.Namespace, Name: vm.Name}, emptyVM).
-				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.VirtualMachine) error {
+				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.VirtualMachine, opts ...client.GetOption) error {
 					*obj = *vm
 					return nil
 				})
@@ -164,13 +164,13 @@ var _ = Describe("Actuator", func() {
 
 		It("should retry when updating the VirtualMachine object for a node and a Conflict error occurs", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: vm.Namespace, Name: vm.Name}, emptyVM).
-				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.VirtualMachine) error {
+				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.VirtualMachine, opts ...client.GetOption) error {
 					obj.Spec.Hostname = "unknown"
 					return nil
 				})
 			c.EXPECT().Update(ctx, vm).Return(apierrors.NewConflict(schema.GroupResource{}, vm.Name, nil))
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: vm.Namespace, Name: vm.Name}, vm).
-				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.VirtualMachine) error {
+				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.VirtualMachine, opts ...client.GetOption) error {
 					obj.Spec.Hostname = "unknown"
 					return nil
 				})
@@ -183,7 +183,7 @@ var _ = Describe("Actuator", func() {
 
 		It("should fail when updating the VirtualMachine object for a node and an error different from Conflict occurs", func() {
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: vm.Namespace, Name: vm.Name}, emptyVM).
-				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.VirtualMachine) error {
+				DoAndReturn(func(_ context.Context, _ client.ObjectKey, obj *azurev1alpha1.VirtualMachine, opts ...client.GetOption) error {
 					obj.Spec.Hostname = "unknown"
 					return nil
 				})

@@ -42,6 +42,50 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 )
 
+type PrometheusMockClient struct {
+	*mockutilsprometheus.MockGaugeVec
+	gauge                   *mockprometheus.MockGauge
+	azureVirtualMachineName string
+}
+
+func (c *PrometheusMockClient) ExpectSetGaugeOK() {
+	c.ExpectSetGauge(virtualmachine.VMStateOK)
+}
+
+func (c *PrometheusMockClient) ExpectSetGauge(state float64) {
+	c.EXPECT().WithLabelValues(c.azureVirtualMachineName).Return(c.gauge)
+	c.gauge.EXPECT().Set(state)
+}
+
+func (c *PrometheusMockClient) ExpectDeleteGauge() {
+	c.EXPECT().DeleteLabelValues(c.azureVirtualMachineName)
+}
+
+type AzureMockClient struct {
+	*mockutilsazure.MockVirtualMachineUtils
+	azureVirtualMachineID   string
+	azureVirtualMachineName string
+}
+
+func NewAzureMockClient(mock *mockutilsazure.MockVirtualMachineUtils, azureVirtualMachineName, azureVirtualMachineID string) *AzureMockClient {
+	return &AzureMockClient{
+		MockVirtualMachineUtils: mock,
+		azureVirtualMachineName: azureVirtualMachineName,
+		azureVirtualMachineID:   azureVirtualMachineID,
+	}
+}
+
+func (c *AzureMockClient) ExpectGetObj(returnProvisioningState compute.ProvisioningState) {
+	azureVirtualMachine := &compute.VirtualMachine{
+		ID:   pointer.StringPtr(c.azureVirtualMachineID),
+		Name: pointer.StringPtr(c.azureVirtualMachineName),
+		VirtualMachineProperties: &compute.VirtualMachineProperties{
+			ProvisioningState: pointer.StringPtr(string(returnProvisioningState)),
+		},
+	}
+	c.EXPECT().Get(gomock.Any(), c.azureVirtualMachineName).Return(azureVirtualMachine, nil)
+}
+
 var _ = Describe("Actuator", func() {
 	const (
 		nodeName                = "shoot--dev--test-vm1"
@@ -56,8 +100,10 @@ var _ = Describe("Actuator", func() {
 	)
 
 	var (
-		ctrl *gomock.Controller
-		ctx  context.Context
+		ctrl      *gomock.Controller
+		ctx       context.Context
+		azureMock *AzureMockClient
+		promMock  *PrometheusMockClient
 
 		c                   *mockclient.MockClient
 		sw                  *mockclient.MockStatusWriter
@@ -72,9 +118,8 @@ var _ = Describe("Actuator", func() {
 		logger      logr.Logger
 		actuator    controller.Actuator
 
-		newVM                  func(bool, bool, compute.ProvisioningState, []azurev1alpha1.FailedOperation) *azurev1alpha1.VirtualMachine
-		newAzureVirtualMachine func(compute.ProvisioningState) *compute.VirtualMachine
-		expectPatchStatus      func(vm, vmUpdated *azurev1alpha1.VirtualMachine) *gomock.Call
+		newVM             func(bool, bool, compute.ProvisioningState, []azurev1alpha1.FailedOperation) *azurev1alpha1.VirtualMachine
+		expectPatchStatus func(vm, vmUpdated *azurev1alpha1.VirtualMachine) *gomock.Call
 	)
 
 	BeforeEach(func() {
@@ -85,9 +130,16 @@ var _ = Describe("Actuator", func() {
 		sw = mockclient.NewMockStatusWriter(ctrl)
 		c.EXPECT().Status().Return(sw).AnyTimes()
 		vmUtils = mockutilsazure.NewMockVirtualMachineUtils(ctrl)
+		azureMock = NewAzureMockClient(vmUtils, azureVirtualMachineName, azureVirtualMachineID)
+
 		reappliedVMsCounter = mockprometheus.NewMockCounter(ctrl)
 		vmStatesGaugeVec = mockutilsprometheus.NewMockGaugeVec(ctrl)
 		vmStatesGauge = mockprometheus.NewMockGauge(ctrl)
+		promMock = &PrometheusMockClient{
+			MockGaugeVec:            vmStatesGaugeVec,
+			gauge:                   vmStatesGauge,
+			azureVirtualMachineName: azureVirtualMachineName,
+		}
 
 		cfg = config.AzureFailedVMRemedyConfiguration{
 			RequeueInterval:    metav1.Duration{Duration: requeueInterval},
@@ -125,15 +177,6 @@ var _ = Describe("Actuator", func() {
 				Status: status,
 			}
 		}
-		newAzureVirtualMachine = func(provisioningState compute.ProvisioningState) *compute.VirtualMachine {
-			return &compute.VirtualMachine{
-				ID:   pointer.StringPtr(azureVirtualMachineID),
-				Name: pointer.StringPtr(azureVirtualMachineName),
-				VirtualMachineProperties: &compute.VirtualMachineProperties{
-					ProvisioningState: pointer.StringPtr(string(provisioningState)),
-				},
-			}
-		}
 		expectPatchStatus = func(vm, vmUpdated *azurev1alpha1.VirtualMachine) *gomock.Call {
 			c.EXPECT().Get(gomock.Any(), client.ObjectKey{Namespace: namespace, Name: azureVirtualMachineName}, vm).Return(nil)
 			return sw.EXPECT().Patch(gomock.Any(), vmUpdated, gomock.Any())
@@ -145,14 +188,14 @@ var _ = Describe("Actuator", func() {
 	})
 
 	Describe("#CreateOrUpdate", func() {
-		It("should update the VirtualMachine object status if the VM is found", func() {
-			vm := newVM(false, false, "", nil)
-			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
-			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
-			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
-			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
+		It("should add the VirtualMachine object status if the VM is found", func() {
+			azureMock.ExpectGetObj(compute.ProvisioningStateSucceeded)
+			promMock.ExpectSetGaugeOK()
 
+			// try controllerutil.CreateOrPatch
+			initialStatus := compute.ProvisioningState("")
+			vm := newVM(false, false, initialStatus, nil) // without status
+			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
 			expectPatchStatus(vm, vmWithStatus).Return(nil)
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject().(client.Object))
@@ -161,9 +204,12 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should not update the VirtualMachine object status if the VM is not found", func() {
-			vm := newVM(false, false, "", nil)
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, nil)
-			vmStatesGaugeVec.EXPECT().DeleteLabelValues(azureVirtualMachineName)
+			azureMock.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, nil)
+			promMock.ExpectDeleteGauge()
+
+			// try controllerutil.CreateOrPatch
+			initialStatus := compute.ProvisioningState("")
+			vm := newVM(false, false, initialStatus, nil) // without status
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vm).Return(nil)
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject().(client.Object))
@@ -172,12 +218,13 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should not update the VirtualMachine object status if the VM is found and the status is already initialized", func() {
+			azureMock.ExpectGetObj(compute.ProvisioningStateSucceeded)
+			promMock.ExpectSetGaugeOK()
+
+			// try controllerutil.CreateOrPatch
 			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
-			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
+			// do not patch status since up-to-date
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vmWithStatus).Return(nil)
-			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
-			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithStatus.DeepCopyObject().(client.Object))
 			Expect(err).NotTo(HaveOccurred())
@@ -185,11 +232,11 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should update the VirtualMachine object status if the VM is not found and the status is already initialized", func() {
-			vm := newVM(false, false, "", nil)
-			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, nil)
-			vmStatesGaugeVec.EXPECT().DeleteLabelValues(azureVirtualMachineName)
+			azureMock.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, nil)
+			promMock.ExpectDeleteGauge()
 
+			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
+			vm := newVM(false, false, "", nil)
 			expectPatchStatus(vmWithStatus, vm).Return(nil)
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithStatus.DeepCopyObject().(client.Object))
@@ -198,23 +245,20 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should reapply the Azure VM if it's in a failed state", func() {
+			azureMock.ExpectGetObj(compute.ProvisioningStateFailed)
+
 			vm := newVM(true, false, "", nil)
 			vmWithStatus := newVM(true, true, compute.ProvisioningStateFailed, nil)
-			vmWithStatus2 := newVM(true, true, compute.ProvisioningStateSucceeded, nil)
-			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateFailed)
-			azureVirtualMachine2 := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
-
 			expectPatchStatus(vm, vmWithStatus).Return(nil)
 
-			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
-			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateFailedWillReapply)
-			vmUtils.EXPECT().Reapply(ctx, azureVirtualMachineName).Return(nil)
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine2, nil)
-			reappliedVMsCounter.EXPECT().Inc()
-			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
-			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
+			promMock.ExpectSetGauge(virtualmachine.VMStateFailedWillReapply)
+			azureMock.EXPECT().Reapply(ctx, azureVirtualMachineName).Return(nil)
 
+			azureMock.ExpectGetObj(compute.ProvisioningStateSucceeded)
+			reappliedVMsCounter.EXPECT().Inc()
+			promMock.ExpectSetGaugeOK()
+
+			vmWithStatus2 := newVM(true, true, compute.ProvisioningStateSucceeded, nil)
 			expectPatchStatus(vmWithStatus, vmWithStatus2).Return(nil)
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject().(client.Object))
@@ -223,6 +267,7 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should fail if getting the Azure VM fails", func() {
+			azureMock.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, errors.New("test"))
 			vm := newVM(false, false, "", nil)
 			vmWithFailedOps := newVM(false, false, "", []azurev1alpha1.FailedOperation{
 				{
@@ -232,7 +277,6 @@ var _ = Describe("Actuator", func() {
 					Timestamp:    now,
 				},
 			})
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, errors.New("test"))
 			expectPatchStatus(vm, vmWithFailedOps).Return(nil)
 
 			_, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject().(client.Object))
@@ -243,11 +287,10 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should fail if updating the VirtualMachine object status fails", func() {
+			azureMock.ExpectGetObj(compute.ProvisioningStateSucceeded)
+
 			vm := newVM(false, false, "", nil)
 			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
-			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
-
 			expectPatchStatus(vm, vmWithStatus).Return(errors.New("test"))
 
 			_, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject().(client.Object))
@@ -255,8 +298,15 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should fail if reapplying the Azure VM fails", func() {
+			azureMock.ExpectGetObj(compute.ProvisioningStateFailed)
+
 			vm := newVM(true, false, "", nil)
 			vmWithStatus := newVM(true, true, compute.ProvisioningStateFailed, nil)
+			expectPatchStatus(vm, vmWithStatus).Return(nil)
+
+			promMock.ExpectSetGauge(virtualmachine.VMStateFailedWillReapply)
+			azureMock.EXPECT().Reapply(ctx, azureVirtualMachineName).Return(errors.New("test"))
+
 			vmWithFailedOps := newVM(true, true, compute.ProvisioningStateFailed, []azurev1alpha1.FailedOperation{
 				{
 					Type:         azurev1alpha1.OperationTypeReapplyVirtualMachine,
@@ -265,15 +315,6 @@ var _ = Describe("Actuator", func() {
 					Timestamp:    now,
 				},
 			})
-			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateFailed)
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
-
-			expectPatchStatus(vm, vmWithStatus).Return(nil)
-
-			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
-			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateFailedWillReapply)
-			vmUtils.EXPECT().Reapply(ctx, azureVirtualMachineName).Return(errors.New("test"))
-
 			expectPatchStatus(vmWithStatus, vmWithFailedOps).Return(nil)
 
 			_, err := actuator.CreateOrUpdate(ctx, vm.DeepCopyObject().(client.Object))
@@ -284,6 +325,9 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should not fail if reapplying the Azure VM fails and max attempts have been reached", func() {
+			azureMock.ExpectGetObj(compute.ProvisioningStateFailed)
+			promMock.ExpectSetGauge(virtualmachine.VMStateFailedWillReapply)
+
 			vmWithFailedOps := newVM(true, true, compute.ProvisioningStateFailed, []azurev1alpha1.FailedOperation{
 				{
 					Type:         azurev1alpha1.OperationTypeReapplyVirtualMachine,
@@ -292,6 +336,10 @@ var _ = Describe("Actuator", func() {
 					Timestamp:    now,
 				},
 			})
+			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vmWithFailedOps).Return(nil)
+
+			azureMock.EXPECT().Reapply(ctx, azureVirtualMachineName).Return(errors.New("test"))
+			promMock.ExpectSetGauge(virtualmachine.VMStateFailed)
 			vmWithFailedOps2 := newVM(true, true, compute.ProvisioningStateFailed, []azurev1alpha1.FailedOperation{
 				{
 					Type:         azurev1alpha1.OperationTypeReapplyVirtualMachine,
@@ -300,15 +348,6 @@ var _ = Describe("Actuator", func() {
 					Timestamp:    now,
 				},
 			})
-			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateFailed)
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
-			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vmWithFailedOps).Return(nil)
-			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
-			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateFailedWillReapply)
-			vmUtils.EXPECT().Reapply(ctx, azureVirtualMachineName).Return(errors.New("test"))
-			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
-			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateFailed)
-
 			expectPatchStatus(vmWithFailedOps, vmWithFailedOps2).Return(nil)
 
 			requeueAfter, err := actuator.CreateOrUpdate(ctx, vmWithFailedOps.DeepCopyObject().(client.Object))
@@ -326,17 +365,17 @@ var _ = Describe("Actuator", func() {
 				},
 			})
 			vm := newVM(true, true, compute.ProvisioningStateSucceeded, nil)
-			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateFailed)
-			azureVirtualMachine2 := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
+
+			azureMock.ExpectGetObj(compute.ProvisioningStateFailed)
+
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vmWithFailedOps).Return(nil)
-			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
-			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateFailedWillReapply)
-			vmUtils.EXPECT().Reapply(ctx, azureVirtualMachineName).Return(nil)
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine2, nil)
+			promMock.ExpectSetGauge(virtualmachine.VMStateFailedWillReapply)
+
+			azureMock.EXPECT().Reapply(ctx, azureVirtualMachineName).Return(nil)
+
+			azureMock.ExpectGetObj(compute.ProvisioningStateSucceeded)
 			reappliedVMsCounter.EXPECT().Inc()
-			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
-			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
+			promMock.ExpectSetGaugeOK()
 
 			expectPatchStatus(vmWithFailedOps, vm).Return(nil)
 
@@ -348,13 +387,12 @@ var _ = Describe("Actuator", func() {
 
 	Describe("#Delete", func() {
 		It("should update the VirtualMachine object status if the VM is found", func() {
+
+			azureMock.ExpectGetObj(compute.ProvisioningStateSucceeded)
+			promMock.ExpectSetGaugeOK()
+
 			vm := newVM(false, false, "", nil)
 			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
-			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
-			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
-			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
-
 			expectPatchStatus(vm, vmWithStatus).Return(nil)
 
 			requeueAfter, err := actuator.Delete(ctx, vm.DeepCopyObject().(client.Object))
@@ -364,8 +402,8 @@ var _ = Describe("Actuator", func() {
 
 		It("should not update the VirtualMachine object status if the VM is not found", func() {
 			vm := newVM(false, false, "", nil)
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, nil)
-			vmStatesGaugeVec.EXPECT().DeleteLabelValues(azureVirtualMachineName)
+			azureMock.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, nil)
+			promMock.ExpectDeleteGauge()
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vm).Return(nil)
 
 			requeueAfter, err := actuator.Delete(ctx, vm.DeepCopyObject().(client.Object))
@@ -375,10 +413,9 @@ var _ = Describe("Actuator", func() {
 
 		It("should not update the VirtualMachine object status if the VM is found and the status is already initialized", func() {
 			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
-			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
-			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
-			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
+
+			azureMock.ExpectGetObj(compute.ProvisioningStateSucceeded)
+			promMock.ExpectSetGaugeOK()
 			c.EXPECT().Get(ctx, client.ObjectKey{Namespace: namespace, Name: nodeName}, vmWithStatus).Return(nil)
 
 			requeueAfter, err := actuator.Delete(ctx, vmWithStatus.DeepCopyObject().(client.Object))
@@ -387,11 +424,11 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should update the VirtualMachine object status if the VM is not found and the status is already initialized", func() {
-			vm := newVM(false, false, "", nil)
-			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, nil)
-			vmStatesGaugeVec.EXPECT().DeleteLabelValues(azureVirtualMachineName)
+			azureMock.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, nil)
+			promMock.ExpectDeleteGauge()
 
+			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
+			vm := newVM(false, false, "", nil)
 			expectPatchStatus(vmWithStatus, vm).Return(nil)
 
 			requeueAfter, err := actuator.Delete(ctx, vmWithStatus.DeepCopyObject().(client.Object))
@@ -400,6 +437,8 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should fail if getting the Azure VM fails", func() {
+			azureMock.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, errors.New("test"))
+
 			vm := newVM(false, false, "", nil)
 			vmWithFailedOps := newVM(false, false, "", []azurev1alpha1.FailedOperation{
 				{
@@ -409,7 +448,6 @@ var _ = Describe("Actuator", func() {
 					Timestamp:    now,
 				},
 			})
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(nil, errors.New("test"))
 			expectPatchStatus(vm, vmWithFailedOps).Return(nil)
 
 			_, err := actuator.Delete(ctx, vm.DeepCopyObject().(client.Object))
@@ -420,13 +458,11 @@ var _ = Describe("Actuator", func() {
 		})
 
 		It("should fail if updating the VirtualMachine object status fails", func() {
+			azureMock.ExpectGetObj(compute.ProvisioningStateSucceeded)
+			promMock.ExpectSetGaugeOK()
+
 			vm := newVM(false, false, "", nil)
 			vmWithStatus := newVM(false, true, compute.ProvisioningStateSucceeded, nil)
-			azureVirtualMachine := newAzureVirtualMachine(compute.ProvisioningStateSucceeded)
-			vmUtils.EXPECT().Get(ctx, azureVirtualMachineName).Return(azureVirtualMachine, nil)
-			vmStatesGaugeVec.EXPECT().WithLabelValues(azureVirtualMachineName).Return(vmStatesGauge)
-			vmStatesGauge.EXPECT().Set(virtualmachine.VMStateOK)
-
 			expectPatchStatus(vm, vmWithStatus).Return(errors.New("test"))
 
 			_, err := actuator.Delete(ctx, vm.DeepCopyObject().(client.Object))

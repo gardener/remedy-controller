@@ -27,6 +27,6 @@ import (
 
 	_ "github.com/ahmetb/gen-crd-api-reference-docs"
 	_ "github.com/golang/mock/mockgen"
-	_ "github.com/onsi/ginkgo/v2/ginkgo"
+	_ "golang.org/x/tools/cmd/goimports"
 	_ "k8s.io/code-generator"
 )

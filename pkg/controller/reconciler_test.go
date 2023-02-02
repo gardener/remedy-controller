@@ -50,7 +50,7 @@ type eqMatcher struct {
 	want interface{}
 }
 
-func EqMatcher(want interface{}) eqMatcher {
+func eqMatch(want interface{}) eqMatcher {
 	return eqMatcher{
 		want: want,
 	}

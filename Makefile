@@ -22,6 +22,13 @@ LD_FLAGS                    := "-w -X github.com/gardener/$(NAME)/pkg/version.Ve
 LEADER_ELECTION             := false
 
 #########################################
+# Tools                                 #
+#########################################
+
+TOOLS_DIR := hack/tools
+include vendor/github.com/gardener/gardener/hack/tools.mk
+
+#########################################
 # Rules for local development scenarios #
 #########################################
 
@@ -79,12 +86,6 @@ docker-images:
 
 .PHONY: install-requirements
 install-requirements: # needs sudo permissions
-	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/ahmetb/gen-crd-api-reference-docs
-	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/golang/mock/mockgen
-	@go install -mod=vendor $(REPO_ROOT)/vendor/github.com/onsi/ginkgo/v2/ginkgo
-	@echo "install newer version of golangci-lint"
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.1 
-
 	@python3 -m venv $(REPO_ROOT)/.env
 	@. $(REPO_ROOT)/.env/bin/activate && pip3 install --upgrade pip && pip3 install -r $(REPO_ROOT)/test/requirements.txt
 
@@ -105,17 +106,17 @@ check-generate:
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check-generate.sh $(REPO_ROOT)
 
 .PHONY: check
-check:
+check: $(GOIMPORTS) $(GOLANGCI_LINT)
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check.sh --golangci-lint-config=./.golangci.yaml ./cmd/... ./pkg/...
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check-charts.sh ./charts
 	@. $(REPO_ROOT)/.env/bin/activate && flake8 $(REPO_ROOT)/test
 
 .PHONY: generate
-generate:
+generate: $(GEN_CRD_API_REFERENCE_DOCS) $(MOCKGEN)
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/generate.sh ./cmd/... ./pkg/...
 
 .PHONY: format
-format:
+format: $(GOIMPORTS)
 	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/format.sh ./cmd ./pkg
 
 .PHONY: test

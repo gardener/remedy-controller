@@ -180,7 +180,7 @@ var _ = Describe("Controller", func() {
 
 			emptyFinalizerObj := obj.DeepCopyObject().(client.Object)
 			emptyFinalizerObj.SetFinalizers([]string{})
-			c.EXPECT().Patch(ctx, EqMatcher(emptyFinalizerObj), gomock.Any()).Return(nil)
+			c.EXPECT().Patch(ctx, eqMatch(emptyFinalizerObj), gomock.Any()).Return(nil)
 
 			result, err := reconciler.Reconcile(ctx, request)
 			Expect(err).NotTo(HaveOccurred())

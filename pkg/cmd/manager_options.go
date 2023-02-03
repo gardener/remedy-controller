@@ -23,8 +23,6 @@ import (
 const (
 	// NamespaceFlag is the name of the command line flag to specify the namespace to watch objects in.
 	NamespaceFlag = "namespace"
-	// MetricsBindAddressFlag is the name of the command line flag to specify the metrics bind address.
-	MetricsBindAddressFlag = "metrics-bind-address"
 )
 
 // ManagerOptions are command line options that can be set for manager.Options.
@@ -44,7 +42,6 @@ type ManagerOptions struct {
 func (m *ManagerOptions) AddFlags(fs *pflag.FlagSet) {
 	m.ManagerOptions.AddFlags(fs)
 	fs.StringVar(&m.Namespace, NamespaceFlag, m.Namespace, "The namespace to watch objects in.")
-	fs.StringVar(&m.MetricsBindAddress, MetricsBindAddressFlag, m.MetricsBindAddress, "The TCP address that the controller should bind to for serving prometheus metrics.")
 }
 
 // Complete implements Completer.Complete.

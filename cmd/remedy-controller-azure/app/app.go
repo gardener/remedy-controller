@@ -50,15 +50,11 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 				LeaderElectionID:        controllercmd.LeaderElectionNameID(Name),
 				LeaderElectionNamespace: os.Getenv("LEADER_ELECTION_NAMESPACE"),
 			},
-			MetricsBindAddress: ":6000",
-			Namespace:          "kube-system",
+			Namespace: "kube-system",
 		}
 
 		targetRestOpts = &controllercmd.RESTOptions{}
-		targetMgrOpts  = &cmd.ManagerOptions{
-			ManagerOptions:     controllercmd.ManagerOptions{},
-			MetricsBindAddress: ":6001",
-		}
+		targetMgrOpts  = &cmd.ManagerOptions{}
 
 		// options for the publicipaddress controller
 		publicIPAddressCtrlOpts = &controllercmd.ControllerOptions{

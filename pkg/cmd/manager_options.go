@@ -31,9 +31,6 @@ type ManagerOptions struct {
 	// Namespace is the namespace to watch objects in.
 	// If not specified, defaults to all namespaces.
 	Namespace string
-	// MetricsBindAddress is the TCP address that the controller should bind to for serving prometheus metrics.
-	// It can be set to "0" to disable the metrics serving.
-	MetricsBindAddress string
 
 	config *ManagerConfig
 }
@@ -50,9 +47,8 @@ func (m *ManagerOptions) Complete() error {
 		return err
 	}
 	m.config = &ManagerConfig{
-		ManagerConfig:      *m.ManagerOptions.Completed(),
-		Namespace:          m.Namespace,
-		MetricsBindAddress: m.MetricsBindAddress,
+		ManagerConfig: *m.ManagerOptions.Completed(),
+		Namespace:     m.Namespace,
 	}
 	return nil
 }
@@ -68,16 +64,14 @@ type ManagerConfig struct {
 	// Namespace is the namespace to watch objects in.
 	// If not specified, defaults to all namespaces.
 	Namespace string
-	// MetricsBindAddress is the TCP address that the controller should bind to for serving prometheus metrics.
-	// It can be set to "0" to disable the metrics serving.
-	MetricsBindAddress string
 }
 
 // Apply sets the values of this ManagerConfig in the given manager.Options.
 func (c *ManagerConfig) Apply(opts *manager.Options) {
 	c.ManagerConfig.Apply(opts)
 	opts.Namespace = c.Namespace
-	opts.MetricsBindAddress = c.MetricsBindAddress
+	// disable health probe as not used but defaulted to the same port twice
+	opts.HealthProbeBindAddress = ""
 }
 
 // Options initializes empty manager.Options, applies the set values and returns it.

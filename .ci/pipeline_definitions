@@ -46,53 +46,11 @@ remedy-controller:
       repo:
         trigger: false
       steps:
-        test:
-          image: eu.gcr.io/gardener-project/gardener/testmachinery/testmachinery-run:stable
-          execute:
-            - tm-test
-            - --flavor-tm-chart=default
-            - --flavor-config=min-shoot-flavor-az.yaml
-            - --landscape=opensource
-            - --tm-landscape=external
-            - --
-            - --testrun-prefix=remedy-controller
-            - --set=projectNamespace=garden-it
         trigger_release:
           execute:
             - trigger_release.py
           vars:
             RELEASE_JOB_NAME: 'pipeline.variant("force-release").job_name()'
-          depends:
-            - test
-      traits:
-        version:
-          inject_effective_version: True
-        component_descriptor: ~
-        publish:
-          dockerimages:
-            remedy-controller-image:
-              registry: "gcr-readwrite"
-              image: "eu.gcr.io/gardener-project/gardener/remedy-controller/remedy-controller-azure"
-              dockerfile: "Dockerfile"
-              target: remedy-controller-azure
-
-    test-only:
-      repo:
-        trigger: false
-      steps:
-        test:
-          image: eu.gcr.io/gardener-project/gardener/testmachinery/testmachinery-run:stable
-          execute:
-            - tm-test
-            - --flavor-tm-chart=default
-            - --flavor-config=min-shoot-flavor-az.yaml
-            - --landscape=opensource
-            - --tm-landscape=external
-            - --
-            - --testrun-prefix=remedy-controller
-            - --set=projectNamespace=garden-it
-          trait_depends:
-            - publish
       traits:
         version:
           inject_effective_version: True

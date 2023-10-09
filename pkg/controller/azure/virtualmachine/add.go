@@ -96,7 +96,7 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 	}
 
 	return remedycontroller.Add(mgr, remedycontroller.AddArgs{
-		Actuator: NewActuator(utilsazure.NewVirtualMachineUtils(azureClients, credentials.ResourceGroup, utilsazure.ReadRequestsCounter, utilsazure.WriteRequestsCounter),
+		Actuator: NewActuator(mgr.GetClient(), utilsazure.NewVirtualMachineUtils(azureClients, credentials.ResourceGroup, utilsazure.ReadRequestsCounter, utilsazure.WriteRequestsCounter),
 			options.Config, utils.TimestamperFunc(metav1.Now), log.Log.WithName(ActuatorName), ReappliedVMsCounter, VMStatesGaugeVec),
 		ControllerName:    ControllerName,
 		FinalizerName:     FinalizerName,

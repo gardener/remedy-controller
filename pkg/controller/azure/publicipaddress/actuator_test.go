@@ -40,7 +40,6 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 )
 
 var _ = Describe("Actuator", func() {
@@ -102,8 +101,7 @@ var _ = Describe("Actuator", func() {
 		now = metav1.Now()
 		timestamper = utils.TimestamperFunc(func() metav1.Time { return now })
 		logger = log.Log.WithName("test")
-		actuator = publicipaddress.NewActuator(pubipUtils, cfg, timestamper, logger, cleanedIPsCounter)
-		Expect(actuator.(inject.Client).InjectClient(c)).To(Succeed())
+		actuator = publicipaddress.NewActuator(c, pubipUtils, cfg, timestamper, logger, cleanedIPsCounter)
 
 		earlyDeletionTimestamp = metav1.NewTime(now.Add(-10 * time.Minute))
 

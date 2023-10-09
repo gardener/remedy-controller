@@ -67,7 +67,7 @@ func DefaultPredicates() []predicate.Predicate {
 
 // Add creates a new controller and adds it to the given manager using the given args.
 func Add(mgr manager.Manager, args AddArgs) error {
-	args.ControllerOptions.Reconciler = NewReconciler(args.Actuator, args.ControllerName, args.FinalizerName, args.Type, args.ShouldEnsureDeleted, log.Log.WithName(args.ControllerName))
+	args.ControllerOptions.Reconciler = NewReconciler(mgr.GetClient(), args.Actuator, args.ControllerName, args.FinalizerName, args.Type, args.ShouldEnsureDeleted, log.Log.WithName(args.ControllerName))
 	return add(mgr, args)
 }
 

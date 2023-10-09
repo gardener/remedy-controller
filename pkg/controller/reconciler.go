@@ -35,7 +35,6 @@ type reconciler struct {
 	typ                 client.Object
 	shouldEnsureDeleted bool
 	client              client.Client
-	reader              client.Reader
 	logger              logr.Logger
 }
 

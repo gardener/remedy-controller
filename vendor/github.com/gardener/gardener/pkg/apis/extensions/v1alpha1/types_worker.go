@@ -1,4 +1,4 @@
-// Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
+// Copyright 2019 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
 package v1alpha1
 
 import (
-	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+
+	gardencorev1beta1 "github.com/gardener/gardener/pkg/apis/core/v1beta1"
 )
 
 var _ Object = (*Worker)(nil)
@@ -210,6 +210,9 @@ type WorkerStatus struct {
 	// +patchMergeKey=name
 	// +patchStrategy=merge
 	MachineDeployments []MachineDeployment `json:"machineDeployments,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
+	// MachineDeploymentsLastUpdateTime is the timestamp when the status.MachineDeployments slice was last updated.
+	// +optional
+	MachineDeploymentsLastUpdateTime *metav1.Time `json:"machineDeploymentsLastUpdateTime,omitempty"`
 }
 
 // MachineDeployment is a created machine deployment.

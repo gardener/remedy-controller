@@ -1,4 +1,4 @@
-// Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
+// Copyright 2019 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gardener/gardener/pkg/utils/retry"
-
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/gardener/gardener/pkg/utils/retry"
 )
 
 // ScaleStatefulSet scales a StatefulSet.
@@ -54,10 +54,7 @@ func ScaleDeployment(ctx context.Context, c client.Client, key client.ObjectKey,
 // scaleResource scales resource's 'spec.replicas' to replicas count
 func scaleResource(ctx context.Context, c client.Client, obj client.Object, replicas int32) error {
 	patch := []byte(fmt.Sprintf(`{"spec":{"replicas":%d}}`, replicas))
-
-	// TODO: replace this with call to scale subresource once controller-runtime supports it
-	// see: https://github.com/kubernetes-sigs/controller-runtime/issues/172
-	return c.Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
+	return c.SubResource("scale").Patch(ctx, obj, client.RawPatch(types.MergePatchType, patch))
 }
 
 // WaitUntilDeploymentScaledToDesiredReplicas waits for the number of available replicas to be equal to the deployment's desired replicas count.

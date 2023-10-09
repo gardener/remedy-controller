@@ -1,4 +1,4 @@
-// Copyright (c) 2022 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
+// Copyright 2022 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,8 +43,8 @@ func GetReplicaCount(failureToleranceType *gardencorev1beta1.FailureToleranceTyp
 // Note that the returned requirement should be added to all existing node selector terms in the
 // spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms field of pods because
 // the various node selector terms are evaluated with the OR operator.
-func GetNodeSelectorRequirementForZones(failureToleranceType *gardencorev1beta1.FailureToleranceType, zones []string) *corev1.NodeSelectorRequirement {
-	if len(zones) == 0 || failureToleranceType == nil {
+func GetNodeSelectorRequirementForZones(isZonePinningEnabled bool, zones []string) *corev1.NodeSelectorRequirement {
+	if len(zones) == 0 || !isZonePinningEnabled {
 		return nil
 	}
 
@@ -93,6 +93,7 @@ func GetTopologySpreadConstraints(
 
 		topologySpreadConstraints = append(topologySpreadConstraints, corev1.TopologySpreadConstraint{
 			TopologyKey:       corev1.LabelTopologyZone,
+			MinDomains:        minDomains(numberOfZones, maxReplicas),
 			MaxSkew:           maxSkew,
 			WhenUnsatisfiable: corev1.DoNotSchedule,
 			LabelSelector:     &labelSelector,
@@ -100,4 +101,15 @@ func GetTopologySpreadConstraints(
 	}
 
 	return topologySpreadConstraints
+}
+
+func minDomains(numberOfZones, maxReplicas int32) *int32 {
+	// If the maximum replica count is lower than the number of zones, then we only need to set 'minDomains' to
+	// the number of replicas because there is no benefit of enforcing a further zone spread for additional replicas,
+	// e.g. when a rolling update is performed.
+	if maxReplicas < numberOfZones {
+		return pointer.Int32(maxReplicas)
+	}
+	// Return the number of zones otherwise because it's not possible to spread pods over more zones than there are available.
+	return pointer.Int32(numberOfZones)
 }

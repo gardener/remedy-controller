@@ -1,4 +1,4 @@
-// Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
+// Copyright 2019 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import (
 
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	baseconfig "k8s.io/component-base/config"
+	componentbaseconfig "k8s.io/component-base/config"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -34,9 +34,8 @@ type Config struct {
 	newRuntimeCache   cache.NewCacheFunc
 	clientOptions     client.Options
 	restConfig        *rest.Config
-	cacheResync       *time.Duration
+	cacheSyncPeriod   *time.Duration
 	disableCache      bool
-	uncachedObjects   []client.Object
 	allowedUserFields []string
 	clientConfig      clientcmd.ClientConfig
 }
@@ -87,7 +86,7 @@ func WithRuntimeCache(runtimeCache cache.Cache) ConfigFunc {
 // WithClientConnectionOptions returns a ConfigFunc that transfers settings from
 // the passed ClientConnectionConfiguration.
 // The kubeconfig location in ClientConnectionConfiguration is disregarded, though!
-func WithClientConnectionOptions(cfg baseconfig.ClientConnectionConfiguration) ConfigFunc {
+func WithClientConnectionOptions(cfg componentbaseconfig.ClientConnectionConfiguration) ConfigFunc {
 	return func(config *Config) error {
 		if config.restConfig == nil {
 			return errors.New("REST config must be set before setting connection options")
@@ -108,10 +107,10 @@ func WithClientOptions(opt client.Options) ConfigFunc {
 	}
 }
 
-// WithCacheResyncPeriod returns a ConfigFunc that set the client's cache's resync period to the given duration.
-func WithCacheResyncPeriod(resync time.Duration) ConfigFunc {
+// WithCacheSyncPeriod returns a ConfigFunc that set the client's cache's sync period to the given duration.
+func WithCacheSyncPeriod(sync time.Duration) ConfigFunc {
 	return func(config *Config) error {
-		config.cacheResync = &resync
+		config.cacheSyncPeriod = &sync
 		return nil
 	}
 }
@@ -121,14 +120,6 @@ func WithCacheResyncPeriod(resync time.Duration) ConfigFunc {
 func WithDisabledCachedClient() ConfigFunc {
 	return func(config *Config) error {
 		config.disableCache = true
-		return nil
-	}
-}
-
-// WithUncached disables the cached client for the specified objects' GroupKinds.
-func WithUncached(objs ...client.Object) ConfigFunc {
-	return func(config *Config) error {
-		config.uncachedObjects = append(config.uncachedObjects, objs...)
 		return nil
 	}
 }

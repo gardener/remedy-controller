@@ -15,6 +15,7 @@
 package controller
 
 import (
+	"context"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -87,7 +88,7 @@ type Mapper interface {
 // MapFuncFromMapper returns handler.MapFunc that uses the given mapper to map the given object
 // to the object key of a different object and returns a reconcile.Request for that key if it's not empty.
 func MapFuncFromMapper(mapper Mapper) handler.MapFunc {
-	return func(obj client.Object) []reconcile.Request {
+	return func(ctx context.Context, obj client.Object) []reconcile.Request {
 		key := mapper.Map(obj)
 		if key.Name == "" {
 			return nil

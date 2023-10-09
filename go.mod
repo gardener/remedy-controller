@@ -2,8 +2,6 @@ module github.com/gardener/remedy-controller
 
 go 1.21
 
-toolchain go1.21.1
-
 require (
 	github.com/Azure/azure-sdk-for-go v49.2.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.27

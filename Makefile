@@ -113,7 +113,7 @@ check: $(GOIMPORTS) $(GOLANGCI_LINT) $(HELM)
 
 .PHONY: generate
 generate: $(GEN_CRD_API_REFERENCE_DOCS) $(MOCKGEN)
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/generate.sh ./cmd/... ./pkg/...
+	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/generate-sequential.sh ./cmd/... ./pkg/...
 
 .PHONY: format
 format: $(GOIMPORTS)

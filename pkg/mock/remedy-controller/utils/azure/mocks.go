@@ -10,7 +10,7 @@ import (
 
 	compute "github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-07-01/compute"
 	network "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockPublicIPAddressUtils is a mock of PublicIPAddressUtils interface.

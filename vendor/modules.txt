@@ -228,7 +228,6 @@ github.com/golang-jwt/jwt/v4
 github.com/golang/groupcache/lru
 # github.com/golang/mock v1.6.0
 ## explicit; go 1.11
-github.com/golang/mock/gomock
 github.com/golang/mock/mockgen
 github.com/golang/mock/mockgen/model
 # github.com/golang/protobuf v1.5.3
@@ -397,6 +396,7 @@ github.com/spf13/cobra
 github.com/spf13/pflag
 # go.uber.org/mock v0.2.0
 ## explicit; go 1.19
+go.uber.org/mock/gomock
 go.uber.org/mock/mockgen
 go.uber.org/mock/mockgen/model
 # go.uber.org/multierr v1.11.0

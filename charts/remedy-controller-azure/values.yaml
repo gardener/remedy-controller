@@ -1,6 +1,6 @@
 replicas: 1
 image:
-  repository: eu.gcr.io/gardener-project/gardener/remedy-controller/remedy-controller-azure
+  repository: europe-docker.pkg.dev/gardener-project/public/gardener/remedy-controller/remedy-controller-azure
   tag: latest
   pullPolicy: IfNotPresent
 resources:

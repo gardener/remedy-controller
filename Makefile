@@ -14,8 +14,8 @@
 
 NAME                        := remedy-controller
 APPLIER_NAME                := remedy-applier
-REGISTRY                    := eu.gcr.io/gardener-project/gardener/remedy-controller
-IMAGE_PREFIX                := $(REGISTRY)
+REGISTRY                    := europe-docker.pkg.dev/gardener-project/public
+IMAGE_PREFIX                := $(REGISTRY)/gardener/remedy-controller
 REPO_ROOT                   := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 VERSION                     := $(shell cat "$(REPO_ROOT)/VERSION")
 LD_FLAGS                    := "-w -X github.com/gardener/$(NAME)/pkg/version.Version=$(VERSION) -X github.com/gardener/$(NAME)/pkg/version.GitCommit=$(shell git rev-parse --verify HEAD) -X github.com/gardener/$(NAME)/pkg/version.BuildDate=$(shell date --rfc-3339=seconds | sed 's/ /T/')"

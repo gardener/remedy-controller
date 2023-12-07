@@ -1,16 +1,22 @@
 remedy-controller:
+  base_definition:
+    traits:
+      version: ~
+      component_descriptor:
+        ocm_repository: europe-docker.pkg.dev/gardener-project/snapshots
+
   jobs:
     force-release:
       traits:
         version:
           preprocess: "finalize"
           inject_effective_version: True
-        component_descriptor: ~
+        component_descriptor:
+          ocm_repository: europe-docker.pkg.dev/gardener-project/releases
         publish:
           dockerimages:
             remedy-controller-image:
-              registry: "gcr-readwrite"
-              image: "eu.gcr.io/gardener-project/gardener/remedy-controller/remedy-controller-azure"
+              image: europe-docker.pkg.dev/gardener-project/releases/gardener/remedy-controller/remedy-controller-azure
               dockerfile: "Dockerfile"
               target: remedy-controller-azure
               tag_as_latest: True
@@ -31,8 +37,7 @@ remedy-controller:
         publish:
           dockerimages:
             remedy-controller-image:
-              registry: "gcr-readwrite"
-              image: "eu.gcr.io/gardener-project/gardener/remedy-controller/remedy-controller-azure"
+              image: europe-docker.pkg.dev/gardener-project/snapshots/gardener/remedy-controller/remedy-controller-azure
               dockerfile: "Dockerfile"
               target: remedy-controller-azure
     pull-request:
@@ -54,11 +59,11 @@ remedy-controller:
       traits:
         version:
           inject_effective_version: True
-        component_descriptor: ~
+        component_descriptor:
+          ocm_repository: europe-docker.pkg.dev/gardener-project/releases
         publish:
           dockerimages:
             remedy-controller-image:
-              registry: "gcr-readwrite"
-              image: "eu.gcr.io/gardener-project/gardener/remedy-controller/remedy-controller-azure"
+              image: europe-docker.pkg.dev/gardener-project/releases/gardener/remedy-controller/remedy-controller-azure
               dockerfile: "Dockerfile"
               target: remedy-controller-azure

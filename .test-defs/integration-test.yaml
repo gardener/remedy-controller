@@ -21,8 +21,6 @@ spec:
   # Arguments to the entrypoint. The docker image's CMD is used if this is not provided.
   args: [".ci/integration_test.sh"]
 
-  # image: eu.gcr.io/gardener-project/cc/job-image-golang:0.12.0
-
   # optional; Configuration of a TestDefinition.
   # Environment Variables can be configured per TestDefinition
   # by specifying the varibale's name and a value, secret or configmap.

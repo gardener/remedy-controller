@@ -28,9 +28,6 @@ remedy-controller:
           commit_message_prefix: "[ci skip]"
 
     head-update:
-      steps:
-        verify:
-          image: 'golang:1.19.5'
       traits:
         version:
           inject_effective_version: True
@@ -41,9 +38,6 @@ remedy-controller:
               dockerfile: "Dockerfile"
               target: remedy-controller-azure
     pull-request:
-      steps:
-        verify:
-          image: 'golang:1.19.5'
       traits:
         pull-request: ~
 

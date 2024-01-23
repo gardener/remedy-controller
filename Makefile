@@ -27,6 +27,7 @@ LEADER_ELECTION             := false
 
 TOOLS_DIR := hack/tools
 include vendor/github.com/gardener/gardener/hack/tools.mk
+GOLANGCI_LINT_VERSION := v1.55.2
 
 #########################################
 # Rules for local development scenarios #

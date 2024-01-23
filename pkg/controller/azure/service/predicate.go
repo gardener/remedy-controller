@@ -128,7 +128,7 @@ func (p *servicePredicate) Delete(e event.DeleteEvent) bool {
 }
 
 // Generic returns true if the Generic event should be processed.
-func (p *servicePredicate) Generic(e event.GenericEvent) bool {
+func (p *servicePredicate) Generic(_ event.GenericEvent) bool {
 	return false
 }
 

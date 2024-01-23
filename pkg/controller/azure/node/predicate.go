@@ -122,7 +122,7 @@ func (p *nodePredicate) Delete(e event.DeleteEvent) bool {
 }
 
 // Generic returns true if the Generic event should be processed.
-func (p *nodePredicate) Generic(e event.GenericEvent) bool {
+func (p *nodePredicate) Generic(_ event.GenericEvent) bool {
 	return false
 }
 

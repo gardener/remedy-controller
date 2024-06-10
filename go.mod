@@ -7,7 +7,7 @@ require (
 	github.com/Azure/go-autorest/autorest v0.11.27
 	github.com/Azure/go-autorest/autorest/adal v0.9.20
 	github.com/ahmetb/gen-crd-api-reference-docs v0.3.0
-	github.com/gardener/gardener v1.79.0
+	github.com/gardener/gardener v1.79.3
 	github.com/go-logr/logr v1.2.4
 	github.com/onsi/gomega v1.27.7
 	github.com/pkg/errors v0.9.1

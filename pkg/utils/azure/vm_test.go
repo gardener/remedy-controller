@@ -70,8 +70,8 @@ var _ = Describe("VirtualMachineUtils", func() {
 		vmUtils = azure.NewVirtualMachineUtils(clients, resourceGroup, readRequestsCounter, writeRequestsCounter)
 
 		virtualMachine = compute.VirtualMachine{
-			ID:                       pointer.StringPtr(virtualMachineID),
-			Name:                     pointer.StringPtr(virtualMachineName),
+			ID:                       pointer.String(virtualMachineID),
+			Name:                     pointer.String(virtualMachineName),
 			VirtualMachineProperties: &compute.VirtualMachineProperties{},
 		}
 

@@ -97,7 +97,7 @@ func simulate(vmName string) error {
 					"storage": resource.MustParse("2Gi"),
 				},
 			},
-			StorageClassName: pointer.StringPtr("managed-standard-ssd"),
+			StorageClassName: pointer.String("managed-standard-ssd"),
 		},
 	}
 	_, err = clientset.CoreV1().PersistentVolumeClaims("default").Create(ctx, pvc, metav1.CreateOptions{})

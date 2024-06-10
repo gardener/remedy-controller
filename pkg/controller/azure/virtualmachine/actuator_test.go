@@ -106,9 +106,9 @@ var _ = Describe("Actuator", func() {
 			if withStatus {
 				status = azurev1alpha1.VirtualMachineStatus{
 					Exists:            true,
-					ID:                pointer.StringPtr(azureVirtualMachineID),
-					Name:              pointer.StringPtr(azureVirtualMachineName),
-					ProvisioningState: pointer.StringPtr(string(provisioningState)),
+					ID:                pointer.String(azureVirtualMachineID),
+					Name:              pointer.String(azureVirtualMachineName),
+					ProvisioningState: pointer.String(string(provisioningState)),
 				}
 			}
 			status.FailedOperations = failedOperations
@@ -127,10 +127,10 @@ var _ = Describe("Actuator", func() {
 		}
 		newAzureVirtualMachine = func(provisioningState compute.ProvisioningState) *compute.VirtualMachine {
 			return &compute.VirtualMachine{
-				ID:   pointer.StringPtr(azureVirtualMachineID),
-				Name: pointer.StringPtr(azureVirtualMachineName),
+				ID:   pointer.String(azureVirtualMachineID),
+				Name: pointer.String(azureVirtualMachineName),
 				VirtualMachineProperties: &compute.VirtualMachineProperties{
-					ProvisioningState: pointer.StringPtr(string(provisioningState)),
+					ProvisioningState: pointer.String(string(provisioningState)),
 				},
 			}
 		}

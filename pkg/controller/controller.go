@@ -79,7 +79,7 @@ func add(mgr manager.Manager, args AddArgs) error {
 	}
 
 	// Add primary watch
-	if err := ctrl.Watch(&source.Kind{Type: args.Type}, &handler.EnqueueRequestForObject{}, args.Predicates...); err != nil {
+	if err := ctrl.Watch(source.Kind(mgr.GetCache(), args.Type), &handler.EnqueueRequestForObject{}, args.Predicates...); err != nil {
 		return errors.Wrap(err, "could not setup primary watch")
 	}
 

@@ -108,7 +108,7 @@ var _ = Describe("Utils", func() {
 
 		DescribeTable("MapFuncFromMapper",
 			func(obj client.Object, requests []reconcile.Request) {
-				Expect(MapFuncFromMapper(mapper)(obj)).To(Equal(requests))
+				Expect(MapFuncFromMapper(mapper)(nil, obj)).To(Equal(requests))
 			},
 			Entry("labeled object", pod, []reconcile.Request{
 				{NamespacedName: types.NamespacedName{Namespace: namespace, Name: name}},

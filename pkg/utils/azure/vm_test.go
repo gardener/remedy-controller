@@ -16,20 +16,19 @@ package azure_test
 
 import (
 	"context"
+	"k8s.io/utils/ptr"
 	"net/http"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-07-01/compute"
 	"github.com/Azure/go-autorest/autorest"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"github.com/pkg/errors"
-	"go.uber.org/mock/gomock"
-	"k8s.io/utils/pointer"
-
 	clientazure "github.com/gardener/remedy-controller/pkg/client/azure"
 	mockprometheus "github.com/gardener/remedy-controller/pkg/mock/prometheus"
 	mockclientazure "github.com/gardener/remedy-controller/pkg/mock/remedy-controller/client/azure"
 	"github.com/gardener/remedy-controller/pkg/utils/azure"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
+	"go.uber.org/mock/gomock"
 )
 
 var _ = Describe("VirtualMachineUtils", func() {
@@ -70,8 +69,8 @@ var _ = Describe("VirtualMachineUtils", func() {
 		vmUtils = azure.NewVirtualMachineUtils(clients, resourceGroup, readRequestsCounter, writeRequestsCounter)
 
 		virtualMachine = compute.VirtualMachine{
-			ID:                       pointer.String(virtualMachineID),
-			Name:                     pointer.String(virtualMachineName),
+			ID:                       ptr.To(virtualMachineID),
+			Name:                     ptr.To(virtualMachineName),
 			VirtualMachineProperties: &compute.VirtualMachineProperties{},
 		}
 

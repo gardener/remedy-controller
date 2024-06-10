@@ -24,7 +24,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	"go.uber.org/mock/gomock"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	clientazure "github.com/gardener/remedy-controller/pkg/client/azure"
 	mockprometheus "github.com/gardener/remedy-controller/pkg/mock/prometheus"
@@ -102,80 +102,80 @@ var _ = Describe("PublicIPAddressUtils", func() {
 		pubipUtils = azure.NewPublicIPAddressUtils(clients, resourceGroup, readRequestsCounter, writeRequestsCounter)
 
 		publicIPAddress = network.PublicIPAddress{
-			ID:   pointer.String(publicIPAddressID),
-			Name: pointer.String(publicIPAddressName),
+			ID:   ptr.To(publicIPAddressID),
+			Name: ptr.To(publicIPAddressName),
 			PublicIPAddressPropertiesFormat: &network.PublicIPAddressPropertiesFormat{
-				IPAddress: pointer.String(ip),
+				IPAddress: ptr.To(ip),
 			},
 		}
 		publicIPAddress2 = network.PublicIPAddress{
-			ID:   pointer.String(publicIPAddressID2),
-			Name: pointer.String(publicIPAddressName2),
+			ID:   ptr.To(publicIPAddressID2),
+			Name: ptr.To(publicIPAddressName2),
 			PublicIPAddressPropertiesFormat: &network.PublicIPAddressPropertiesFormat{
-				IPAddress: pointer.String(ip2),
+				IPAddress: ptr.To(ip2),
 			},
 		}
 		frontendIPConfiguration = network.FrontendIPConfiguration{
-			ID:   pointer.String(frontendIPConfigurationID),
-			Name: pointer.String(frontendIPConfigurationName),
+			ID:   ptr.To(frontendIPConfigurationID),
+			Name: ptr.To(frontendIPConfigurationName),
 			FrontendIPConfigurationPropertiesFormat: &network.FrontendIPConfigurationPropertiesFormat{
 				LoadBalancingRules: &[]network.SubResource{
-					{ID: pointer.String(loadBalancingRuleID)},
+					{ID: ptr.To(loadBalancingRuleID)},
 				},
 				PublicIPAddress: &network.PublicIPAddress{
-					ID: pointer.String(publicIPAddressID),
+					ID: ptr.To(publicIPAddressID),
 				},
 			},
 		}
 		frontendIPConfiguration2 = network.FrontendIPConfiguration{
-			ID:   pointer.String(frontendIPConfigurationID2),
-			Name: pointer.String(frontendIPConfigurationName2),
+			ID:   ptr.To(frontendIPConfigurationID2),
+			Name: ptr.To(frontendIPConfigurationName2),
 			FrontendIPConfigurationPropertiesFormat: &network.FrontendIPConfigurationPropertiesFormat{
 				LoadBalancingRules: &[]network.SubResource{
-					{ID: pointer.String(loadBalancingRuleID2)},
+					{ID: ptr.To(loadBalancingRuleID2)},
 				},
 				PublicIPAddress: &network.PublicIPAddress{
-					ID: pointer.String(publicIPAddressID2),
+					ID: ptr.To(publicIPAddressID2),
 				},
 			},
 		}
 		loadBalancingRule = network.LoadBalancingRule{
-			ID:   pointer.String(loadBalancingRuleID),
-			Name: pointer.String(loadBalancingRuleName),
+			ID:   ptr.To(loadBalancingRuleID),
+			Name: ptr.To(loadBalancingRuleName),
 			LoadBalancingRulePropertiesFormat: &network.LoadBalancingRulePropertiesFormat{
-				FrontendIPConfiguration: &network.SubResource{ID: pointer.String(frontendIPConfigurationID)},
+				FrontendIPConfiguration: &network.SubResource{ID: ptr.To(frontendIPConfigurationID)},
 			},
 		}
 		loadBalancingRule2 = network.LoadBalancingRule{
-			ID:   pointer.String(loadBalancingRuleID2),
-			Name: pointer.String(loadBalancingRuleName2),
+			ID:   ptr.To(loadBalancingRuleID2),
+			Name: ptr.To(loadBalancingRuleName2),
 			LoadBalancingRulePropertiesFormat: &network.LoadBalancingRulePropertiesFormat{
-				FrontendIPConfiguration: &network.SubResource{ID: pointer.String(frontendIPConfigurationID2)},
+				FrontendIPConfiguration: &network.SubResource{ID: ptr.To(frontendIPConfigurationID2)},
 			},
 		}
 		probe = network.Probe{
-			ID:   pointer.String(probeID),
-			Name: pointer.String(probeName),
+			ID:   ptr.To(probeID),
+			Name: ptr.To(probeName),
 			ProbePropertiesFormat: &network.ProbePropertiesFormat{
 				LoadBalancingRules: &[]network.SubResource{
-					{ID: pointer.String(loadBalancingRuleID)},
+					{ID: ptr.To(loadBalancingRuleID)},
 				},
 			},
 		}
 		probe2 = network.Probe{
-			ID:   pointer.String(probeID2),
-			Name: pointer.String(probeName2),
+			ID:   ptr.To(probeID2),
+			Name: ptr.To(probeName2),
 			ProbePropertiesFormat: &network.ProbePropertiesFormat{
 				LoadBalancingRules: &[]network.SubResource{
-					{ID: pointer.String(loadBalancingRuleID2)},
+					{ID: ptr.To(loadBalancingRuleID2)},
 				},
 			},
 		}
 
 		newLoadBalancer = func(frontendIPConfigurations []network.FrontendIPConfiguration, loadBalancingRules []network.LoadBalancingRule, probes []network.Probe) network.LoadBalancer {
 			return network.LoadBalancer{
-				ID:   pointer.String(loadBalancerID),
-				Name: pointer.String(loadBalancerName),
+				ID:   ptr.To(loadBalancerID),
+				Name: ptr.To(loadBalancerName),
 				LoadBalancerPropertiesFormat: &network.LoadBalancerPropertiesFormat{
 					FrontendIPConfigurations: &frontendIPConfigurations,
 					LoadBalancingRules:       &loadBalancingRules,

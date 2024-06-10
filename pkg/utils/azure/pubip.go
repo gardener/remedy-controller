@@ -17,10 +17,10 @@ package azure
 import (
 	"context"
 	"net/http"
+	"slices"
 
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
 	"github.com/Azure/go-autorest/autorest"
-	gardenerutils "github.com/gardener/gardener/pkg/utils"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -171,7 +171,7 @@ func updateFrontendIPConfigurations(lb network.LoadBalancer, publicIPAddressIDs 
 	var fcIDs []string
 	var updated []network.FrontendIPConfiguration
 	for _, fc := range *lb.FrontendIPConfigurations {
-		if fc.ID != nil && fc.PublicIPAddress != nil && fc.PublicIPAddress.ID != nil && gardenerutils.ValueExists(*fc.PublicIPAddress.ID, publicIPAddressIDs) {
+		if fc.ID != nil && fc.PublicIPAddress != nil && fc.PublicIPAddress.ID != nil && slices.Contains(publicIPAddressIDs, *fc.PublicIPAddress.ID) {
 			fcIDs = append(fcIDs, *fc.ID)
 		} else {
 			updated = append(updated, fc)
@@ -188,7 +188,7 @@ func updateLoadBalancingRules(lb network.LoadBalancer, fcIDs []string) []string 
 	var ruleIDs []string
 	var updated []network.LoadBalancingRule
 	for _, rule := range *lb.LoadBalancingRules {
-		if rule.ID != nil && rule.FrontendIPConfiguration != nil && rule.FrontendIPConfiguration.ID != nil && gardenerutils.ValueExists(*rule.FrontendIPConfiguration.ID, fcIDs) {
+		if rule.ID != nil && rule.FrontendIPConfiguration != nil && rule.FrontendIPConfiguration.ID != nil && slices.Contains(fcIDs, *rule.FrontendIPConfiguration.ID) {
 			ruleIDs = append(ruleIDs, *rule.ID)
 		} else {
 			updated = append(updated, rule)
@@ -208,7 +208,7 @@ func updateProbes(lb network.LoadBalancer, ruleIDs []string) {
 			continue
 		}
 		for _, probeRule := range *probe.LoadBalancingRules {
-			if !(probeRule.ID != nil && gardenerutils.ValueExists(*probeRule.ID, ruleIDs)) {
+			if !(probeRule.ID != nil && slices.Contains(ruleIDs, *probeRule.ID)) {
 				updated = append(updated, probe)
 			}
 		}

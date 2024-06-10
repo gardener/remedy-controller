@@ -17,6 +17,7 @@ package cmd
 import (
 	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
 	"github.com/spf13/pflag"
+	cache "sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -70,7 +71,7 @@ type ManagerConfig struct {
 func (c *ManagerConfig) Apply(opts *manager.Options) {
 	c.ManagerConfig.Apply(opts)
 	if c.Namespace != "" {
-		opts.Cache.Namespaces = []string{c.Namespace}
+		opts.Cache.DefaultNamespaces = map[string]cache.Config{c.Namespace: {}}
 	}
 	// disable health probe as not used but defaulted to the same port twice
 	opts.HealthProbeBindAddress = ""

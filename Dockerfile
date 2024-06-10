@@ -1,7 +1,11 @@
 ############# builder
-FROM golang:1.21.1 AS builder
+FROM golang:1.22.4 AS builder
 
 WORKDIR /go/src/github.com/gardener/remedy-controller
+# cache deps before building and copying source so that we don't need to re-download as much
+# and so that source changes don't invalidate our downloaded layer
+COPY go.mod go.sum ./
+RUN go mod download
 COPY . .
 RUN make install
 

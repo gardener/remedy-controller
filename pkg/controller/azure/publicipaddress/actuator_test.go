@@ -112,9 +112,9 @@ var _ = Describe("Actuator", func() {
 			if withStatus {
 				status = azurev1alpha1.PublicIPAddressStatus{
 					Exists:            true,
-					ID:                pointer.StringPtr(azurePublicIPAddressID),
-					Name:              pointer.StringPtr(azurePublicIPAddressName),
-					ProvisioningState: pointer.StringPtr(string(network.Succeeded)),
+					ID:                pointer.String(azurePublicIPAddressID),
+					Name:              pointer.String(azurePublicIPAddressName),
+					ProvisioningState: pointer.String(string(network.Succeeded)),
 				}
 			}
 			status.FailedOperations = failedOperations
@@ -156,15 +156,15 @@ var _ = Describe("Actuator", func() {
 			var tags map[string]*string
 			if withServiceTag {
 				tags = map[string]*string{
-					publicipaddress.ServiceTag: pointer.StringPtr(namespace + "/" + serviceName),
+					publicipaddress.ServiceTag: pointer.String(namespace + "/" + serviceName),
 				}
 			}
 			return &network.PublicIPAddress{
-				ID:   pointer.StringPtr(azurePublicIPAddressID),
-				Name: pointer.StringPtr(azurePublicIPAddressName),
+				ID:   pointer.String(azurePublicIPAddressID),
+				Name: pointer.String(azurePublicIPAddressName),
 				PublicIPAddressPropertiesFormat: &network.PublicIPAddressPropertiesFormat{
-					IPAddress:         pointer.StringPtr(ip),
-					ProvisioningState: pointer.StringPtr(string(network.Succeeded)),
+					IPAddress:         pointer.String(ip),
+					ProvisioningState: pointer.String(string(network.Succeeded)),
 				},
 				Tags: tags,
 			}

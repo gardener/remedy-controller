@@ -16,6 +16,7 @@ package publicipaddress_test
 
 import (
 	"context"
+	"k8s.io/utils/ptr"
 	"strconv"
 	"time"
 
@@ -37,7 +38,6 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/mock/gomock"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -110,9 +110,9 @@ var _ = Describe("Actuator", func() {
 			if withStatus {
 				status = azurev1alpha1.PublicIPAddressStatus{
 					Exists:            true,
-					ID:                pointer.String(azurePublicIPAddressID),
-					Name:              pointer.String(azurePublicIPAddressName),
-					ProvisioningState: pointer.String(string(network.Succeeded)),
+					ID:                ptr.To(azurePublicIPAddressID),
+					Name:              ptr.To(azurePublicIPAddressName),
+					ProvisioningState: ptr.To(string(network.Succeeded)),
 				}
 			}
 			status.FailedOperations = failedOperations
@@ -154,15 +154,15 @@ var _ = Describe("Actuator", func() {
 			var tags map[string]*string
 			if withServiceTag {
 				tags = map[string]*string{
-					publicipaddress.ServiceTag: pointer.String(namespace + "/" + serviceName),
+					publicipaddress.ServiceTag: ptr.To(namespace + "/" + serviceName),
 				}
 			}
 			return &network.PublicIPAddress{
-				ID:   pointer.String(azurePublicIPAddressID),
-				Name: pointer.String(azurePublicIPAddressName),
+				ID:   ptr.To(azurePublicIPAddressID),
+				Name: ptr.To(azurePublicIPAddressName),
 				PublicIPAddressPropertiesFormat: &network.PublicIPAddressPropertiesFormat{
-					IPAddress:         pointer.String(ip),
-					ProvisioningState: pointer.String(string(network.Succeeded)),
+					IPAddress:         ptr.To(ip),
+					ProvisioningState: ptr.To(string(network.Succeeded)),
 				},
 				Tags: tags,
 			}

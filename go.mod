@@ -11,7 +11,7 @@ require (
 	github.com/go-logr/logr v1.4.1
 	github.com/onsi/gomega v1.33.1
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.18.0
+	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/client_model v0.6.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
@@ -137,10 +137,4 @@ require (
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
-)
-
-replace (
-	github.com/gardener/hvpa-controller/api => github.com/gardener/hvpa-controller/api v0.15.0
-	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.19.1 // keep this value in sync with sigs.k8s.io/controller-runtime
-	k8s.io/client-go => k8s.io/client-go v0.29.5
 )

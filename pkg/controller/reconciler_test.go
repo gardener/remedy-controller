@@ -21,9 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gardener/remedy-controller/pkg/controller"
-	mockclient "github.com/gardener/remedy-controller/pkg/mock/controller-runtime/client"
-	mockcontroller "github.com/gardener/remedy-controller/pkg/mock/remedy-controller/controller"
 	"github.com/go-logr/logr"
 	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/ginkgo/v2"
@@ -36,6 +33,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/gardener/remedy-controller/pkg/controller"
+	mockclient "github.com/gardener/remedy-controller/pkg/mock/controller-runtime/client"
+	mockcontroller "github.com/gardener/remedy-controller/pkg/mock/remedy-controller/controller"
 )
 
 const (

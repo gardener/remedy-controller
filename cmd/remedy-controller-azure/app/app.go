@@ -19,6 +19,13 @@ import (
 	"os"
 	"sync"
 
+	"github.com/gardener/gardener/extensions/pkg/controller"
+	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
+	"github.com/gardener/gardener/extensions/pkg/util"
+	"github.com/spf13/cobra"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
 	azureinstall "github.com/gardener/remedy-controller/pkg/apis/azure/install"
 	"github.com/gardener/remedy-controller/pkg/cmd"
 	azurenode "github.com/gardener/remedy-controller/pkg/controller/azure/node"
@@ -26,13 +33,6 @@ import (
 	azureservice "github.com/gardener/remedy-controller/pkg/controller/azure/service"
 	azurevirtualmachine "github.com/gardener/remedy-controller/pkg/controller/azure/virtualmachine"
 	"github.com/gardener/remedy-controller/pkg/version"
-
-	"github.com/gardener/gardener/extensions/pkg/controller"
-	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
-	"github.com/gardener/gardener/extensions/pkg/util"
-	"github.com/spf13/cobra"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 const (

@@ -18,11 +18,6 @@ import (
 	"context"
 	"time"
 
-	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
-	"github.com/gardener/remedy-controller/pkg/apis/config"
-	remedycontroller "github.com/gardener/remedy-controller/pkg/controller"
-	"github.com/gardener/remedy-controller/pkg/controller/azure"
-
 	extensionscontroller "github.com/gardener/gardener/extensions/pkg/controller"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,6 +29,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
+	"github.com/gardener/remedy-controller/pkg/apis/config"
+	remedycontroller "github.com/gardener/remedy-controller/pkg/controller"
+	"github.com/gardener/remedy-controller/pkg/controller/azure"
 )
 
 const (

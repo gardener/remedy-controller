@@ -19,14 +19,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gardener/remedy-controller/pkg/utils/azure"
-
 	aznetwork "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/gardener/remedy-controller/pkg/utils/azure"
 )
 
 // CleanPublicIps detects and cleans Azure orphan public ips.

@@ -15,10 +15,6 @@
 package service_test
 
 import (
-	"github.com/gardener/remedy-controller/pkg/controller/azure"
-	azureservice "github.com/gardener/remedy-controller/pkg/controller/azure/service"
-	mockutils "github.com/gardener/remedy-controller/pkg/mock/remedy-controller/utils"
-
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -28,6 +24,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	"github.com/gardener/remedy-controller/pkg/controller/azure"
+	azureservice "github.com/gardener/remedy-controller/pkg/controller/azure/service"
+	mockutils "github.com/gardener/remedy-controller/pkg/mock/remedy-controller/utils"
 )
 
 var _ = Describe("Predicate", func() {

@@ -18,9 +18,10 @@ import (
 	"os"
 
 	"github.com/gardener/gardener/pkg/logger"
-	"github.com/gardener/remedy-controller/cmd/remedy-controller-azure/app"
 	runtimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+
+	"github.com/gardener/remedy-controller/cmd/remedy-controller-azure/app"
 )
 
 func main() {

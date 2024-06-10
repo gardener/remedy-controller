@@ -15,10 +15,10 @@
 package install
 
 import (
+	"k8s.io/apimachinery/pkg/runtime"
+
 	"github.com/gardener/remedy-controller/pkg/apis/config"
 	"github.com/gardener/remedy-controller/pkg/apis/config/v1alpha1"
-
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var (

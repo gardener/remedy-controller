@@ -19,14 +19,6 @@ import (
 	"strconv"
 	"time"
 
-	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
-	"github.com/gardener/remedy-controller/pkg/apis/config"
-	"github.com/gardener/remedy-controller/pkg/controller"
-	controllerazure "github.com/gardener/remedy-controller/pkg/controller/azure"
-	"github.com/gardener/remedy-controller/pkg/controller/azure/service"
-	"github.com/gardener/remedy-controller/pkg/utils"
-	"github.com/gardener/remedy-controller/pkg/utils/azure"
-
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
 	controllererror "github.com/gardener/gardener/pkg/controllerutils/reconciler"
 	"github.com/go-logr/logr"
@@ -34,6 +26,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
+	"github.com/gardener/remedy-controller/pkg/apis/config"
+	"github.com/gardener/remedy-controller/pkg/controller"
+	controllerazure "github.com/gardener/remedy-controller/pkg/controller/azure"
+	"github.com/gardener/remedy-controller/pkg/controller/azure/service"
+	"github.com/gardener/remedy-controller/pkg/utils"
+	"github.com/gardener/remedy-controller/pkg/utils/azure"
 )
 
 const (

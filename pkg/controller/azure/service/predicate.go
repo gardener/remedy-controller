@@ -18,13 +18,13 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/gardener/remedy-controller/pkg/utils"
-
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	"github.com/gardener/remedy-controller/pkg/utils"
 )
 
 const (

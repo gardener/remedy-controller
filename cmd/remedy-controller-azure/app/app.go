@@ -153,10 +153,10 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 			azurenode.DefaultAddOptions.Manager = mgr
 
 			logger.Info("Adding controllers to managers")
-			if err := controllerSwitches.Completed().AddToManager(mgr); err != nil {
+			if err := controllerSwitches.Completed().AddToManager(ctx, mgr); err != nil {
 				logErrAndExit(err, "Could not add controllers to manager")
 			}
-			if err := targetControllerSwitches.Completed().AddToManager(targetMgr); err != nil {
+			if err := targetControllerSwitches.Completed().AddToManager(ctx, targetMgr); err != nil {
 				logErrAndExit(err, "Could not add controllers to target cluster manager")
 			}
 

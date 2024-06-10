@@ -7,8 +7,8 @@ package prometheus
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
 	prometheus "github.com/prometheus/client_golang/prometheus"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockGaugeVec is a mock of GaugeVec interface.

@@ -15,6 +15,7 @@
 package virtualmachine
 
 import (
+	"context"
 	"time"
 
 	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
@@ -109,7 +110,7 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 }
 
 // AddToManager adds a controller with the default AddOptions to the given manager.
-func AddToManager(mgr manager.Manager) error {
+func AddToManager(_ context.Context, mgr manager.Manager) error {
 	return AddToManagerWithOptions(mgr, DefaultAddOptions)
 }
 

@@ -90,7 +90,7 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 	}
 
 	return remedycontroller.Add(mgr, remedycontroller.AddArgs{
-		Actuator: NewActuator(utilsazure.NewPublicIPAddressUtils(azureClients, credentials.ResourceGroup, utilsazure.ReadRequestsCounter, utilsazure.WriteRequestsCounter),
+		Actuator: NewActuator(mgr.GetClient(), utilsazure.NewPublicIPAddressUtils(azureClients, credentials.ResourceGroup, utilsazure.ReadRequestsCounter, utilsazure.WriteRequestsCounter),
 			options.Config, utils.TimestamperFunc(metav1.Now), log.Log.WithName(ActuatorName), CleanedIPsCounter),
 		ControllerName:    ControllerName,
 		FinalizerName:     FinalizerName,

@@ -21,6 +21,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gardener/remedy-controller/pkg/controller"
+	mockclient "github.com/gardener/remedy-controller/pkg/mock/controller-runtime/client"
+	mockcontroller "github.com/gardener/remedy-controller/pkg/mock/remedy-controller/controller"
 	"github.com/go-logr/logr"
 	"github.com/google/go-cmp/cmp"
 	. "github.com/onsi/ginkgo/v2"
@@ -33,11 +36,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
-
-	"github.com/gardener/remedy-controller/pkg/controller"
-	mockclient "github.com/gardener/remedy-controller/pkg/mock/controller-runtime/client"
-	mockcontroller "github.com/gardener/remedy-controller/pkg/mock/remedy-controller/controller"
 )
 
 const (
@@ -96,9 +94,7 @@ var _ = Describe("Controller", func() {
 
 		ctx = context.TODO()
 		logger = log.Log.WithName("test")
-		reconciler = controller.NewReconciler(a, "test-controller", "test-finalizer", &corev1.Pod{}, true, logger)
-		Expect(reconciler.(inject.Client).InjectClient(c)).To(Succeed())
-		Expect(reconciler.(inject.APIReader).InjectAPIReader(c)).To(Succeed())
+		reconciler = controller.NewReconciler(a, "test-controller", "test-finalizer", &corev1.Pod{}, true, c, c, logger)
 
 		ts = metav1.Now()
 		request = reconcile.Request{

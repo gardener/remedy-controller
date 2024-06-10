@@ -39,7 +39,6 @@ import (
 	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 )
 
 var _ = Describe("Actuator", func() {
@@ -98,8 +97,7 @@ var _ = Describe("Actuator", func() {
 		now = metav1.Now()
 		timestamper = utils.TimestamperFunc(func() metav1.Time { return now })
 		logger = log.Log.WithName("test")
-		actuator = virtualmachine.NewActuator(vmUtils, cfg, timestamper, logger, reappliedVMsCounter, vmStatesGaugeVec)
-		Expect(actuator.(inject.Client).InjectClient(c)).To(Succeed())
+		actuator = virtualmachine.NewActuator(c, vmUtils, cfg, timestamper, logger, reappliedVMsCounter, vmStatesGaugeVec)
 
 		newVM = func(notReadyOrUnreachable, withStatus bool, provisioningState compute.ProvisioningState, failedOperations []azurev1alpha1.FailedOperation) *azurev1alpha1.VirtualMachine {
 			var status azurev1alpha1.VirtualMachineStatus

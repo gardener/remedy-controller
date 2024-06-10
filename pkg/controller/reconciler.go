@@ -26,7 +26,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 )
 
 type reconciler struct {
@@ -41,7 +40,7 @@ type reconciler struct {
 }
 
 // NewReconciler creates a new generic Reconciler.
-func NewReconciler(actuator Actuator, controllerName, finalizerName string, typ client.Object, shouldEnsureDeleted bool, logger logr.Logger) reconcile.Reconciler {
+func NewReconciler(actuator Actuator, controllerName, finalizerName string, typ client.Object, shouldEnsureDeleted bool, client client.Client, reader client.Reader, logger logr.Logger) reconcile.Reconciler {
 	logger.Info("Creating reconciler", "controllerName", controllerName)
 	return &reconciler{
 		actuator:            actuator,
@@ -49,22 +48,10 @@ func NewReconciler(actuator Actuator, controllerName, finalizerName string, typ 
 		finalizerName:       finalizerName,
 		typ:                 typ,
 		shouldEnsureDeleted: shouldEnsureDeleted,
+		client:              client,
+		reader:              reader,
 		logger:              logger,
 	}
-}
-
-func (r *reconciler) InjectFunc(f inject.Func) error {
-	return f(r.actuator)
-}
-
-func (r *reconciler) InjectClient(client client.Client) error {
-	r.client = client
-	return nil
-}
-
-func (r *reconciler) InjectAPIReader(reader client.Reader) error {
-	r.reader = reader
-	return nil
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {

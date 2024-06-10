@@ -56,6 +56,7 @@ type actuator struct {
 
 // NewActuator creates a new Actuator.
 func NewActuator(
+	client client.Client,
 	vmUtils azure.VirtualMachineUtils,
 	config config.AzureFailedVMRemedyConfiguration,
 	timestamper utils.Timestamper,
@@ -65,6 +66,7 @@ func NewActuator(
 ) controller.Actuator {
 	logger.Info("Creating actuator", "config", config)
 	return &actuator{
+		client:              client,
 		vmUtils:             vmUtils,
 		config:              config,
 		timestamper:         timestamper,
@@ -72,11 +74,6 @@ func NewActuator(
 		reappliedVMsCounter: reappliedVMsCounter,
 		vmStatesGaugeVec:    vmStatesGaugeVec,
 	}
-}
-
-func (a *actuator) InjectClient(client client.Client) error {
-	a.client = client
-	return nil
 }
 
 // CreateOrUpdate reconciles object creation or update.

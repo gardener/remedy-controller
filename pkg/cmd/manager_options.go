@@ -69,7 +69,9 @@ type ManagerConfig struct {
 // Apply sets the values of this ManagerConfig in the given manager.Options.
 func (c *ManagerConfig) Apply(opts *manager.Options) {
 	c.ManagerConfig.Apply(opts)
-	opts.Namespace = c.Namespace
+	if c.Namespace != "" {
+		opts.Cache.Namespaces = []string{c.Namespace}
+	}
 	// disable health probe as not used but defaulted to the same port twice
 	opts.HealthProbeBindAddress = ""
 }

@@ -12,7 +12,7 @@ import (
 	network "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
 	autorest "github.com/Azure/go-autorest/autorest"
 	azure "github.com/gardener/remedy-controller/pkg/client/azure"
-	gomock "github.com/golang/mock/gomock"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // MockFuture is a mock of Future interface.

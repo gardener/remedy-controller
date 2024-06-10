@@ -20,10 +20,10 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
 	"github.com/Azure/go-autorest/autorest"
-	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
+	"go.uber.org/mock/gomock"
 	"k8s.io/utils/pointer"
 
 	clientazure "github.com/gardener/remedy-controller/pkg/client/azure"

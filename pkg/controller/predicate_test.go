@@ -18,10 +18,6 @@ import (
 	"context"
 	"errors"
 
-	"github.com/gardener/remedy-controller/pkg/controller"
-	mockclient "github.com/gardener/remedy-controller/pkg/mock/controller-runtime/client"
-	mockcontroller "github.com/gardener/remedy-controller/pkg/mock/remedy-controller/controller"
-
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -33,6 +29,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	"github.com/gardener/remedy-controller/pkg/controller"
+	mockclient "github.com/gardener/remedy-controller/pkg/mock/controller-runtime/client"
+	mockcontroller "github.com/gardener/remedy-controller/pkg/mock/remedy-controller/controller"
 )
 
 const (

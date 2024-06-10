@@ -17,14 +17,14 @@ package helper
 import (
 	"os"
 
-	"github.com/gardener/remedy-controller/pkg/apis/config"
-	"github.com/gardener/remedy-controller/pkg/apis/config/install"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/runtime/serializer/versioning"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+
+	"github.com/gardener/remedy-controller/pkg/apis/config"
+	"github.com/gardener/remedy-controller/pkg/apis/config/install"
 )
 
 var (

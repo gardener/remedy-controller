@@ -15,12 +15,12 @@
 package cmd
 
 import (
+	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
+
 	azurenode "github.com/gardener/remedy-controller/pkg/controller/azure/node"
 	azurepublicipaddress "github.com/gardener/remedy-controller/pkg/controller/azure/publicipaddress"
 	azureservice "github.com/gardener/remedy-controller/pkg/controller/azure/service"
 	azurevirtualmachine "github.com/gardener/remedy-controller/pkg/controller/azure/virtualmachine"
-
-	controllercmd "github.com/gardener/gardener/extensions/pkg/controller/cmd"
 )
 
 // ControllerSwitchOptions are the controllercmd.SwitchOptions for the manager controllers.

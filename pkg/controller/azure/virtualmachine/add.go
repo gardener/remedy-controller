@@ -18,13 +18,6 @@ import (
 	"context"
 	"time"
 
-	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
-	"github.com/gardener/remedy-controller/pkg/apis/config"
-	"github.com/gardener/remedy-controller/pkg/client/azure"
-	remedycontroller "github.com/gardener/remedy-controller/pkg/controller"
-	"github.com/gardener/remedy-controller/pkg/utils"
-	utilsazure "github.com/gardener/remedy-controller/pkg/utils/azure"
-
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,6 +26,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
+	"github.com/gardener/remedy-controller/pkg/apis/config"
+	"github.com/gardener/remedy-controller/pkg/client/azure"
+	remedycontroller "github.com/gardener/remedy-controller/pkg/controller"
+	"github.com/gardener/remedy-controller/pkg/utils"
+	utilsazure "github.com/gardener/remedy-controller/pkg/utils/azure"
 )
 
 const (

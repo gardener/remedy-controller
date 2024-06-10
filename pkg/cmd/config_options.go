@@ -17,10 +17,10 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/spf13/pflag"
+
 	"github.com/gardener/remedy-controller/pkg/apis/config"
 	confighelper "github.com/gardener/remedy-controller/pkg/apis/config/helper"
-
-	"github.com/spf13/pflag"
 )
 
 // ConfigOptions are command line options that can be set for config.ControllerConfiguration.

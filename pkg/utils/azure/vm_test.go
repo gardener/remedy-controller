@@ -18,18 +18,18 @@ import (
 	"context"
 	"net/http"
 
-	"k8s.io/utils/ptr"
-
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-07-01/compute"
 	"github.com/Azure/go-autorest/autorest"
-	clientazure "github.com/gardener/remedy-controller/pkg/client/azure"
-	mockprometheus "github.com/gardener/remedy-controller/pkg/mock/prometheus"
-	mockclientazure "github.com/gardener/remedy-controller/pkg/mock/remedy-controller/client/azure"
-	"github.com/gardener/remedy-controller/pkg/utils/azure"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	"go.uber.org/mock/gomock"
+	"k8s.io/utils/ptr"
+
+	clientazure "github.com/gardener/remedy-controller/pkg/client/azure"
+	mockprometheus "github.com/gardener/remedy-controller/pkg/mock/prometheus"
+	mockclientazure "github.com/gardener/remedy-controller/pkg/mock/remedy-controller/client/azure"
+	"github.com/gardener/remedy-controller/pkg/utils/azure"
 )
 
 var _ = Describe("VirtualMachineUtils", func() {

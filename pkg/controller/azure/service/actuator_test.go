@@ -20,12 +20,6 @@ import (
 	"strconv"
 	"time"
 
-	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
-	"github.com/gardener/remedy-controller/pkg/controller"
-	"github.com/gardener/remedy-controller/pkg/controller/azure"
-	azureservice "github.com/gardener/remedy-controller/pkg/controller/azure/service"
-	mockclient "github.com/gardener/remedy-controller/pkg/mock/controller-runtime/client"
-
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -36,6 +30,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
+	"github.com/gardener/remedy-controller/pkg/controller"
+	"github.com/gardener/remedy-controller/pkg/controller/azure"
+	azureservice "github.com/gardener/remedy-controller/pkg/controller/azure/service"
+	mockclient "github.com/gardener/remedy-controller/pkg/mock/controller-runtime/client"
 )
 
 var _ = Describe("Actuator", func() {

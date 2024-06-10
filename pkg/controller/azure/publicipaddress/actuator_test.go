@@ -16,9 +16,20 @@ package publicipaddress_test
 
 import (
 	"context"
-	"k8s.io/utils/ptr"
 	"strconv"
 	"time"
+
+	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
+	controllererror "github.com/gardener/gardener/pkg/controllerutils/reconciler"
+	"github.com/go-logr/logr"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
+	"go.uber.org/mock/gomock"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
 	"github.com/gardener/remedy-controller/pkg/apis/config"
@@ -29,17 +40,6 @@ import (
 	mockprometheus "github.com/gardener/remedy-controller/pkg/mock/prometheus"
 	mockutilsazure "github.com/gardener/remedy-controller/pkg/mock/remedy-controller/utils/azure"
 	"github.com/gardener/remedy-controller/pkg/utils"
-
-	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
-	controllererror "github.com/gardener/gardener/pkg/controllerutils/reconciler"
-	"github.com/go-logr/logr"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	"github.com/pkg/errors"
-	"go.uber.org/mock/gomock"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var _ = Describe("Actuator", func() {

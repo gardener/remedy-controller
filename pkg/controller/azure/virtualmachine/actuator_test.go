@@ -16,6 +16,7 @@ package virtualmachine_test
 
 import (
 	"context"
+	"k8s.io/utils/ptr"
 	"time"
 
 	azurev1alpha1 "github.com/gardener/remedy-controller/pkg/apis/azure/v1alpha1"
@@ -36,7 +37,6 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/mock/gomock"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -104,9 +104,9 @@ var _ = Describe("Actuator", func() {
 			if withStatus {
 				status = azurev1alpha1.VirtualMachineStatus{
 					Exists:            true,
-					ID:                pointer.String(azureVirtualMachineID),
-					Name:              pointer.String(azureVirtualMachineName),
-					ProvisioningState: pointer.String(string(provisioningState)),
+					ID:                ptr.To(azureVirtualMachineID),
+					Name:              ptr.To(azureVirtualMachineName),
+					ProvisioningState: ptr.To(string(provisioningState)),
 				}
 			}
 			status.FailedOperations = failedOperations
@@ -125,10 +125,10 @@ var _ = Describe("Actuator", func() {
 		}
 		newAzureVirtualMachine = func(provisioningState compute.ProvisioningState) *compute.VirtualMachine {
 			return &compute.VirtualMachine{
-				ID:   pointer.String(azureVirtualMachineID),
-				Name: pointer.String(azureVirtualMachineName),
+				ID:   ptr.To(azureVirtualMachineID),
+				Name: ptr.To(azureVirtualMachineName),
 				VirtualMachineProperties: &compute.VirtualMachineProperties{
-					ProvisioningState: pointer.String(string(provisioningState)),
+					ProvisioningState: ptr.To(string(provisioningState)),
 				},
 			}
 		}

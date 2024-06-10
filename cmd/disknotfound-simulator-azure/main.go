@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"k8s.io/utils/ptr"
 	"math/rand"
 	"os"
 	"time"
@@ -11,15 +12,13 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
+	azclient "github.com/gardener/remedy-controller/pkg/client/azure"
 	"golang.org/x/sync/errgroup"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/utils/pointer"
-
-	azclient "github.com/gardener/remedy-controller/pkg/client/azure"
 )
 
 // NOTE: This simulator is a work in progress and does not (yet) reproduce the issue. More investigation is needed.
@@ -92,12 +91,12 @@ func simulate(vmName string) error {
 			AccessModes: []corev1.PersistentVolumeAccessMode{
 				corev1.ReadWriteOnce,
 			},
-			Resources: corev1.ResourceRequirements{
+			Resources: corev1.VolumeResourceRequirements{
 				Requests: corev1.ResourceList{
 					"storage": resource.MustParse("2Gi"),
 				},
 			},
-			StorageClassName: pointer.String("managed-standard-ssd"),
+			StorageClassName: ptr.To("managed-standard-ssd"),
 		},
 	}
 	_, err = clientset.CoreV1().PersistentVolumeClaims("default").Create(ctx, pvc, metav1.CreateOptions{})

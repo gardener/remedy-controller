@@ -112,7 +112,6 @@ check: $(GOIMPORTS) $(GOLANGCI_LINT) $(HELM)
 .PHONY: generate
 generate: $(VGOPATH) $(GEN_CRD_API_REFERENCE_DOCS) $(MOCKGEN)
 	@REPO_ROOT=$(REPO_ROOT) VGOPATH=$(VGOPATH) GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) bash $(GARDENER_HACK_DIR)/generate-sequential.sh ./cmd/... ./pkg/...
-	$(MAKE) format
 
 .PHONY: format
 format: $(GOIMPORTS)

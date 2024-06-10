@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+GARDENER_HACK_DIR           := $(shell go list -m -f "{{.Dir}}" github.com/gardener/gardener)/hack
 NAME                        := remedy-controller
 APPLIER_NAME                := remedy-applier
 REGISTRY                    := europe-docker.pkg.dev/gardener-project/public
 IMAGE_PREFIX                := $(REGISTRY)/gardener/remedy-controller
 REPO_ROOT                   := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+HACK_DIR                    := $(REPO_ROOT)/hack
 VERSION                     := $(shell cat "$(REPO_ROOT)/VERSION")
 LD_FLAGS                    := "-w -X github.com/gardener/$(NAME)/pkg/version.Version=$(VERSION) -X github.com/gardener/$(NAME)/pkg/version.GitCommit=$(shell git rev-parse --verify HEAD) -X github.com/gardener/$(NAME)/pkg/version.BuildDate=$(shell date --rfc-3339=seconds | sed 's/ /T/')"
 LEADER_ELECTION             := false
@@ -25,8 +27,8 @@ LEADER_ELECTION             := false
 # Tools                                 #
 #########################################
 
-TOOLS_DIR := hack/tools
-include vendor/github.com/gardener/gardener/hack/tools.mk
+TOOLS_DIR := $(HACK_DIR)/tools
+include $(GARDENER_HACK_DIR)/tools.mk
 GOLANGCI_LINT_VERSION := v1.55.2
 
 #########################################
@@ -36,7 +38,6 @@ GOLANGCI_LINT_VERSION := v1.55.2
 .PHONY: start-azure
 start-azure:
 	@LEADER_ELECTION_NAMESPACE=garden GO111MODULE=on go run \
-		-mod=vendor \
 		-ldflags $(LD_FLAGS) \
 		./cmd/$(NAME)-azure \
 		--config-file=./example/00-config.yaml \
@@ -49,7 +50,6 @@ start-azure:
 .PHONY: start-applier-azure
 start-applier-azure:
 	@GO111MODULE=on go run \
-		-mod=vendor \
 		-ldflags $(LD_FLAGS) \
 		./cmd/$(APPLIER_NAME)-azure \
 		--kubeconfig=$(KUBECONFIG) \
@@ -59,7 +59,6 @@ start-applier-azure:
 VM_NAME = ""
 start-failedvm-simulator-azure:
 	@GO111MODULE=on go run \
-		-mod=vendor \
 		-ldflags $(LD_FLAGS) \
 		./cmd/failedvm-simulator-azure \
 		$(VM_NAME)
@@ -71,7 +70,7 @@ start-failedvm-simulator-azure:
 .PHONY: install
 install:
 	@LD_FLAGS="-w -X github.com/gardener/$(NAME)/pkg/version.Version=$(VERSION) -X github.com/gardener/$(NAME)/pkg/version.GitCommit=$(shell git rev-parse --verify HEAD) -X github.com/gardener/$(NAME)/pkg/version.BuildDate=$(shell date --rfc-3339=seconds | sed 's/ /T/')" \
-	$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/install.sh ./...
+	bash $(GARDENER_HACK_DIR)/install.sh ./...
 
 .PHONY: docker-login
 docker-login:
@@ -90,47 +89,46 @@ install-requirements: # needs sudo permissions
 	@python3 -m venv $(REPO_ROOT)/.env
 	@. $(REPO_ROOT)/.env/bin/activate && pip3 install --upgrade pip && pip3 install -r $(REPO_ROOT)/test/requirements.txt
 
-.PHONY: revendor
-revendor:
-	@GO111MODULE=on go mod vendor
+.PHONY: tidy
+tidy:
 	@GO111MODULE=on go mod tidy
-	@chmod +x $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/*
-	@chmod +x $(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/.ci/*
-	@$(REPO_ROOT)/hack/update-github-templates.sh
+	@mkdir -p $(REPO_ROOT)/.ci/hack && cp $(GARDENER_HACK_DIR)/.ci/* $(REPO_ROOT)/.ci/hack/ && chmod +xw $(REPO_ROOT)/.ci/hack/*
+	@GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) $(REPO_ROOT)/hack/update-github-templates.sh
 
 .PHONY: clean
 clean:
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/clean.sh ./cmd/... ./pkg/... ./test/...
+	@bash $(GARDENER_HACK_DIR)/clean.sh ./cmd/... ./pkg/... ./test/...
 
 .PHONY: check-generate
 check-generate:
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check-generate.sh $(REPO_ROOT)
+	@bash $(GARDENER_HACK_DIR)/check-generate.sh $(REPO_ROOT)
 
 .PHONY: check
 check: $(GOIMPORTS) $(GOLANGCI_LINT) $(HELM)
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check.sh --golangci-lint-config=./.golangci.yaml ./cmd/... ./pkg/...
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/check-charts.sh ./charts
+	@REPO_ROOT=$(REPO_ROOT) bash $(GARDENER_HACK_DIR)/check.sh --golangci-lint-config=./.golangci.yaml ./cmd/... ./pkg/...
+	@REPO_ROOT=$(REPO_ROOT) bash $(GARDENER_HACK_DIR)/check-charts.sh ./charts
 	@. $(REPO_ROOT)/.env/bin/activate && flake8 $(REPO_ROOT)/test
 
 .PHONY: generate
-generate: $(GEN_CRD_API_REFERENCE_DOCS) $(MOCKGEN)
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/generate-sequential.sh ./cmd/... ./pkg/...
+generate: $(VGOPATH) $(GEN_CRD_API_REFERENCE_DOCS) $(MOCKGEN)
+	@REPO_ROOT=$(REPO_ROOT) VGOPATH=$(VGOPATH) GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) bash $(GARDENER_HACK_DIR)/generate-sequential.sh ./cmd/... ./pkg/...
+	$(MAKE) format
 
 .PHONY: format
 format: $(GOIMPORTS)
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/format.sh ./cmd ./pkg
+	@bash $(GARDENER_HACK_DIR)/format.sh ./cmd ./pkg
 
 .PHONY: test
 test:
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/test.sh ./cmd/... ./pkg/...
+	@bash $(GARDENER_HACK_DIR)/test.sh ./cmd/... ./pkg/...
 
 .PHONY: test-cov
 test-cov:
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/test-cover.sh ./cmd/... ./pkg/...
+	@bash $(GARDENER_HACK_DIR)/test-cover.sh ./cmd/... ./pkg/...
 
 .PHONY: test-clean
 test-clean:
-	@$(REPO_ROOT)/vendor/github.com/gardener/gardener/hack/test-cover-clean.sh
+	@bash $(GARDENER_HACK_DIR)/test-cover-clean.sh
 
 .PHONY: verify
 verify: check format test

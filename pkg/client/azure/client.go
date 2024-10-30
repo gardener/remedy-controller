@@ -16,6 +16,7 @@ package azure
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -31,11 +32,12 @@ import (
 
 // Credentials contains credentials and other parameters needed to work with Azure objects.
 type Credentials struct {
-	ClientID       string `yaml:"aadClientId"`
-	ClientSecret   string `yaml:"aadClientSecret"`
-	TenantID       string `yaml:"tenantId"`
-	SubscriptionID string `yaml:"subscriptionId"`
-	ResourceGroup  string `yaml:"resourceGroup"`
+	ClientID           string `yaml:"aadClientId"`
+	ClientSecret       string `yaml:"aadClientSecret"`
+	FederatedTokenFile string `yaml:"aadFederatedTokenFile"`
+	TenantID           string `yaml:"tenantId"`
+	SubscriptionID     string `yaml:"subscriptionId"`
+	ResourceGroup      string `yaml:"resourceGroup"`
 }
 
 // Future contains the method WaitForCompletionRef.
@@ -156,11 +158,25 @@ func NewClients(credentials *Credentials) (*Clients, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create OAuth config")
 	}
-
-	// Create service principal token
-	servicePrincipalToken, err := adal.NewServicePrincipalToken(*oauthConfig, credentials.ClientID, credentials.ClientSecret, azure.PublicCloud.ResourceManagerEndpoint)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not create service principal token")
+	var servicePrincipalToken *adal.ServicePrincipalToken
+	if len(credentials.FederatedTokenFile) > 0 {
+		servicePrincipalToken, err = adal.NewServicePrincipalTokenFromFederatedTokenCallback(
+			*oauthConfig,
+			credentials.ClientID,
+			func() (string, error) {
+				b, err := os.ReadFile(credentials.FederatedTokenFile)
+				return string(b), err
+			},
+			azure.PublicCloud.ResourceManagerEndpoint,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("could not create service principal from federated token: %w", err)
+		}
+	} else {
+		servicePrincipalToken, err = adal.NewServicePrincipalToken(*oauthConfig, credentials.ClientID, credentials.ClientSecret, azure.PublicCloud.ResourceManagerEndpoint)
+		if err != nil {
+			return nil, errors.Wrap(err, "could not create service principal token")
+		}
 	}
 	authorizer := autorest.NewBearerAuthorizer(servicePrincipalToken)
 

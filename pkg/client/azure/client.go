@@ -173,7 +173,12 @@ func NewClients(credentials *Credentials) (*Clients, error) {
 			return nil, fmt.Errorf("could not create service principal from federated token: %w", err)
 		}
 	} else {
-		servicePrincipalToken, err = adal.NewServicePrincipalToken(*oauthConfig, credentials.ClientID, credentials.ClientSecret, azure.PublicCloud.ResourceManagerEndpoint)
+		servicePrincipalToken, err = adal.NewServicePrincipalToken(
+			*oauthConfig,
+			credentials.ClientID,
+			credentials.ClientSecret,
+			azure.PublicCloud.ResourceManagerEndpoint,
+		)
 		if err != nil {
 			return nil, errors.Wrap(err, "could not create service principal token")
 		}

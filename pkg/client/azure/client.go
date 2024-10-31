@@ -165,7 +165,10 @@ func NewClients(credentials *Credentials) (*Clients, error) {
 			credentials.ClientID,
 			func() (string, error) {
 				b, err := os.ReadFile(credentials.FederatedTokenFile)
-				return string(b), err
+				if err != nil {
+					return "", fmt.Errorf("could not read workload identity token from file: %w", err)
+				}
+				return string(b), nil
 			},
 			azure.PublicCloud.ResourceManagerEndpoint,
 		)

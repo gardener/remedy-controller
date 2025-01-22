@@ -20,6 +20,7 @@ import (
 type MockGaugeVec struct {
 	ctrl     *gomock.Controller
 	recorder *MockGaugeVecMockRecorder
+	isgomock struct{}
 }
 
 // MockGaugeVecMockRecorder is the mock recorder for MockGaugeVec.
@@ -40,10 +41,10 @@ func (m *MockGaugeVec) EXPECT() *MockGaugeVecMockRecorder {
 }
 
 // DeleteLabelValues mocks base method.
-func (m *MockGaugeVec) DeleteLabelValues(arg0 ...string) bool {
+func (m *MockGaugeVec) DeleteLabelValues(lvs ...string) bool {
 	m.ctrl.T.Helper()
 	varargs := []any{}
-	for _, a := range arg0 {
+	for _, a := range lvs {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "DeleteLabelValues", varargs...)
@@ -52,16 +53,16 @@ func (m *MockGaugeVec) DeleteLabelValues(arg0 ...string) bool {
 }
 
 // DeleteLabelValues indicates an expected call of DeleteLabelValues.
-func (mr *MockGaugeVecMockRecorder) DeleteLabelValues(arg0 ...any) *gomock.Call {
+func (mr *MockGaugeVecMockRecorder) DeleteLabelValues(lvs ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteLabelValues", reflect.TypeOf((*MockGaugeVec)(nil).DeleteLabelValues), arg0...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteLabelValues", reflect.TypeOf((*MockGaugeVec)(nil).DeleteLabelValues), lvs...)
 }
 
 // WithLabelValues mocks base method.
-func (m *MockGaugeVec) WithLabelValues(arg0 ...string) prometheus.Gauge {
+func (m *MockGaugeVec) WithLabelValues(lvs ...string) prometheus.Gauge {
 	m.ctrl.T.Helper()
 	varargs := []any{}
-	for _, a := range arg0 {
+	for _, a := range lvs {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "WithLabelValues", varargs...)
@@ -70,7 +71,7 @@ func (m *MockGaugeVec) WithLabelValues(arg0 ...string) prometheus.Gauge {
 }
 
 // WithLabelValues indicates an expected call of WithLabelValues.
-func (mr *MockGaugeVecMockRecorder) WithLabelValues(arg0 ...any) *gomock.Call {
+func (mr *MockGaugeVecMockRecorder) WithLabelValues(lvs ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithLabelValues", reflect.TypeOf((*MockGaugeVec)(nil).WithLabelValues), arg0...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithLabelValues", reflect.TypeOf((*MockGaugeVec)(nil).WithLabelValues), lvs...)
 }

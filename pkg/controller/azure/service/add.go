@@ -90,9 +90,11 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 		WatchBuilder: extensionscontroller.NewWatchBuilder(func(ctrl controller.Controller) error {
 			serviceMapper := remedycontroller.NewLabelMapper(ObjectLabeler, azure.ServiceLabel)
 			return ctrl.Watch(
-				source.Kind(options.Manager.GetCache(), &azurev1alpha1.PublicIPAddress{}),
-				handler.EnqueueRequestsFromMapFunc(remedycontroller.MapFuncFromMapper(serviceMapper)),
-				remedycontroller.NewOwnedObjectPredicate(&corev1.Service{}, mgr.GetCache(), serviceMapper, FinalizerName, log.Log.WithName(PublicIPAddressPredicateName)),
+				source.Kind[client.Object](options.Manager.GetCache(),
+					&azurev1alpha1.PublicIPAddress{},
+					handler.TypedEnqueueRequestsFromMapFunc(remedycontroller.MapFuncFromMapper(serviceMapper)),
+					remedycontroller.NewOwnedObjectPredicate(&corev1.Service{}, mgr.GetCache(), serviceMapper, FinalizerName, log.Log.WithName(PublicIPAddressPredicateName)),
+				),
 			)
 		}),
 	})

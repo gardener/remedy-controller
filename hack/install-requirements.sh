@@ -17,12 +17,6 @@
 set -e
 
 echo "> Installing requirements"
-
-export GO111MODULE=on
-curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.27.0
-curl -s "https://raw.githubusercontent.com/helm/helm/v3.2.2/scripts/get-helm-3" | bash -s -- --version 'v3.2.2'
-
-
 if [[ "$(uname -s)" == *"Darwin"* ]]; then
   cat <<EOM
 You are running in a MAC OS environment!

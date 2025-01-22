@@ -224,7 +224,7 @@ func simulate(vmName string) error {
 
 	errs.Go(func() error {
 		// Wait between 0.5s and 1.5s
-		ms := rand.Intn(1001) + 500
+		ms := rand.Intn(1001) + 500 // #nosec G404 -- Used for e2e tests only.
 		fmt.Printf("Waiting for %v milliseconds\n", ms)
 		time.Sleep(time.Duration(ms) * time.Millisecond)
 

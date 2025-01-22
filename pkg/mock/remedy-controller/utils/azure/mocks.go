@@ -22,6 +22,7 @@ import (
 type MockPublicIPAddressUtils struct {
 	ctrl     *gomock.Controller
 	recorder *MockPublicIPAddressUtilsMockRecorder
+	isgomock struct{}
 }
 
 // MockPublicIPAddressUtilsMockRecorder is the mock recorder for MockPublicIPAddressUtils.
@@ -42,82 +43,83 @@ func (m *MockPublicIPAddressUtils) EXPECT() *MockPublicIPAddressUtilsMockRecorde
 }
 
 // Delete mocks base method.
-func (m *MockPublicIPAddressUtils) Delete(arg0 context.Context, arg1 string) error {
+func (m *MockPublicIPAddressUtils) Delete(ctx context.Context, name string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", arg0, arg1)
+	ret := m.ctrl.Call(m, "Delete", ctx, name)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockPublicIPAddressUtilsMockRecorder) Delete(arg0, arg1 any) *gomock.Call {
+func (mr *MockPublicIPAddressUtilsMockRecorder) Delete(ctx, name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPublicIPAddressUtils)(nil).Delete), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockPublicIPAddressUtils)(nil).Delete), ctx, name)
 }
 
 // GetAll mocks base method.
-func (m *MockPublicIPAddressUtils) GetAll(arg0 context.Context) ([]network.PublicIPAddress, error) {
+func (m *MockPublicIPAddressUtils) GetAll(ctx context.Context) ([]network.PublicIPAddress, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll", arg0)
+	ret := m.ctrl.Call(m, "GetAll", ctx)
 	ret0, _ := ret[0].([]network.PublicIPAddress)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetAll indicates an expected call of GetAll.
-func (mr *MockPublicIPAddressUtilsMockRecorder) GetAll(arg0 any) *gomock.Call {
+func (mr *MockPublicIPAddressUtilsMockRecorder) GetAll(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockPublicIPAddressUtils)(nil).GetAll), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockPublicIPAddressUtils)(nil).GetAll), ctx)
 }
 
 // GetByIP mocks base method.
-func (m *MockPublicIPAddressUtils) GetByIP(arg0 context.Context, arg1 string) (*network.PublicIPAddress, error) {
+func (m *MockPublicIPAddressUtils) GetByIP(ctx context.Context, ip string) (*network.PublicIPAddress, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByIP", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetByIP", ctx, ip)
 	ret0, _ := ret[0].(*network.PublicIPAddress)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetByIP indicates an expected call of GetByIP.
-func (mr *MockPublicIPAddressUtilsMockRecorder) GetByIP(arg0, arg1 any) *gomock.Call {
+func (mr *MockPublicIPAddressUtilsMockRecorder) GetByIP(ctx, ip any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByIP", reflect.TypeOf((*MockPublicIPAddressUtils)(nil).GetByIP), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByIP", reflect.TypeOf((*MockPublicIPAddressUtils)(nil).GetByIP), ctx, ip)
 }
 
 // GetByName mocks base method.
-func (m *MockPublicIPAddressUtils) GetByName(arg0 context.Context, arg1 string) (*network.PublicIPAddress, error) {
+func (m *MockPublicIPAddressUtils) GetByName(ctx context.Context, name string) (*network.PublicIPAddress, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByName", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetByName", ctx, name)
 	ret0, _ := ret[0].(*network.PublicIPAddress)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetByName indicates an expected call of GetByName.
-func (mr *MockPublicIPAddressUtilsMockRecorder) GetByName(arg0, arg1 any) *gomock.Call {
+func (mr *MockPublicIPAddressUtilsMockRecorder) GetByName(ctx, name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByName", reflect.TypeOf((*MockPublicIPAddressUtils)(nil).GetByName), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByName", reflect.TypeOf((*MockPublicIPAddressUtils)(nil).GetByName), ctx, name)
 }
 
 // RemoveFromLoadBalancer mocks base method.
-func (m *MockPublicIPAddressUtils) RemoveFromLoadBalancer(arg0 context.Context, arg1 []string) error {
+func (m *MockPublicIPAddressUtils) RemoveFromLoadBalancer(ctx context.Context, publicIPAddressIDs []string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemoveFromLoadBalancer", arg0, arg1)
+	ret := m.ctrl.Call(m, "RemoveFromLoadBalancer", ctx, publicIPAddressIDs)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RemoveFromLoadBalancer indicates an expected call of RemoveFromLoadBalancer.
-func (mr *MockPublicIPAddressUtilsMockRecorder) RemoveFromLoadBalancer(arg0, arg1 any) *gomock.Call {
+func (mr *MockPublicIPAddressUtilsMockRecorder) RemoveFromLoadBalancer(ctx, publicIPAddressIDs any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFromLoadBalancer", reflect.TypeOf((*MockPublicIPAddressUtils)(nil).RemoveFromLoadBalancer), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveFromLoadBalancer", reflect.TypeOf((*MockPublicIPAddressUtils)(nil).RemoveFromLoadBalancer), ctx, publicIPAddressIDs)
 }
 
 // MockVirtualMachineUtils is a mock of VirtualMachineUtils interface.
 type MockVirtualMachineUtils struct {
 	ctrl     *gomock.Controller
 	recorder *MockVirtualMachineUtilsMockRecorder
+	isgomock struct{}
 }
 
 // MockVirtualMachineUtilsMockRecorder is the mock recorder for MockVirtualMachineUtils.
@@ -138,30 +140,30 @@ func (m *MockVirtualMachineUtils) EXPECT() *MockVirtualMachineUtilsMockRecorder 
 }
 
 // Get mocks base method.
-func (m *MockVirtualMachineUtils) Get(arg0 context.Context, arg1 string) (*compute.VirtualMachine, error) {
+func (m *MockVirtualMachineUtils) Get(ctx context.Context, name string) (*compute.VirtualMachine, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", arg0, arg1)
+	ret := m.ctrl.Call(m, "Get", ctx, name)
 	ret0, _ := ret[0].(*compute.VirtualMachine)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockVirtualMachineUtilsMockRecorder) Get(arg0, arg1 any) *gomock.Call {
+func (mr *MockVirtualMachineUtilsMockRecorder) Get(ctx, name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockVirtualMachineUtils)(nil).Get), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockVirtualMachineUtils)(nil).Get), ctx, name)
 }
 
 // Reapply mocks base method.
-func (m *MockVirtualMachineUtils) Reapply(arg0 context.Context, arg1 string) error {
+func (m *MockVirtualMachineUtils) Reapply(ctx context.Context, name string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Reapply", arg0, arg1)
+	ret := m.ctrl.Call(m, "Reapply", ctx, name)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Reapply indicates an expected call of Reapply.
-func (mr *MockVirtualMachineUtilsMockRecorder) Reapply(arg0, arg1 any) *gomock.Call {
+func (mr *MockVirtualMachineUtilsMockRecorder) Reapply(ctx, name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reapply", reflect.TypeOf((*MockVirtualMachineUtils)(nil).Reapply), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reapply", reflect.TypeOf((*MockVirtualMachineUtils)(nil).Reapply), ctx, name)
 }

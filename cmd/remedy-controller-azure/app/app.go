@@ -100,7 +100,7 @@ func NewControllerManagerCommand(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: Name,
 
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			logger := log.Log.WithName(Name)
 			logger.Info("Initializing", "version", version.Version)
 

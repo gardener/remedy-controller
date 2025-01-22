@@ -166,7 +166,7 @@ var _ = Describe("Controller", func() {
 		})
 
 		It("should create or update an object and remove the finalizer if it should not be finalized but already has a finalizer", func() {
-			c.EXPECT().Get(gomock.Any(), request.NamespacedName, obj).DoAndReturn(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod, opts ...client.GetOption) error {
+			c.EXPECT().Get(gomock.Any(), request.NamespacedName, obj).DoAndReturn(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod, _ ...client.GetOption) error {
 				pod.ObjectMeta.Finalizers = []string{"test-finalizer"}
 				return nil
 			})
@@ -185,7 +185,7 @@ var _ = Describe("Controller", func() {
 		})
 
 		It("should delete an object that has a finalizer", func() {
-			c.EXPECT().Get(ctx, request.NamespacedName, obj).DoAndReturn(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod, opts ...client.GetOption) error {
+			c.EXPECT().Get(ctx, request.NamespacedName, obj).DoAndReturn(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod, _ ...client.GetOption) error {
 				pod.ObjectMeta.DeletionTimestamp = &ts
 				pod.ObjectMeta.Finalizers = []string{"test-finalizer"}
 				return nil
@@ -203,7 +203,7 @@ var _ = Describe("Controller", func() {
 		})
 
 		It("should not delete an object that doesn't have a finalizer", func() {
-			c.EXPECT().Get(ctx, request.NamespacedName, obj).DoAndReturn(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod, opts ...client.GetOption) error {
+			c.EXPECT().Get(ctx, request.NamespacedName, obj).DoAndReturn(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod, _ ...client.GetOption) error {
 				pod.ObjectMeta.DeletionTimestamp = &ts
 				return nil
 			})
@@ -242,7 +242,7 @@ var _ = Describe("Controller", func() {
 		})
 
 		It("should fail if the actuator fails to delete", func() {
-			c.EXPECT().Get(ctx, request.NamespacedName, obj).DoAndReturn(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod, opts ...client.GetOption) error {
+			c.EXPECT().Get(ctx, request.NamespacedName, obj).DoAndReturn(func(_ context.Context, _ client.ObjectKey, pod *corev1.Pod, _ ...client.GetOption) error {
 				pod.ObjectMeta.DeletionTimestamp = &ts
 				pod.ObjectMeta.Finalizers = []string{"test-finalizer"}
 				return nil

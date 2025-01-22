@@ -18,6 +18,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2019-07-01/compute"
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-11-01/network"
@@ -133,7 +134,7 @@ type Clients struct {
 // ReadConfig creates new Azure credentials by reading the configuration file at the given path.
 func ReadConfig(path string) (*Credentials, error) {
 	// Open the configuration file
-	input, err := os.Open(path)
+	input, err := os.Open(filepath.Clean(path))
 	if err != nil {
 		return nil, errors.Wrap(err, "could not open configuration file")
 	}

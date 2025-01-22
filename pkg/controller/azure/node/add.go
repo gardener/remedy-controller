@@ -90,10 +90,11 @@ func AddToManagerWithOptions(mgr manager.Manager, options AddOptions) error {
 		WatchBuilder: extensionscontroller.NewWatchBuilder(func(ctrl controller.Controller) error {
 			nodeMapper := remedycontroller.NewLabelMapper(ObjectLabeler, azure.NodeLabel)
 			return ctrl.Watch(
-				source.Kind(options.Manager.GetCache(), &azurev1alpha1.VirtualMachine{}),
-				handler.EnqueueRequestsFromMapFunc(remedycontroller.MapFuncFromMapper(nodeMapper)),
-				remedycontroller.NewOwnedObjectPredicate(&corev1.Node{}, mgr.GetCache(), nodeMapper, FinalizerName, log.Log.WithName(VirtualMachinePredicateName)),
-			)
+				source.Kind[client.Object](options.Manager.GetCache(),
+					&azurev1alpha1.VirtualMachine{},
+					handler.EnqueueRequestsFromMapFunc(remedycontroller.MapFuncFromMapper(nodeMapper)),
+					remedycontroller.NewOwnedObjectPredicate(&corev1.Node{}, mgr.GetCache(), nodeMapper, FinalizerName, log.Log.WithName(VirtualMachinePredicateName)),
+				))
 		}),
 	})
 }

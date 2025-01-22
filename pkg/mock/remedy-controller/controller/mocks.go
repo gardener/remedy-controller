@@ -15,7 +15,6 @@ import (
 	time "time"
 
 	gomock "go.uber.org/mock/gomock"
-	types "k8s.io/apimachinery/pkg/types"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -23,6 +22,7 @@ import (
 type MockActuator struct {
 	ctrl     *gomock.Controller
 	recorder *MockActuatorMockRecorder
+	isgomock struct{}
 }
 
 // MockActuatorMockRecorder is the mock recorder for MockActuator.
@@ -91,6 +91,7 @@ func (mr *MockActuatorMockRecorder) ShouldFinalize(arg0, arg1 any) *gomock.Call 
 type MockMapper struct {
 	ctrl     *gomock.Controller
 	recorder *MockMapperMockRecorder
+	isgomock struct{}
 }
 
 // MockMapperMockRecorder is the mock recorder for MockMapper.
@@ -111,15 +112,15 @@ func (m *MockMapper) EXPECT() *MockMapperMockRecorder {
 }
 
 // Map mocks base method.
-func (m *MockMapper) Map(arg0 client.Object) types.NamespacedName {
+func (m *MockMapper) Map(obj client.Object) client.ObjectKey {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Map", arg0)
-	ret0, _ := ret[0].(types.NamespacedName)
+	ret := m.ctrl.Call(m, "Map", obj)
+	ret0, _ := ret[0].(client.ObjectKey)
 	return ret0
 }
 
 // Map indicates an expected call of Map.
-func (mr *MockMapperMockRecorder) Map(arg0 any) *gomock.Call {
+func (mr *MockMapperMockRecorder) Map(obj any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Map", reflect.TypeOf((*MockMapper)(nil).Map), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Map", reflect.TypeOf((*MockMapper)(nil).Map), obj)
 }

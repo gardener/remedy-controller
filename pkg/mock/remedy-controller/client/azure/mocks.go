@@ -24,6 +24,7 @@ import (
 type MockFuture struct {
 	ctrl     *gomock.Controller
 	recorder *MockFutureMockRecorder
+	isgomock struct{}
 }
 
 // MockFutureMockRecorder is the mock recorder for MockFuture.
@@ -61,6 +62,7 @@ func (mr *MockFutureMockRecorder) WaitForCompletionRef(arg0, arg1 any) *gomock.C
 type MockPublicIPAddressesClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockPublicIPAddressesClientMockRecorder
+	isgomock struct{}
 }
 
 // MockPublicIPAddressesClientMockRecorder is the mock recorder for MockPublicIPAddressesClient.
@@ -143,6 +145,7 @@ func (mr *MockPublicIPAddressesClientMockRecorder) List(arg0, arg1 any) *gomock.
 type MockLoadBalancersClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockLoadBalancersClientMockRecorder
+	isgomock struct{}
 }
 
 // MockLoadBalancersClientMockRecorder is the mock recorder for MockLoadBalancersClient.
@@ -210,6 +213,7 @@ func (mr *MockLoadBalancersClientMockRecorder) Get(arg0, arg1, arg2, arg3 any) *
 type MockVirtualMachinesClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockVirtualMachinesClientMockRecorder
+	isgomock struct{}
 }
 
 // MockVirtualMachinesClientMockRecorder is the mock recorder for MockVirtualMachinesClient.

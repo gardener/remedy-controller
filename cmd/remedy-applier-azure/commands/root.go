@@ -38,7 +38,7 @@ func GetRootCommand() *cobra.Command {
 		cmd                                       = &cobra.Command{
 			Use:  "azure-remedy-applier",
 			Long: "TODO",
-			Run: func(cmd *cobra.Command, args []string) {
+			Run: func(_ *cobra.Command, _ []string) {
 				configureLogger(logLevel)
 
 				// Register a signal handler and create root context to shutdown the app with a graceperiod.

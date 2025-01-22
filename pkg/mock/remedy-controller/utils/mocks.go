@@ -20,6 +20,7 @@ import (
 type MockExpiringCache struct {
 	ctrl     *gomock.Controller
 	recorder *MockExpiringCacheMockRecorder
+	isgomock struct{}
 }
 
 // MockExpiringCacheMockRecorder is the mock recorder for MockExpiringCache.
@@ -40,40 +41,40 @@ func (m *MockExpiringCache) EXPECT() *MockExpiringCacheMockRecorder {
 }
 
 // Delete mocks base method.
-func (m *MockExpiringCache) Delete(arg0 any) {
+func (m *MockExpiringCache) Delete(key any) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Delete", arg0)
+	m.ctrl.Call(m, "Delete", key)
 }
 
 // Delete indicates an expected call of Delete.
-func (mr *MockExpiringCacheMockRecorder) Delete(arg0 any) *gomock.Call {
+func (mr *MockExpiringCacheMockRecorder) Delete(key any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockExpiringCache)(nil).Delete), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockExpiringCache)(nil).Delete), key)
 }
 
 // Get mocks base method.
-func (m *MockExpiringCache) Get(arg0 any) (any, bool) {
+func (m *MockExpiringCache) Get(key any) (any, bool) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", arg0)
+	ret := m.ctrl.Call(m, "Get", key)
 	ret0, _ := ret[0].(any)
 	ret1, _ := ret[1].(bool)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockExpiringCacheMockRecorder) Get(arg0 any) *gomock.Call {
+func (mr *MockExpiringCacheMockRecorder) Get(key any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockExpiringCache)(nil).Get), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockExpiringCache)(nil).Get), key)
 }
 
 // Set mocks base method.
-func (m *MockExpiringCache) Set(arg0, arg1 any, arg2 time.Duration) {
+func (m *MockExpiringCache) Set(key, value any, ttl time.Duration) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Set", arg0, arg1, arg2)
+	m.ctrl.Call(m, "Set", key, value, ttl)
 }
 
 // Set indicates an expected call of Set.
-func (mr *MockExpiringCacheMockRecorder) Set(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockExpiringCacheMockRecorder) Set(key, value, ttl any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockExpiringCache)(nil).Set), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockExpiringCache)(nil).Set), key, value, ttl)
 }

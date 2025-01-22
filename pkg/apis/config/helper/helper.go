@@ -16,6 +16,7 @@ package helper
 
 import (
 	"os"
+	"path/filepath"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -46,7 +47,7 @@ func init() {
 
 // LoadFromFile takes a filename and de-serializes its contents into a ControllerConfiguration object.
 func LoadFromFile(filename string) (*config.ControllerConfiguration, error) {
-	bytes, err := os.ReadFile(filename)
+	bytes, err := os.ReadFile(filepath.Clean(filename))
 	if err != nil {
 		return nil, err
 	}

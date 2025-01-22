@@ -23,6 +23,7 @@ HACK_DIR                    := $(REPO_ROOT)/hack
 VERSION                     := $(shell cat "$(REPO_ROOT)/VERSION")
 LD_FLAGS                    := "-w -X github.com/gardener/$(NAME)/pkg/version.Version=$(VERSION) -X github.com/gardener/$(NAME)/pkg/version.GitCommit=$(shell git rev-parse --verify HEAD) -X github.com/gardener/$(NAME)/pkg/version.BuildDate=$(shell date --rfc-3339=seconds | sed 's/ /T/')"
 LEADER_ELECTION             := false
+PLATFORM 					:= linux/amd64
 
 #########################################
 # Tools                                 #
@@ -30,7 +31,6 @@ LEADER_ELECTION             := false
 
 TOOLS_DIR := $(HACK_DIR)/tools
 include $(GARDENER_HACK_DIR)/tools.mk
-GOLANGCI_LINT_VERSION := v1.55.2
 
 #########################################
 # Rules for local development scenarios #
@@ -79,7 +79,7 @@ docker-login:
 
 .PHONY: docker-images
 docker-images:
-	@docker build -t $(IMAGE_PREFIX)/$(NAME)-azure:$(VERSION) -t $(IMAGE_PREFIX)/$(NAME)-azure:latest -f Dockerfile -m 6g --target $(NAME)-azure .
+	@docker buildx build --platform=$(PLATFORM) -t $(IMAGE_PREFIX)/$(NAME)-azure:$(VERSION) -t $(IMAGE_PREFIX)/$(NAME)-azure:latest -f Dockerfile -m 6g --target $(NAME)-azure .
 
 #####################################################################
 # Rules for verification, formatting, linting, testing and cleaning #
@@ -111,8 +111,8 @@ check: $(GOIMPORTS) $(GOLANGCI_LINT) $(HELM)
 	@. $(REPO_ROOT)/.env/bin/activate && flake8 $(REPO_ROOT)/test
 
 .PHONY: generate
-generate: $(VGOPATH) $(GEN_CRD_API_REFERENCE_DOCS) $(MOCKGEN)
-	@REPO_ROOT=$(REPO_ROOT) VGOPATH=$(VGOPATH) GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) bash $(GARDENER_HACK_DIR)/generate-sequential.sh ./cmd/... ./pkg/...
+generate: $(VGOPATH) $(CONTROLLER_GEN) $(GEN_CRD_API_REFERENCE_DOCS) $(MOCKGEN)
+	@REPO_ROOT=$(REPO_ROOT) VGOPATH=$(VGOPATH) GARDENER_HACK_DIR=$(GARDENER_HACK_DIR) bash $(GARDENER_HACK_DIR)/generate-sequential.sh ./charts/... ./cmd/... ./example/... ./pkg/...
 	$(MAKE) format
 
 .PHONY: format
@@ -131,11 +131,19 @@ test-cov:
 test-clean:
 	@bash $(GARDENER_HACK_DIR)/test-cover-clean.sh
 
+.PHONY: sast
+sast: $(GOSEC)
+	@bash $(GARDENER_HACK_DIR)/sast.sh
+
+.PHONY: sast-report
+sast-report: $(GOSEC)
+	@bash $(GARDENER_HACK_DIR)/sast.sh --gosec-report true
+
 .PHONY: verify
-verify: check format test
+verify: check format test sast
 
 .PHONY: verify-extended
-verify-extended: install-requirements check-generate check format test-cov test-clean
+verify-extended: install-requirements check-generate check format test-cov test-clean sast-report
 
 .PHONY: pubip-remedy-test
 pubip-remedy-test:

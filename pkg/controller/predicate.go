@@ -28,7 +28,7 @@ import (
 // NewOwnedObjectPredicate creates a new predicate that filters only relevant owned object events,
 // such as creating or updating an object without an owner or with an owner that is being deleted,
 // or deleting an object with an owner that is not being deleted.
-func NewOwnedObjectPredicate(ownerType client.Object, reader client.Reader, ownerMapper Mapper, finalizer string, logger logr.Logger) predicate.Predicate {
+func NewOwnedObjectPredicate(ownerType client.Object, reader client.Reader, ownerMapper Mapper, finalizer string, logger logr.Logger) predicate.TypedPredicate[client.Object] {
 	return &ownedObjectPredicate{
 		ownerType:   ownerType,
 		reader:      reader,

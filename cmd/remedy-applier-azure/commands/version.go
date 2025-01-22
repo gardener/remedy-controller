@@ -27,7 +27,7 @@ func getVersionCommand() *cobra.Command {
 		cmd = &cobra.Command{
 			Use:  "version",
 			Long: "Get detailed version and build information",
-			Run: func(cmd *cobra.Command, args []string) {
+			Run: func(_ *cobra.Command, _ []string) {
 				fmt.Println(version.Get())
 			},
 		}

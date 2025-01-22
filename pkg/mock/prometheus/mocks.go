@@ -21,6 +21,7 @@ import (
 type MockCounter struct {
 	ctrl     *gomock.Controller
 	recorder *MockCounterMockRecorder
+	isgomock struct{}
 }
 
 // MockCounterMockRecorder is the mock recorder for MockCounter.
@@ -120,6 +121,7 @@ func (mr *MockCounterMockRecorder) Write(arg0 any) *gomock.Call {
 type MockGauge struct {
 	ctrl     *gomock.Controller
 	recorder *MockGaugeMockRecorder
+	isgomock struct{}
 }
 
 // MockGaugeMockRecorder is the mock recorder for MockGauge.

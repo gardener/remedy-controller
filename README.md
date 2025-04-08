@@ -210,7 +210,9 @@ To test this remedy:
 
 ## Feedback and Support
 
-Feedback and contributions are always welcome. Please report bugs or suggestions as [GitHub issues](https://github.com/gardener/remedy-controller/issues) or join our [Slack channel #gardener](https://kubernetes.slack.com/messages/gardener) (please invite yourself to the Kubernetes workspace [here](http://slack.k8s.io)).
+Feedback and contributions are always welcome!
+
+Please report bugs or suggestions as [GitHub issues](https://github.com/gardener/remedy-controller/issues) or reach out on [Slack](https://gardener-cloud.slack.com/) (join the workspace [here](https://gardener.cloud/community/community-bio/)).
 
 ## Learn More!
 

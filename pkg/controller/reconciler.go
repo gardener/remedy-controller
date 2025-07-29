@@ -84,7 +84,6 @@ func (r *reconciler) createOrUpdate(ctx context.Context, obj client.Object, logg
 		return reconcile.Result{}, errors.Wrap(err, "could not check if the object should be finalized")
 	}
 	if shouldFinalize {
-
 		if err := controllerutils.AddFinalizers(ctx, r.client, obj, r.finalizerName); err != nil {
 			if apierrors.IsNotFound(err) {
 				return reconcile.Result{}, nil

@@ -68,14 +68,12 @@ func GetRootCommand() *cobra.Command {
 					utilsazure.NewPublicIPAddressUtils(clients, credentials.ResourceGroup, utilsazure.ReadRequestsCounter, utilsazure.WriteRequestsCounter),
 					credentials.ResourceGroup)
 
-				select { // nolint:gosimple
-				case <-interuptCh:
-					signal.Stop(interuptCh)
-					log.Info("Received stop signal, shutting down with grace period.")
-					cancel()
-					time.Sleep(time.Second * 5)
-					log.Info("Shut down.")
-				}
+				<-interuptCh
+				signal.Stop(interuptCh)
+				log.Info("Received stop signal, shutting down with grace period.")
+				cancel()
+				time.Sleep(time.Second * 5)
+				log.Info("Shut down.")
 			},
 		}
 	)

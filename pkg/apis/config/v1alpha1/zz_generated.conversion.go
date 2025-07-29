@@ -15,7 +15,6 @@ import (
 	config "github.com/gardener/remedy-controller/pkg/apis/config"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-	componentbaseconfig "k8s.io/component-base/config"
 	configv1alpha1 "k8s.io/component-base/config/v1alpha1"
 )
 
@@ -150,7 +149,7 @@ func Convert_config_AzureOrphanedPublicIPRemedyConfiguration_To_v1alpha1_AzureOr
 }
 
 func autoConvert_v1alpha1_ControllerConfiguration_To_config_ControllerConfiguration(in *ControllerConfiguration, out *config.ControllerConfiguration, s conversion.Scope) error {
-	out.ClientConnection = (*componentbaseconfig.ClientConnectionConfiguration)(unsafe.Pointer(in.ClientConnection))
+	out.ClientConnection = (*configv1alpha1.ClientConnectionConfiguration)(unsafe.Pointer(in.ClientConnection))
 	out.Azure = (*config.AzureConfiguration)(unsafe.Pointer(in.Azure))
 	return nil
 }

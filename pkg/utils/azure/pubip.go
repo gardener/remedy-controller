@@ -208,7 +208,7 @@ func updateProbes(lb network.LoadBalancer, ruleIDs []string) {
 			continue
 		}
 		for _, probeRule := range *probe.LoadBalancingRules {
-			if !(probeRule.ID != nil && slices.Contains(ruleIDs, *probeRule.ID)) {
+			if probeRule.ID == nil || !slices.Contains(ruleIDs, *probeRule.ID) {
 				updated = append(updated, probe)
 			}
 		}

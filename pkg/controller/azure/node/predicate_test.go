@@ -78,38 +78,38 @@ var _ = Describe("Predicate", func() {
 
 	Describe("#Create", func() {
 		It("should return false with an empty event", func() {
-			Expect(p.Create(event.CreateEvent{})).To(Equal(false))
+			Expect(p.Create(event.CreateEvent{})).To(BeFalse())
 		})
 
 		It("should return false with an object that is not a node", func() {
-			Expect(p.Create(event.CreateEvent{Object: &corev1.Service{}})).To(Equal(false))
+			Expect(p.Create(event.CreateEvent{Object: &corev1.Service{}})).To(BeFalse())
 		})
 
 		It("should return true with an object that is a node (and add it to the node cache)", func() {
 			nodeCache.EXPECT().Set(nodeName, projection, azurenode.CacheTTL)
 
-			Expect(p.Create(event.CreateEvent{Object: node})).To(Equal(true))
+			Expect(p.Create(event.CreateEvent{Object: node})).To(BeTrue())
 		})
 	})
 
 	Describe("#Update", func() {
 		It("should return false with an empty event", func() {
-			Expect(p.Update(event.UpdateEvent{})).To(Equal(false))
+			Expect(p.Update(event.UpdateEvent{})).To(BeFalse())
 		})
 
 		It("should return false with an old object that is not a node", func() {
-			Expect(p.Update(event.UpdateEvent{ObjectOld: &corev1.Service{}, ObjectNew: node})).To(Equal(false))
+			Expect(p.Update(event.UpdateEvent{ObjectOld: &corev1.Service{}, ObjectNew: node})).To(BeFalse())
 		})
 
 		It("should return false with a new object that is not a node", func() {
-			Expect(p.Update(event.UpdateEvent{ObjectOld: node, ObjectNew: &corev1.Service{}})).To(Equal(false))
+			Expect(p.Update(event.UpdateEvent{ObjectOld: node, ObjectNew: &corev1.Service{}})).To(BeFalse())
 		})
 
 		It("should return true if the new node is missing from the node cache (and add it to the node cache)", func() {
 			nodeCache.EXPECT().Get(nodeName).Return(nil, false)
 			nodeCache.EXPECT().Set(nodeName, projection, azurenode.CacheTTL)
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: node, ObjectOld: node})).To(Equal(true))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: node, ObjectOld: node})).To(BeTrue())
 		})
 
 		It("should return true if the deletion timestamp of the new node is different from that of the old node", func() {
@@ -119,7 +119,7 @@ var _ = Describe("Predicate", func() {
 			nodeCache.EXPECT().Get(nodeName).Return(newProjection, true)
 			nodeCache.EXPECT().Set(nodeName, newProjection, azurenode.CacheTTL)
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: newNode, ObjectOld: node})).To(Equal(true))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: newNode, ObjectOld: node})).To(BeTrue())
 		})
 
 		It("should return true if the deletion timestamp of the new node is different from that of the cached node", func() {
@@ -129,7 +129,7 @@ var _ = Describe("Predicate", func() {
 			nodeCache.EXPECT().Get(nodeName).Return(projection, true)
 			nodeCache.EXPECT().Set(nodeName, newProjection, azurenode.CacheTTL)
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: newNode, ObjectOld: newNode})).To(Equal(true))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: newNode, ObjectOld: newNode})).To(BeTrue())
 		})
 
 		It("should return true if the 'not ready or unreachable' status of the new node is different from that of the old node", func() {
@@ -139,7 +139,7 @@ var _ = Describe("Predicate", func() {
 			nodeCache.EXPECT().Get(nodeName).Return(newProjection, true)
 			nodeCache.EXPECT().Set(nodeName, newProjection, azurenode.CacheTTL)
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: newNode, ObjectOld: node})).To(Equal(true))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: newNode, ObjectOld: node})).To(BeTrue())
 		})
 
 		It("should return true if the 'not ready or unreachable' status of the new node is different from that of the cached node", func() {
@@ -149,29 +149,29 @@ var _ = Describe("Predicate", func() {
 			nodeCache.EXPECT().Get(nodeName).Return(projection, true)
 			nodeCache.EXPECT().Set(nodeName, newProjection, azurenode.CacheTTL)
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: newNode, ObjectOld: newNode})).To(Equal(true))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: newNode, ObjectOld: newNode})).To(BeTrue())
 		})
 
 		It("should return false if the new node is not different from the old or the cached node", func() {
 			nodeCache.EXPECT().Get(nodeName).Return(projection, true)
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: node, ObjectOld: node})).To(Equal(false))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: node, ObjectOld: node})).To(BeFalse())
 		})
 	})
 
 	Describe("#Delete", func() {
 		It("should return false with an empty event", func() {
-			Expect(p.Delete(event.DeleteEvent{})).To(Equal(false))
+			Expect(p.Delete(event.DeleteEvent{})).To(BeFalse())
 		})
 
 		It("should return false with an object that is not a node", func() {
-			Expect(p.Delete(event.DeleteEvent{Object: &corev1.Service{}})).To(Equal(false))
+			Expect(p.Delete(event.DeleteEvent{Object: &corev1.Service{}})).To(BeFalse())
 		})
 
 		It("should return true with an object that is a node (and delete it from the node cache)", func() {
 			nodeCache.EXPECT().Delete(nodeName)
 
-			Expect(p.Delete(event.DeleteEvent{Object: node})).To(Equal(true))
+			Expect(p.Delete(event.DeleteEvent{Object: node})).To(BeTrue())
 		})
 	})
 })

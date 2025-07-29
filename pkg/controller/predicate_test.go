@@ -91,34 +91,34 @@ var _ = Describe("OwnedObjectPredicate", func() {
 
 	Describe("#Create", func() {
 		It("should return false with an empty event", func() {
-			Expect(p.Create(event.CreateEvent{})).To(Equal(false))
+			Expect(p.Create(event.CreateEvent{})).To(BeFalse())
 		})
 
 		It("should return false if the mapper returns an empty owner key", func() {
 			m.EXPECT().Map(obj).Return(client.ObjectKey{})
 
-			Expect(p.Create(event.CreateEvent{Object: obj})).To(Equal(false))
+			Expect(p.Create(event.CreateEvent{Object: obj})).To(BeFalse())
 		})
 
 		It("should return false if getting the owner fails", func() {
 			m.EXPECT().Map(obj).Return(ownerKey)
 			r.EXPECT().Get(context.Background(), ownerKey, gomock.AssignableToTypeOf(&corev1.Service{})).Return(errors.New("test"))
 
-			Expect(p.Create(event.CreateEvent{Object: obj})).To(Equal(false))
+			Expect(p.Create(event.CreateEvent{Object: obj})).To(BeFalse())
 		})
 
 		It("should return true if the owner is not found", func() {
 			m.EXPECT().Map(obj).Return(ownerKey)
 			r.EXPECT().Get(context.Background(), ownerKey, gomock.AssignableToTypeOf(&corev1.Service{})).Return(notFoundError)
 
-			Expect(p.Create(event.CreateEvent{Object: obj})).To(Equal(true))
+			Expect(p.Create(event.CreateEvent{Object: obj})).To(BeTrue())
 		})
 
 		It("should return false if the owner doesn't have a finalizer", func() {
 			m.EXPECT().Map(obj).Return(ownerKey)
 			expectGetOwner()
 
-			Expect(p.Create(event.CreateEvent{Object: obj})).To(Equal(false))
+			Expect(p.Create(event.CreateEvent{Object: obj})).To(BeFalse())
 		})
 
 		It("should return true if the owner has a finalizer and a deletion timestamp", func() {
@@ -131,7 +131,7 @@ var _ = Describe("OwnedObjectPredicate", func() {
 			m.EXPECT().Map(obj).Return(ownerKey)
 			expectGetOwner()
 
-			Expect(p.Create(event.CreateEvent{Object: obj})).To(Equal(true))
+			Expect(p.Create(event.CreateEvent{Object: obj})).To(BeTrue())
 		})
 
 		It("should return false if the owner has a finalizer and no deletion timestamp", func() {
@@ -143,40 +143,40 @@ var _ = Describe("OwnedObjectPredicate", func() {
 			m.EXPECT().Map(obj).Return(ownerKey)
 			expectGetOwner()
 
-			Expect(p.Create(event.CreateEvent{Object: obj})).To(Equal(false))
+			Expect(p.Create(event.CreateEvent{Object: obj})).To(BeFalse())
 		})
 	})
 
 	Describe("#Update", func() {
 		It("should return false with an empty event", func() {
-			Expect(p.Update(event.UpdateEvent{})).To(Equal(false))
+			Expect(p.Update(event.UpdateEvent{})).To(BeFalse())
 		})
 
 		It("should return false if the mapper returns an empty owner key", func() {
 			m.EXPECT().Map(obj).Return(client.ObjectKey{})
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: obj})).To(Equal(false))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: obj})).To(BeFalse())
 		})
 
 		It("should return false if getting the owner fails", func() {
 			m.EXPECT().Map(obj).Return(ownerKey)
 			r.EXPECT().Get(context.Background(), ownerKey, gomock.AssignableToTypeOf(&corev1.Service{})).Return(errors.New("test"))
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: obj})).To(Equal(false))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: obj})).To(BeFalse())
 		})
 
 		It("should return true if the owner is not found", func() {
 			m.EXPECT().Map(obj).Return(ownerKey)
 			r.EXPECT().Get(context.Background(), ownerKey, gomock.AssignableToTypeOf(&corev1.Service{})).Return(notFoundError)
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: obj})).To(Equal(true))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: obj})).To(BeTrue())
 		})
 
 		It("should return false if the owner doesn't have a finalizer", func() {
 			m.EXPECT().Map(obj).Return(ownerKey)
 			expectGetOwner()
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: obj})).To(Equal(false))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: obj})).To(BeFalse())
 		})
 
 		It("should return true if the owner has a finalizer and a deletion timestamp", func() {
@@ -189,7 +189,7 @@ var _ = Describe("OwnedObjectPredicate", func() {
 			m.EXPECT().Map(obj).Return(ownerKey)
 			expectGetOwner()
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: obj})).To(Equal(true))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: obj})).To(BeTrue())
 		})
 
 		It("should return false if the owner has a finalizer and no deletion timestamp", func() {
@@ -201,40 +201,40 @@ var _ = Describe("OwnedObjectPredicate", func() {
 			m.EXPECT().Map(obj).Return(ownerKey)
 			expectGetOwner()
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: obj})).To(Equal(false))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: obj})).To(BeFalse())
 		})
 	})
 
 	Describe("#Delete", func() {
 		It("should return false with an empty event", func() {
-			Expect(p.Delete(event.DeleteEvent{})).To(Equal(false))
+			Expect(p.Delete(event.DeleteEvent{})).To(BeFalse())
 		})
 
 		It("should return false if the mapper returns an empty owner key", func() {
 			m.EXPECT().Map(obj).Return(client.ObjectKey{})
 
-			Expect(p.Delete(event.DeleteEvent{Object: obj})).To(Equal(false))
+			Expect(p.Delete(event.DeleteEvent{Object: obj})).To(BeFalse())
 		})
 
 		It("should return false if getting the owner fails", func() {
 			m.EXPECT().Map(obj).Return(ownerKey)
 			r.EXPECT().Get(context.Background(), ownerKey, gomock.AssignableToTypeOf(&corev1.Service{})).Return(errors.New("test"))
 
-			Expect(p.Delete(event.DeleteEvent{Object: obj})).To(Equal(false))
+			Expect(p.Delete(event.DeleteEvent{Object: obj})).To(BeFalse())
 		})
 
 		It("should return false if the owner is not found", func() {
 			m.EXPECT().Map(obj).Return(ownerKey)
 			r.EXPECT().Get(context.Background(), ownerKey, gomock.AssignableToTypeOf(&corev1.Service{})).Return(notFoundError)
 
-			Expect(p.Delete(event.DeleteEvent{Object: obj})).To(Equal(false))
+			Expect(p.Delete(event.DeleteEvent{Object: obj})).To(BeFalse())
 		})
 
 		It("should return false if the owner doesn't have a finalizer", func() {
 			m.EXPECT().Map(obj).Return(ownerKey)
 			expectGetOwner()
 
-			Expect(p.Delete(event.DeleteEvent{Object: obj})).To(Equal(false))
+			Expect(p.Delete(event.DeleteEvent{Object: obj})).To(BeFalse())
 		})
 
 		It("should return true if the owner has a finalizer and no deletion timestamp", func() {
@@ -246,7 +246,7 @@ var _ = Describe("OwnedObjectPredicate", func() {
 			m.EXPECT().Map(obj).Return(ownerKey)
 			expectGetOwner()
 
-			Expect(p.Delete(event.DeleteEvent{Object: obj})).To(Equal(true))
+			Expect(p.Delete(event.DeleteEvent{Object: obj})).To(BeTrue())
 		})
 
 		It("should return false if the owner has a finalizer and a deletion timestamp", func() {
@@ -259,7 +259,7 @@ var _ = Describe("OwnedObjectPredicate", func() {
 			m.EXPECT().Map(obj).Return(ownerKey)
 			expectGetOwner()
 
-			Expect(p.Delete(event.DeleteEvent{Object: obj})).To(Equal(false))
+			Expect(p.Delete(event.DeleteEvent{Object: obj})).To(BeFalse())
 		})
 	})
 })

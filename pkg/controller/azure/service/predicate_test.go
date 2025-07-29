@@ -85,38 +85,38 @@ var _ = Describe("Predicate", func() {
 
 	Describe("#Create", func() {
 		It("should return false with an empty event", func() {
-			Expect(p.Create(event.CreateEvent{})).To(Equal(false))
+			Expect(p.Create(event.CreateEvent{})).To(BeFalse())
 		})
 
 		It("should return false with an object that is not a service", func() {
-			Expect(p.Create(event.CreateEvent{Object: &corev1.Node{}})).To(Equal(false))
+			Expect(p.Create(event.CreateEvent{Object: &corev1.Node{}})).To(BeFalse())
 		})
 
 		It("should return true with an object that is a service (and add it to the service cache)", func() {
 			serviceCache.EXPECT().Set(serviceName, projection, azureservice.CacheTTL)
 
-			Expect(p.Create(event.CreateEvent{Object: service})).To(Equal(true))
+			Expect(p.Create(event.CreateEvent{Object: service})).To(BeTrue())
 		})
 	})
 
 	Describe("#Update", func() {
 		It("should return false with an empty event", func() {
-			Expect(p.Update(event.UpdateEvent{})).To(Equal(false))
+			Expect(p.Update(event.UpdateEvent{})).To(BeFalse())
 		})
 
 		It("should return false with an old object that is not a service", func() {
-			Expect(p.Update(event.UpdateEvent{ObjectOld: &corev1.Node{}, ObjectNew: service})).To(Equal(false))
+			Expect(p.Update(event.UpdateEvent{ObjectOld: &corev1.Node{}, ObjectNew: service})).To(BeFalse())
 		})
 
 		It("should return false with a new object that is not a service", func() {
-			Expect(p.Update(event.UpdateEvent{ObjectOld: service, ObjectNew: &corev1.Node{}})).To(Equal(false))
+			Expect(p.Update(event.UpdateEvent{ObjectOld: service, ObjectNew: &corev1.Node{}})).To(BeFalse())
 		})
 
 		It("should return true if the new service is missing from the service cache (and add it to the service cache)", func() {
 			serviceCache.EXPECT().Get(serviceName).Return(nil, false)
 			serviceCache.EXPECT().Set(serviceName, projection, azureservice.CacheTTL)
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: service, ObjectOld: service})).To(Equal(true))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: service, ObjectOld: service})).To(BeTrue())
 		})
 
 		It("should return true if the deletion timestamp of the new service is different from that of the old service", func() {
@@ -126,7 +126,7 @@ var _ = Describe("Predicate", func() {
 			serviceCache.EXPECT().Get(serviceName).Return(newProjection, true)
 			serviceCache.EXPECT().Set(serviceName, newProjection, azureservice.CacheTTL)
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: newService, ObjectOld: service})).To(Equal(true))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: newService, ObjectOld: service})).To(BeTrue())
 		})
 
 		It("should return true if the deletion timestamp of the new service is different from that of the cached service", func() {
@@ -136,7 +136,7 @@ var _ = Describe("Predicate", func() {
 			serviceCache.EXPECT().Get(serviceName).Return(projection, true)
 			serviceCache.EXPECT().Set(serviceName, newProjection, azureservice.CacheTTL)
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: newService, ObjectOld: newService})).To(Equal(true))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: newService, ObjectOld: newService})).To(BeTrue())
 		})
 
 		It("should return true if the ignore annotation of the new service is different from that of the old service", func() {
@@ -146,7 +146,7 @@ var _ = Describe("Predicate", func() {
 			serviceCache.EXPECT().Get(serviceName).Return(newProjection, true)
 			serviceCache.EXPECT().Set(serviceName, newProjection, azureservice.CacheTTL)
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: newService, ObjectOld: service})).To(Equal(true))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: newService, ObjectOld: service})).To(BeTrue())
 		})
 
 		It("should return true if the ignore annotation of the new service is different from that of the cached service", func() {
@@ -156,7 +156,7 @@ var _ = Describe("Predicate", func() {
 			serviceCache.EXPECT().Get(serviceName).Return(projection, true)
 			serviceCache.EXPECT().Set(serviceName, newProjection, azureservice.CacheTTL)
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: newService, ObjectOld: newService})).To(Equal(true))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: newService, ObjectOld: newService})).To(BeTrue())
 		})
 
 		It("should return true if the LoadBalancer IPs of the new service are different from that of the old service", func() {
@@ -166,7 +166,7 @@ var _ = Describe("Predicate", func() {
 			serviceCache.EXPECT().Get(serviceName).Return(newProjection, true)
 			serviceCache.EXPECT().Set(serviceName, newProjection, azureservice.CacheTTL)
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: newService, ObjectOld: service})).To(Equal(true))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: newService, ObjectOld: service})).To(BeTrue())
 		})
 
 		It("should return true if the LoadBalancer IPs the new service are different from that of the cached service", func() {
@@ -176,29 +176,29 @@ var _ = Describe("Predicate", func() {
 			serviceCache.EXPECT().Get(serviceName).Return(projection, true)
 			serviceCache.EXPECT().Set(serviceName, newProjection, azureservice.CacheTTL)
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: newService, ObjectOld: newService})).To(Equal(true))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: newService, ObjectOld: newService})).To(BeTrue())
 		})
 
 		It("should return false if the new service is not different from the old or the cached service", func() {
 			serviceCache.EXPECT().Get(serviceName).Return(projection, true)
 
-			Expect(p.Update(event.UpdateEvent{ObjectNew: service, ObjectOld: service})).To(Equal(false))
+			Expect(p.Update(event.UpdateEvent{ObjectNew: service, ObjectOld: service})).To(BeFalse())
 		})
 	})
 
 	Describe("#Delete", func() {
 		It("should return false with an empty event", func() {
-			Expect(p.Delete(event.DeleteEvent{})).To(Equal(false))
+			Expect(p.Delete(event.DeleteEvent{})).To(BeFalse())
 		})
 
 		It("should return false with an object that is not a service", func() {
-			Expect(p.Delete(event.DeleteEvent{Object: &corev1.Node{}})).To(Equal(false))
+			Expect(p.Delete(event.DeleteEvent{Object: &corev1.Node{}})).To(BeFalse())
 		})
 
 		It("should return true with an object that is a service (and delete it from the service cache)", func() {
 			serviceCache.EXPECT().Delete(serviceName)
 
-			Expect(p.Delete(event.DeleteEvent{Object: service})).To(Equal(true))
+			Expect(p.Delete(event.DeleteEvent{Object: service})).To(BeTrue())
 		})
 	})
 })

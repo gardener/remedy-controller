@@ -1,0 +1,9 @@
+# See the OWNERS docs at https://go.k8s.io/owners
+
+aliases:
+  remedy-controller-reviewers:
+  - AndreasBurger
+  - kon-angelo
+  remedy-controller-approvers:
+  - AndreasBurger
+  - kon-angelo

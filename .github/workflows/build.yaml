@@ -34,7 +34,7 @@ jobs:
       matrix:
         args:
           - name: remedy-controller-image
-            target:
+            target: remedy-controller-azure
             oci-repository: gardener/remedy-controller/remedy-controller-azure
     with:
       name: ${{ matrix.args.name }}

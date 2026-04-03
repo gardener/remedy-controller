@@ -46,7 +46,7 @@ require (
 	github.com/gardener/cert-management v0.17.8 // indirect
 	github.com/gardener/etcd-druid/api v0.31.0 // indirect
 	github.com/gardener/machine-controller-manager v0.59.2 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.0 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/errors v0.22.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect

@@ -1,7 +1,7 @@
 //go:build tools
 // +build tools
 
-// SPDX-FileCopyrightText: Copyright Contributors to the Gardener project
+// SPDX-FileCopyrightText: Contributors to the Gardener project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.

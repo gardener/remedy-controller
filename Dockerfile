@@ -10,7 +10,7 @@ COPY . .
 RUN make install
 
 ############# base image
-FROM gcr.io/distroless/static-debian11:nonroot AS base
+FROM gcr.io/distroless/static-debian12:nonroot AS base
 
 ############# remedy-controller-azure
 FROM base AS remedy-controller-azure
